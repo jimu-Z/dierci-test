@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriQualityReportMapper">
+
+    <resultMap type="AgriQualityReport" id="AgriQualityReportResult">
+        <result property="reportId" column="report_id" />
+        <result property="reportNo" column="report_no" />
+        <result property="inspectId" column="inspect_id" />
+        <result property="processBatchNo" column="process_batch_no" />
+        <result property="qualityGrade" column="quality_grade" />
+        <result property="defectRate" column="defect_rate" />
+        <result property="reportSummary" column="report_summary" />
+        <result property="reportStatus" column="report_status" />
+        <result property="reportTime" column="report_time" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriQualityReportVo">
+        select report_id, report_no, inspect_id, process_batch_no, quality_grade,
+               defect_rate, report_summary, report_status, report_time,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_quality_report
+    </sql>
+
+    <select id="selectAgriQualityReportList" parameterType="AgriQualityReport" resultMap="AgriQualityReportResult">
+        <include refid="selectAgriQualityReportVo"/>
+        <where>
+            <if test="reportNo != null and reportNo != ''">
+                and report_no like concat('%', #{reportNo}, '%')
+            </if>
+            <if test="processBatchNo != null and processBatchNo != ''">
+                and process_batch_no like concat('%', #{processBatchNo}, '%')
+            </if>
+            <if test="reportStatus != null and reportStatus != ''">
+                and report_status = #{reportStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by report_id desc
+    </select>
+
+    <select id="selectAgriQualityReportByReportId" parameterType="Long" resultMap="AgriQualityReportResult">
+        <include refid="selectAgriQualityReportVo"/>
+        where report_id = #{reportId}
+    </select>
+
+    <select id="selectAgriQualityReportByInspectId" parameterType="Long" resultMap="AgriQualityReportResult">
+        <include refid="selectAgriQualityReportVo"/>
+        where inspect_id = #{inspectId}
+        limit 1
+    </select>
+
+    <insert id="insertAgriQualityReport" parameterType="AgriQualityReport" useGeneratedKeys="true" keyProperty="reportId">
+        insert into agri_quality_report
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="reportNo != null and reportNo != ''">report_no,</if>
+            <if test="inspectId != null">inspect_id,</if>
+            <if test="processBatchNo != null and processBatchNo != ''">process_batch_no,</if>
+            <if test="qualityGrade != null and qualityGrade != ''">quality_grade,</if>
+            <if test="defectRate != null">defect_rate,</if>
+            <if test="reportSummary != null and reportSummary != ''">report_summary,</if>
+            <if test="reportStatus != null and reportStatus != ''">report_status,</if>
+            <if test="reportTime != null">report_time,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="reportNo != null and reportNo != ''">#{reportNo},</if>
+            <if test="inspectId != null">#{inspectId},</if>
+            <if test="processBatchNo != null and processBatchNo != ''">#{processBatchNo},</if>
+            <if test="qualityGrade != null and qualityGrade != ''">#{qualityGrade},</if>
+            <if test="defectRate != null">#{defectRate},</if>
+            <if test="reportSummary != null and reportSummary != ''">#{reportSummary},</if>
+            <if test="reportStatus != null and reportStatus != ''">#{reportStatus},</if>
+            <if test="reportTime != null">#{reportTime},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriQualityReport" parameterType="AgriQualityReport">
+        update agri_quality_report
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="reportNo != null and reportNo != ''">report_no = #{reportNo},</if>
+            <if test="inspectId != null">inspect_id = #{inspectId},</if>
+            <if test="processBatchNo != null and processBatchNo != ''">process_batch_no = #{processBatchNo},</if>
+            <if test="qualityGrade != null">quality_grade = #{qualityGrade},</if>
+            <if test="defectRate != null">defect_rate = #{defectRate},</if>
+            <if test="reportSummary != null">report_summary = #{reportSummary},</if>
+            <if test="reportStatus != null and reportStatus != ''">report_status = #{reportStatus},</if>
+            <if test="reportTime != null">report_time = #{reportTime},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where report_id = #{reportId}
+    </update>
+
+    <delete id="deleteAgriQualityReportByReportId" parameterType="Long">
+        delete from agri_quality_report where report_id = #{reportId}
+    </delete>
+
+    <delete id="deleteAgriQualityReportByReportIds" parameterType="Long">
+        delete from agri_quality_report where report_id in
+        <foreach item="reportId" collection="array" open="(" separator="," close=")">
+            #{reportId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriTraceAuditLogMapper">
+
+    <resultMap type="AgriTraceAuditLog" id="AgriTraceAuditLogResult">
+        <result property="auditId" column="audit_id" />
+        <result property="bizNo" column="biz_no" />
+        <result property="moduleName" column="module_name" />
+        <result property="actionType" column="action_type" />
+        <result property="operatorName" column="operator_name" />
+        <result property="operateTime" column="operate_time" />
+        <result property="operateResult" column="operate_result" />
+        <result property="txHash" column="tx_hash" />
+        <result property="ipAddress" column="ip_address" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriTraceAuditLogVo">
+        select audit_id, biz_no, module_name, action_type, operator_name, operate_time,
+               operate_result, tx_hash, ip_address, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_trace_audit_log
+    </sql>
+
+    <select id="selectAgriTraceAuditLogList" parameterType="AgriTraceAuditLog" resultMap="AgriTraceAuditLogResult">
+        <include refid="selectAgriTraceAuditLogVo"/>
+        <where>
+            <if test="bizNo != null and bizNo != ''">
+                and biz_no like concat('%', #{bizNo}, '%')
+            </if>
+            <if test="moduleName != null and moduleName != ''">
+                and module_name like concat('%', #{moduleName}, '%')
+            </if>
+            <if test="actionType != null and actionType != ''">
+                and action_type = #{actionType}
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                and operator_name like concat('%', #{operatorName}, '%')
+            </if>
+            <if test="operateResult != null and operateResult != ''">
+                and operate_result = #{operateResult}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by audit_id desc
+    </select>
+
+    <select id="selectAgriTraceAuditLogByAuditId" parameterType="Long" resultMap="AgriTraceAuditLogResult">
+        <include refid="selectAgriTraceAuditLogVo"/>
+        where audit_id = #{auditId}
+    </select>
+
+    <insert id="insertAgriTraceAuditLog" parameterType="AgriTraceAuditLog" useGeneratedKeys="true" keyProperty="auditId">
+        insert into agri_trace_audit_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bizNo != null and bizNo != ''">biz_no,</if>
+            <if test="moduleName != null and moduleName != ''">module_name,</if>
+            <if test="actionType != null and actionType != ''">action_type,</if>
+            <if test="operatorName != null and operatorName != ''">operator_name,</if>
+            <if test="operateTime != null">operate_time,</if>
+            <if test="operateResult != null and operateResult != ''">operate_result,</if>
+            <if test="txHash != null and txHash != ''">tx_hash,</if>
+            <if test="ipAddress != null and ipAddress != ''">ip_address,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bizNo != null and bizNo != ''">#{bizNo},</if>
+            <if test="moduleName != null and moduleName != ''">#{moduleName},</if>
+            <if test="actionType != null and actionType != ''">#{actionType},</if>
+            <if test="operatorName != null and operatorName != ''">#{operatorName},</if>
+            <if test="operateTime != null">#{operateTime},</if>
+            <if test="operateResult != null and operateResult != ''">#{operateResult},</if>
+            <if test="txHash != null and txHash != ''">#{txHash},</if>
+            <if test="ipAddress != null and ipAddress != ''">#{ipAddress},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriTraceAuditLog" parameterType="AgriTraceAuditLog">
+        update agri_trace_audit_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="bizNo != null and bizNo != ''">biz_no = #{bizNo},</if>
+            <if test="moduleName != null and moduleName != ''">module_name = #{moduleName},</if>
+            <if test="actionType != null and actionType != ''">action_type = #{actionType},</if>
+            <if test="operatorName != null">operator_name = #{operatorName},</if>
+            <if test="operateTime != null">operate_time = #{operateTime},</if>
+            <if test="operateResult != null and operateResult != ''">operate_result = #{operateResult},</if>
+            <if test="txHash != null">tx_hash = #{txHash},</if>
+            <if test="ipAddress != null">ip_address = #{ipAddress},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where audit_id = #{auditId}
+    </update>
+
+    <delete id="deleteAgriTraceAuditLogByAuditId" parameterType="Long">
+        delete from agri_trace_audit_log where audit_id = #{auditId}
+    </delete>
+
+    <delete id="deleteAgriTraceAuditLogByAuditIds" parameterType="Long">
+        delete from agri_trace_audit_log where audit_id in
+        <foreach item="auditId" collection="array" open="(" separator="," close=")">
+            #{auditId}
+        </foreach>
+    </delete>
+
+</mapper>

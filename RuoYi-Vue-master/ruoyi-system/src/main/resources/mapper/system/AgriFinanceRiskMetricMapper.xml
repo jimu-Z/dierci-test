@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriFinanceRiskMetricMapper">
+
+    <resultMap type="AgriFinanceRiskMetric" id="AgriFinanceRiskMetricResult">
+        <result property="riskId" column="risk_id" />
+        <result property="indicatorCode" column="indicator_code" />
+        <result property="indicatorName" column="indicator_name" />
+        <result property="riskDimension" column="risk_dimension" />
+        <result property="riskScore" column="risk_score" />
+        <result property="thresholdValue" column="threshold_value" />
+        <result property="riskLevel" column="risk_level" />
+        <result property="evaluateStatus" column="evaluate_status" />
+        <result property="evaluateTime" column="evaluate_time" />
+        <result property="evaluator" column="evaluator" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriFinanceRiskMetricVo">
+        select risk_id, indicator_code, indicator_name, risk_dimension, risk_score,
+               threshold_value, risk_level, evaluate_status, evaluate_time, evaluator,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_finance_risk_metric
+    </sql>
+
+    <select id="selectAgriFinanceRiskMetricList" parameterType="AgriFinanceRiskMetric" resultMap="AgriFinanceRiskMetricResult">
+        <include refid="selectAgriFinanceRiskMetricVo"/>
+        <where>
+            <if test="indicatorCode != null and indicatorCode != ''">
+                and indicator_code like concat('%', #{indicatorCode}, '%')
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                and indicator_name like concat('%', #{indicatorName}, '%')
+            </if>
+            <if test="riskDimension != null and riskDimension != ''">
+                and risk_dimension = #{riskDimension}
+            </if>
+            <if test="riskLevel != null and riskLevel != ''">
+                and risk_level = #{riskLevel}
+            </if>
+            <if test="evaluateStatus != null and evaluateStatus != ''">
+                and evaluate_status = #{evaluateStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by risk_id desc
+    </select>
+
+    <select id="selectAgriFinanceRiskMetricByRiskId" parameterType="Long" resultMap="AgriFinanceRiskMetricResult">
+        <include refid="selectAgriFinanceRiskMetricVo"/>
+        where risk_id = #{riskId}
+    </select>
+
+    <insert id="insertAgriFinanceRiskMetric" parameterType="AgriFinanceRiskMetric" useGeneratedKeys="true" keyProperty="riskId">
+        insert into agri_finance_risk_metric
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="indicatorCode != null and indicatorCode != ''">indicator_code,</if>
+            <if test="indicatorName != null and indicatorName != ''">indicator_name,</if>
+            <if test="riskDimension != null and riskDimension != ''">risk_dimension,</if>
+            <if test="riskScore != null">risk_score,</if>
+            <if test="thresholdValue != null">threshold_value,</if>
+            <if test="riskLevel != null and riskLevel != ''">risk_level,</if>
+            <if test="evaluateStatus != null and evaluateStatus != ''">evaluate_status,</if>
+            <if test="evaluateTime != null">evaluate_time,</if>
+            <if test="evaluator != null and evaluator != ''">evaluator,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="indicatorCode != null and indicatorCode != ''">#{indicatorCode},</if>
+            <if test="indicatorName != null and indicatorName != ''">#{indicatorName},</if>
+            <if test="riskDimension != null and riskDimension != ''">#{riskDimension},</if>
+            <if test="riskScore != null">#{riskScore},</if>
+            <if test="thresholdValue != null">#{thresholdValue},</if>
+            <if test="riskLevel != null and riskLevel != ''">#{riskLevel},</if>
+            <if test="evaluateStatus != null and evaluateStatus != ''">#{evaluateStatus},</if>
+            <if test="evaluateTime != null">#{evaluateTime},</if>
+            <if test="evaluator != null and evaluator != ''">#{evaluator},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriFinanceRiskMetric" parameterType="AgriFinanceRiskMetric">
+        update agri_finance_risk_metric
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="indicatorCode != null and indicatorCode != ''">indicator_code = #{indicatorCode},</if>
+            <if test="indicatorName != null and indicatorName != ''">indicator_name = #{indicatorName},</if>
+            <if test="riskDimension != null and riskDimension != ''">risk_dimension = #{riskDimension},</if>
+            <if test="riskScore != null">risk_score = #{riskScore},</if>
+            <if test="thresholdValue != null">threshold_value = #{thresholdValue},</if>
+            <if test="riskLevel != null and riskLevel != ''">risk_level = #{riskLevel},</if>
+            <if test="evaluateStatus != null and evaluateStatus != ''">evaluate_status = #{evaluateStatus},</if>
+            <if test="evaluateTime != null">evaluate_time = #{evaluateTime},</if>
+            <if test="evaluator != null">evaluator = #{evaluator},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where risk_id = #{riskId}
+    </update>
+
+    <delete id="deleteAgriFinanceRiskMetricByRiskId" parameterType="Long">
+        delete from agri_finance_risk_metric where risk_id = #{riskId}
+    </delete>
+
+    <delete id="deleteAgriFinanceRiskMetricByRiskIds" parameterType="Long">
+        delete from agri_finance_risk_metric where risk_id in
+        <foreach item="riskId" collection="array" open="(" separator="," close=")">
+            #{riskId}
+        </foreach>
+    </delete>
+
+</mapper>

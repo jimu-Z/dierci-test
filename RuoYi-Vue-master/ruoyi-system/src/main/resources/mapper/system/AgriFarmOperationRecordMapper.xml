@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriFarmOperationRecordMapper">
+
+    <resultMap type="AgriFarmOperationRecord" id="AgriFarmOperationRecordResult">
+        <result property="operationId" column="operation_id" />
+        <result property="plotCode" column="plot_code" />
+        <result property="operationType" column="operation_type" />
+        <result property="operationContent" column="operation_content" />
+        <result property="operatorName" column="operator_name" />
+        <result property="inputName" column="input_name" />
+        <result property="inputAmount" column="input_amount" />
+        <result property="inputUnit" column="input_unit" />
+        <result property="operationTime" column="operation_time" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriFarmOperationRecordVo">
+        select operation_id, plot_code, operation_type, operation_content, operator_name,
+               input_name, input_amount, input_unit, operation_time, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_farm_operation_record
+    </sql>
+
+    <select id="selectAgriFarmOperationRecordList" parameterType="AgriFarmOperationRecord" resultMap="AgriFarmOperationRecordResult">
+        <include refid="selectAgriFarmOperationRecordVo"/>
+        <where>
+            <if test="plotCode != null and plotCode != ''">
+                and plot_code like concat('%', #{plotCode}, '%')
+            </if>
+            <if test="operationType != null and operationType != ''">
+                and operation_type = #{operationType}
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                and operator_name like concat('%', #{operatorName}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and date_format(operation_time, '%y%m%d') &gt;= date_format(#{params.beginTime}, '%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and date_format(operation_time, '%y%m%d') &lt;= date_format(#{params.endTime}, '%y%m%d')
+            </if>
+        </where>
+        order by operation_time desc, operation_id desc
+    </select>
+
+    <select id="selectAgriFarmOperationRecordByOperationId" parameterType="Long" resultMap="AgriFarmOperationRecordResult">
+        <include refid="selectAgriFarmOperationRecordVo"/>
+        where operation_id = #{operationId}
+    </select>
+
+    <insert id="insertAgriFarmOperationRecord" parameterType="AgriFarmOperationRecord" useGeneratedKeys="true" keyProperty="operationId">
+        insert into agri_farm_operation_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="plotCode != null and plotCode != ''">plot_code,</if>
+            <if test="operationType != null and operationType != ''">operation_type,</if>
+            <if test="operationContent != null and operationContent != ''">operation_content,</if>
+            <if test="operatorName != null and operatorName != ''">operator_name,</if>
+            <if test="inputName != null and inputName != ''">input_name,</if>
+            <if test="inputAmount != null">input_amount,</if>
+            <if test="inputUnit != null and inputUnit != ''">input_unit,</if>
+            <if test="operationTime != null">operation_time,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="plotCode != null and plotCode != ''">#{plotCode},</if>
+            <if test="operationType != null and operationType != ''">#{operationType},</if>
+            <if test="operationContent != null and operationContent != ''">#{operationContent},</if>
+            <if test="operatorName != null and operatorName != ''">#{operatorName},</if>
+            <if test="inputName != null and inputName != ''">#{inputName},</if>
+            <if test="inputAmount != null">#{inputAmount},</if>
+            <if test="inputUnit != null and inputUnit != ''">#{inputUnit},</if>
+            <if test="operationTime != null">#{operationTime},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriFarmOperationRecord" parameterType="AgriFarmOperationRecord">
+        update agri_farm_operation_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="plotCode != null and plotCode != ''">plot_code = #{plotCode},</if>
+            <if test="operationType != null and operationType != ''">operation_type = #{operationType},</if>
+            <if test="operationContent != null and operationContent != ''">operation_content = #{operationContent},</if>
+            <if test="operatorName != null and operatorName != ''">operator_name = #{operatorName},</if>
+            <if test="inputName != null and inputName != ''">input_name = #{inputName},</if>
+            <if test="inputAmount != null">input_amount = #{inputAmount},</if>
+            <if test="inputUnit != null and inputUnit != ''">input_unit = #{inputUnit},</if>
+            <if test="operationTime != null">operation_time = #{operationTime},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where operation_id = #{operationId}
+    </update>
+
+    <delete id="deleteAgriFarmOperationRecordByOperationId" parameterType="Long">
+        delete from agri_farm_operation_record where operation_id = #{operationId}
+    </delete>
+
+    <delete id="deleteAgriFarmOperationRecordByOperationIds" parameterType="Long">
+        delete from agri_farm_operation_record where operation_id in
+        <foreach item="operationId" collection="array" open="(" separator="," close=")">
+            #{operationId}
+        </foreach>
+    </delete>
+
+</mapper>

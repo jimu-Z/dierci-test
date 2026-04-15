@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriSmartContractDeployMapper">
+
+    <resultMap type="AgriSmartContractDeploy" id="AgriSmartContractDeployResult">
+        <result property="deployId" column="deploy_id" />
+        <result property="contractName" column="contract_name" />
+        <result property="contractVersion" column="contract_version" />
+        <result property="chainPlatform" column="chain_platform" />
+        <result property="sourceHash" column="source_hash" />
+        <result property="abiJson" column="abi_json" />
+        <result property="contractAddress" column="contract_address" />
+        <result property="deployTxHash" column="deploy_tx_hash" />
+        <result property="deployStatus" column="deploy_status" />
+        <result property="deployTime" column="deploy_time" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriSmartContractDeployVo">
+        select deploy_id, contract_name, contract_version, chain_platform, source_hash,
+               abi_json, contract_address, deploy_tx_hash, deploy_status, deploy_time,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_smart_contract_deploy
+    </sql>
+
+    <select id="selectAgriSmartContractDeployList" parameterType="AgriSmartContractDeploy" resultMap="AgriSmartContractDeployResult">
+        <include refid="selectAgriSmartContractDeployVo"/>
+        <where>
+            <if test="contractName != null and contractName != ''">
+                and contract_name like concat('%', #{contractName}, '%')
+            </if>
+            <if test="contractVersion != null and contractVersion != ''">
+                and contract_version = #{contractVersion}
+            </if>
+            <if test="chainPlatform != null and chainPlatform != ''">
+                and chain_platform = #{chainPlatform}
+            </if>
+            <if test="deployStatus != null and deployStatus != ''">
+                and deploy_status = #{deployStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by deploy_id desc
+    </select>
+
+    <select id="selectAgriSmartContractDeployByDeployId" parameterType="Long" resultMap="AgriSmartContractDeployResult">
+        <include refid="selectAgriSmartContractDeployVo"/>
+        where deploy_id = #{deployId}
+    </select>
+
+    <insert id="insertAgriSmartContractDeploy" parameterType="AgriSmartContractDeploy" useGeneratedKeys="true" keyProperty="deployId">
+        insert into agri_smart_contract_deploy
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="contractName != null and contractName != ''">contract_name,</if>
+            <if test="contractVersion != null and contractVersion != ''">contract_version,</if>
+            <if test="chainPlatform != null and chainPlatform != ''">chain_platform,</if>
+            <if test="sourceHash != null and sourceHash != ''">source_hash,</if>
+            <if test="abiJson != null and abiJson != ''">abi_json,</if>
+            <if test="contractAddress != null and contractAddress != ''">contract_address,</if>
+            <if test="deployTxHash != null and deployTxHash != ''">deploy_tx_hash,</if>
+            <if test="deployStatus != null and deployStatus != ''">deploy_status,</if>
+            <if test="deployTime != null">deploy_time,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="contractName != null and contractName != ''">#{contractName},</if>
+            <if test="contractVersion != null and contractVersion != ''">#{contractVersion},</if>
+            <if test="chainPlatform != null and chainPlatform != ''">#{chainPlatform},</if>
+            <if test="sourceHash != null and sourceHash != ''">#{sourceHash},</if>
+            <if test="abiJson != null and abiJson != ''">#{abiJson},</if>
+            <if test="contractAddress != null and contractAddress != ''">#{contractAddress},</if>
+            <if test="deployTxHash != null and deployTxHash != ''">#{deployTxHash},</if>
+            <if test="deployStatus != null and deployStatus != ''">#{deployStatus},</if>
+            <if test="deployTime != null">#{deployTime},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriSmartContractDeploy" parameterType="AgriSmartContractDeploy">
+        update agri_smart_contract_deploy
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="contractName != null and contractName != ''">contract_name = #{contractName},</if>
+            <if test="contractVersion != null and contractVersion != ''">contract_version = #{contractVersion},</if>
+            <if test="chainPlatform != null and chainPlatform != ''">chain_platform = #{chainPlatform},</if>
+            <if test="sourceHash != null and sourceHash != ''">source_hash = #{sourceHash},</if>
+            <if test="abiJson != null">abi_json = #{abiJson},</if>
+            <if test="contractAddress != null">contract_address = #{contractAddress},</if>
+            <if test="deployTxHash != null">deploy_tx_hash = #{deployTxHash},</if>
+            <if test="deployStatus != null and deployStatus != ''">deploy_status = #{deployStatus},</if>
+            <if test="deployTime != null">deploy_time = #{deployTime},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where deploy_id = #{deployId}
+    </update>
+
+    <delete id="deleteAgriSmartContractDeployByDeployId" parameterType="Long">
+        delete from agri_smart_contract_deploy where deploy_id = #{deployId}
+    </delete>
+
+    <delete id="deleteAgriSmartContractDeployByDeployIds" parameterType="Long">
+        delete from agri_smart_contract_deploy where deploy_id in
+        <foreach item="deployId" collection="array" open="(" separator="," close=")">
+            #{deployId}
+        </foreach>
+    </delete>
+
+</mapper>

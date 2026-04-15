@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriLogisticsTempHumidityMapper">
+
+    <resultMap type="AgriLogisticsTempHumidity" id="AgriLogisticsTempHumidityResult">
+        <result property="recordId" column="record_id" />
+        <result property="traceCode" column="trace_code" />
+        <result property="orderNo" column="order_no" />
+        <result property="deviceCode" column="device_code" />
+        <result property="collectLocation" column="collect_location" />
+        <result property="temperature" column="temperature" />
+        <result property="humidity" column="humidity" />
+        <result property="tempUpperLimit" column="temp_upper_limit" />
+        <result property="tempLowerLimit" column="temp_lower_limit" />
+        <result property="humidityUpperLimit" column="humidity_upper_limit" />
+        <result property="humidityLowerLimit" column="humidity_lower_limit" />
+        <result property="alertFlag" column="alert_flag" />
+        <result property="alertMessage" column="alert_message" />
+        <result property="collectTime" column="collect_time" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriLogisticsTempHumidityVo">
+        select record_id, trace_code, order_no, device_code, collect_location,
+               temperature, humidity, temp_upper_limit, temp_lower_limit,
+               humidity_upper_limit, humidity_lower_limit, alert_flag,
+               alert_message, collect_time, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_logistics_temp_humidity
+    </sql>
+
+    <select id="selectAgriLogisticsTempHumidityList" parameterType="AgriLogisticsTempHumidity" resultMap="AgriLogisticsTempHumidityResult">
+        <include refid="selectAgriLogisticsTempHumidityVo"/>
+        <where>
+            <if test="traceCode != null and traceCode != ''">
+                and trace_code like concat('%', #{traceCode}, '%')
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                and order_no like concat('%', #{orderNo}, '%')
+            </if>
+            <if test="deviceCode != null and deviceCode != ''">
+                and device_code like concat('%', #{deviceCode}, '%')
+            </if>
+            <if test="alertFlag != null and alertFlag != ''">
+                and alert_flag = #{alertFlag}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by collect_time desc, record_id desc
+    </select>
+
+    <select id="selectAgriLogisticsTempHumidityByRecordId" parameterType="Long" resultMap="AgriLogisticsTempHumidityResult">
+        <include refid="selectAgriLogisticsTempHumidityVo"/>
+        where record_id = #{recordId}
+    </select>
+
+    <insert id="insertAgriLogisticsTempHumidity" parameterType="AgriLogisticsTempHumidity" useGeneratedKeys="true" keyProperty="recordId">
+        insert into agri_logistics_temp_humidity
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code,</if>
+            <if test="orderNo != null and orderNo != ''">order_no,</if>
+            <if test="deviceCode != null and deviceCode != ''">device_code,</if>
+            <if test="collectLocation != null and collectLocation != ''">collect_location,</if>
+            <if test="temperature != null">temperature,</if>
+            <if test="humidity != null">humidity,</if>
+            <if test="tempUpperLimit != null">temp_upper_limit,</if>
+            <if test="tempLowerLimit != null">temp_lower_limit,</if>
+            <if test="humidityUpperLimit != null">humidity_upper_limit,</if>
+            <if test="humidityLowerLimit != null">humidity_lower_limit,</if>
+            <if test="alertFlag != null and alertFlag != ''">alert_flag,</if>
+            <if test="alertMessage != null and alertMessage != ''">alert_message,</if>
+            <if test="collectTime != null">collect_time,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">#{traceCode},</if>
+            <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
+            <if test="deviceCode != null and deviceCode != ''">#{deviceCode},</if>
+            <if test="collectLocation != null and collectLocation != ''">#{collectLocation},</if>
+            <if test="temperature != null">#{temperature},</if>
+            <if test="humidity != null">#{humidity},</if>
+            <if test="tempUpperLimit != null">#{tempUpperLimit},</if>
+            <if test="tempLowerLimit != null">#{tempLowerLimit},</if>
+            <if test="humidityUpperLimit != null">#{humidityUpperLimit},</if>
+            <if test="humidityLowerLimit != null">#{humidityLowerLimit},</if>
+            <if test="alertFlag != null and alertFlag != ''">#{alertFlag},</if>
+            <if test="alertMessage != null and alertMessage != ''">#{alertMessage},</if>
+            <if test="collectTime != null">#{collectTime},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriLogisticsTempHumidity" parameterType="AgriLogisticsTempHumidity">
+        update agri_logistics_temp_humidity
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code = #{traceCode},</if>
+            <if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+            <if test="deviceCode != null and deviceCode != ''">device_code = #{deviceCode},</if>
+            <if test="collectLocation != null">collect_location = #{collectLocation},</if>
+            <if test="temperature != null">temperature = #{temperature},</if>
+            <if test="humidity != null">humidity = #{humidity},</if>
+            <if test="tempUpperLimit != null">temp_upper_limit = #{tempUpperLimit},</if>
+            <if test="tempLowerLimit != null">temp_lower_limit = #{tempLowerLimit},</if>
+            <if test="humidityUpperLimit != null">humidity_upper_limit = #{humidityUpperLimit},</if>
+            <if test="humidityLowerLimit != null">humidity_lower_limit = #{humidityLowerLimit},</if>
+            <if test="alertFlag != null and alertFlag != ''">alert_flag = #{alertFlag},</if>
+            <if test="alertMessage != null">alert_message = #{alertMessage},</if>
+            <if test="collectTime != null">collect_time = #{collectTime},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where record_id = #{recordId}
+    </update>
+
+    <delete id="deleteAgriLogisticsTempHumidityByRecordId" parameterType="Long">
+        delete from agri_logistics_temp_humidity where record_id = #{recordId}
+    </delete>
+
+    <delete id="deleteAgriLogisticsTempHumidityByRecordIds" parameterType="Long">
+        delete from agri_logistics_temp_humidity where record_id in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </delete>
+
+</mapper>

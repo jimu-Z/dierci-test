@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriDeviceAccessNodeMapper">
+
+    <resultMap type="AgriDeviceAccessNode" id="AgriDeviceAccessNodeResult">
+        <result property="nodeId" column="node_id" />
+        <result property="deviceCode" column="device_code" />
+        <result property="deviceName" column="device_name" />
+        <result property="deviceType" column="device_type" />
+        <result property="protocolType" column="protocol_type" />
+        <result property="firmwareVersion" column="firmware_version" />
+        <result property="bindArea" column="bind_area" />
+        <result property="accessStatus" column="access_status" />
+        <result property="lastOnlineTime" column="last_online_time" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriDeviceAccessNodeVo">
+        select node_id, device_code, device_name, device_type, protocol_type,
+               firmware_version, bind_area, access_status, last_online_time,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_device_access_node
+    </sql>
+
+    <select id="selectAgriDeviceAccessNodeList" parameterType="AgriDeviceAccessNode" resultMap="AgriDeviceAccessNodeResult">
+        <include refid="selectAgriDeviceAccessNodeVo"/>
+        <where>
+            <if test="deviceCode != null and deviceCode != ''">
+                and device_code like concat('%', #{deviceCode}, '%')
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                and device_name like concat('%', #{deviceName}, '%')
+            </if>
+            <if test="deviceType != null and deviceType != ''">
+                and device_type = #{deviceType}
+            </if>
+            <if test="protocolType != null and protocolType != ''">
+                and protocol_type = #{protocolType}
+            </if>
+            <if test="accessStatus != null and accessStatus != ''">
+                and access_status = #{accessStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by node_id desc
+    </select>
+
+    <select id="selectAgriDeviceAccessNodeByNodeId" parameterType="Long" resultMap="AgriDeviceAccessNodeResult">
+        <include refid="selectAgriDeviceAccessNodeVo"/>
+        where node_id = #{nodeId}
+    </select>
+
+    <insert id="insertAgriDeviceAccessNode" parameterType="AgriDeviceAccessNode" useGeneratedKeys="true" keyProperty="nodeId">
+        insert into agri_device_access_node
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="deviceCode != null and deviceCode != ''">device_code,</if>
+            <if test="deviceName != null and deviceName != ''">device_name,</if>
+            <if test="deviceType != null and deviceType != ''">device_type,</if>
+            <if test="protocolType != null and protocolType != ''">protocol_type,</if>
+            <if test="firmwareVersion != null and firmwareVersion != ''">firmware_version,</if>
+            <if test="bindArea != null and bindArea != ''">bind_area,</if>
+            <if test="accessStatus != null and accessStatus != ''">access_status,</if>
+            <if test="lastOnlineTime != null">last_online_time,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="deviceCode != null and deviceCode != ''">#{deviceCode},</if>
+            <if test="deviceName != null and deviceName != ''">#{deviceName},</if>
+            <if test="deviceType != null and deviceType != ''">#{deviceType},</if>
+            <if test="protocolType != null and protocolType != ''">#{protocolType},</if>
+            <if test="firmwareVersion != null and firmwareVersion != ''">#{firmwareVersion},</if>
+            <if test="bindArea != null and bindArea != ''">#{bindArea},</if>
+            <if test="accessStatus != null and accessStatus != ''">#{accessStatus},</if>
+            <if test="lastOnlineTime != null">#{lastOnlineTime},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriDeviceAccessNode" parameterType="AgriDeviceAccessNode">
+        update agri_device_access_node
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="deviceCode != null and deviceCode != ''">device_code = #{deviceCode},</if>
+            <if test="deviceName != null and deviceName != ''">device_name = #{deviceName},</if>
+            <if test="deviceType != null and deviceType != ''">device_type = #{deviceType},</if>
+            <if test="protocolType != null and protocolType != ''">protocol_type = #{protocolType},</if>
+            <if test="firmwareVersion != null">firmware_version = #{firmwareVersion},</if>
+            <if test="bindArea != null">bind_area = #{bindArea},</if>
+            <if test="accessStatus != null and accessStatus != ''">access_status = #{accessStatus},</if>
+            <if test="lastOnlineTime != null">last_online_time = #{lastOnlineTime},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where node_id = #{nodeId}
+    </update>
+
+    <delete id="deleteAgriDeviceAccessNodeByNodeId" parameterType="Long">
+        delete from agri_device_access_node where node_id = #{nodeId}
+    </delete>
+
+    <delete id="deleteAgriDeviceAccessNodeByNodeIds" parameterType="Long">
+        delete from agri_device_access_node where node_id in
+        <foreach item="nodeId" collection="array" open="(" separator="," close=")">
+            #{nodeId}
+        </foreach>
+    </delete>
+
+</mapper>

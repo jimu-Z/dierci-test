@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriDashboardOverviewMapper">
+
+    <resultMap type="AgriDashboardOverview" id="AgriDashboardOverviewResult">
+        <result property="overviewId" column="overview_id" />
+        <result property="statDate" column="stat_date" />
+        <result property="totalOutput" column="total_output" />
+        <result property="totalSales" column="total_sales" />
+        <result property="traceQueryCount" column="trace_query_count" />
+        <result property="warningCount" column="warning_count" />
+        <result property="onlineDeviceCount" column="online_device_count" />
+        <result property="pendingTaskCount" column="pending_task_count" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriDashboardOverviewVo">
+        select overview_id, stat_date, total_output, total_sales, trace_query_count,
+               warning_count, online_device_count, pending_task_count,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_dashboard_overview
+    </sql>
+
+    <select id="selectAgriDashboardOverviewList" parameterType="AgriDashboardOverview" resultMap="AgriDashboardOverviewResult">
+        <include refid="selectAgriDashboardOverviewVo"/>
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="params.beginStatDate != null and params.beginStatDate != ''">
+                and stat_date &gt;= #{params.beginStatDate}
+            </if>
+            <if test="params.endStatDate != null and params.endStatDate != ''">
+                and stat_date &lt;= #{params.endStatDate}
+            </if>
+        </where>
+        order by stat_date desc, overview_id desc
+    </select>
+
+    <select id="selectAgriDashboardOverviewByOverviewId" parameterType="Long" resultMap="AgriDashboardOverviewResult">
+        <include refid="selectAgriDashboardOverviewVo"/>
+        where overview_id = #{overviewId}
+    </select>
+
+    <insert id="insertAgriDashboardOverview" parameterType="AgriDashboardOverview" useGeneratedKeys="true" keyProperty="overviewId">
+        insert into agri_dashboard_overview
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">stat_date,</if>
+            <if test="totalOutput != null">total_output,</if>
+            <if test="totalSales != null">total_sales,</if>
+            <if test="traceQueryCount != null">trace_query_count,</if>
+            <if test="warningCount != null">warning_count,</if>
+            <if test="onlineDeviceCount != null">online_device_count,</if>
+            <if test="pendingTaskCount != null">pending_task_count,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">#{statDate},</if>
+            <if test="totalOutput != null">#{totalOutput},</if>
+            <if test="totalSales != null">#{totalSales},</if>
+            <if test="traceQueryCount != null">#{traceQueryCount},</if>
+            <if test="warningCount != null">#{warningCount},</if>
+            <if test="onlineDeviceCount != null">#{onlineDeviceCount},</if>
+            <if test="pendingTaskCount != null">#{pendingTaskCount},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriDashboardOverview" parameterType="AgriDashboardOverview">
+        update agri_dashboard_overview
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="statDate != null">stat_date = #{statDate},</if>
+            <if test="totalOutput != null">total_output = #{totalOutput},</if>
+            <if test="totalSales != null">total_sales = #{totalSales},</if>
+            <if test="traceQueryCount != null">trace_query_count = #{traceQueryCount},</if>
+            <if test="warningCount != null">warning_count = #{warningCount},</if>
+            <if test="onlineDeviceCount != null">online_device_count = #{onlineDeviceCount},</if>
+            <if test="pendingTaskCount != null">pending_task_count = #{pendingTaskCount},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where overview_id = #{overviewId}
+    </update>
+
+    <delete id="deleteAgriDashboardOverviewByOverviewId" parameterType="Long">
+        delete from agri_dashboard_overview where overview_id = #{overviewId}
+    </delete>
+
+    <delete id="deleteAgriDashboardOverviewByOverviewIds" parameterType="Long">
+        delete from agri_dashboard_overview where overview_id in
+        <foreach item="overviewId" collection="array" open="(" separator="," close=")">
+            #{overviewId}
+        </foreach>
+    </delete>
+
+</mapper>

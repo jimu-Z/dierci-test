@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriTraceQueryStatsMapper">
+
+    <resultMap type="AgriTraceQueryStats" id="AgriTraceQueryStatsResult">
+        <result property="statsId" column="stats_id" />
+        <result property="statDate" column="stat_date" />
+        <result property="totalQueryCount" column="total_query_count" />
+        <result property="uniqueUserCount" column="unique_user_count" />
+        <result property="avgDurationMs" column="avg_duration_ms" />
+        <result property="successCount" column="success_count" />
+        <result property="failCount" column="fail_count" />
+        <result property="peakQps" column="peak_qps" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriTraceQueryStatsVo">
+        select stats_id, stat_date, total_query_count, unique_user_count, avg_duration_ms,
+               success_count, fail_count, peak_qps, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_trace_query_stats
+    </sql>
+
+    <select id="selectAgriTraceQueryStatsList" parameterType="AgriTraceQueryStats" resultMap="AgriTraceQueryStatsResult">
+        <include refid="selectAgriTraceQueryStatsVo"/>
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="params.beginStatDate != null and params.beginStatDate != ''">
+                and stat_date &gt;= #{params.beginStatDate}
+            </if>
+            <if test="params.endStatDate != null and params.endStatDate != ''">
+                and stat_date &lt;= #{params.endStatDate}
+            </if>
+        </where>
+        order by stat_date desc, stats_id desc
+    </select>
+
+    <select id="selectAgriTraceQueryStatsByStatsId" parameterType="Long" resultMap="AgriTraceQueryStatsResult">
+        <include refid="selectAgriTraceQueryStatsVo"/>
+        where stats_id = #{statsId}
+    </select>
+
+    <insert id="insertAgriTraceQueryStats" parameterType="AgriTraceQueryStats" useGeneratedKeys="true" keyProperty="statsId">
+        insert into agri_trace_query_stats
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">stat_date,</if>
+            <if test="totalQueryCount != null">total_query_count,</if>
+            <if test="uniqueUserCount != null">unique_user_count,</if>
+            <if test="avgDurationMs != null">avg_duration_ms,</if>
+            <if test="successCount != null">success_count,</if>
+            <if test="failCount != null">fail_count,</if>
+            <if test="peakQps != null">peak_qps,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">#{statDate},</if>
+            <if test="totalQueryCount != null">#{totalQueryCount},</if>
+            <if test="uniqueUserCount != null">#{uniqueUserCount},</if>
+            <if test="avgDurationMs != null">#{avgDurationMs},</if>
+            <if test="successCount != null">#{successCount},</if>
+            <if test="failCount != null">#{failCount},</if>
+            <if test="peakQps != null">#{peakQps},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriTraceQueryStats" parameterType="AgriTraceQueryStats">
+        update agri_trace_query_stats
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="statDate != null">stat_date = #{statDate},</if>
+            <if test="totalQueryCount != null">total_query_count = #{totalQueryCount},</if>
+            <if test="uniqueUserCount != null">unique_user_count = #{uniqueUserCount},</if>
+            <if test="avgDurationMs != null">avg_duration_ms = #{avgDurationMs},</if>
+            <if test="successCount != null">success_count = #{successCount},</if>
+            <if test="failCount != null">fail_count = #{failCount},</if>
+            <if test="peakQps != null">peak_qps = #{peakQps},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where stats_id = #{statsId}
+    </update>
+
+    <delete id="deleteAgriTraceQueryStatsByStatsId" parameterType="Long">
+        delete from agri_trace_query_stats where stats_id = #{statsId}
+    </delete>
+
+    <delete id="deleteAgriTraceQueryStatsByStatsIds" parameterType="Long">
+        delete from agri_trace_query_stats where stats_id in
+        <foreach item="statsId" collection="array" open="(" separator="," close=")">
+            #{statsId}
+        </foreach>
+    </delete>
+
+</mapper>

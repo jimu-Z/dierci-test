@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriLogisticsWarningMapper">
+
+    <resultMap type="AgriLogisticsWarning" id="AgriLogisticsWarningResult">
+        <result property="warningId" column="warning_id" />
+        <result property="traceCode" column="trace_code" />
+        <result property="orderNo" column="order_no" />
+        <result property="warningType" column="warning_type" />
+        <result property="warningLevel" column="warning_level" />
+        <result property="warningStatus" column="warning_status" />
+        <result property="sourceRecordId" column="source_record_id" />
+        <result property="warningTitle" column="warning_title" />
+        <result property="warningContent" column="warning_content" />
+        <result property="warningTime" column="warning_time" />
+        <result property="handler" column="handler" />
+        <result property="handleTime" column="handle_time" />
+        <result property="handleRemark" column="handle_remark" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriLogisticsWarningVo">
+        select warning_id, trace_code, order_no, warning_type, warning_level,
+               warning_status, source_record_id, warning_title, warning_content,
+               warning_time, handler, handle_time, handle_remark, status,
+               remark, create_by, create_time, update_by, update_time
+        from agri_logistics_warning
+    </sql>
+
+    <select id="selectAgriLogisticsWarningList" parameterType="AgriLogisticsWarning" resultMap="AgriLogisticsWarningResult">
+        <include refid="selectAgriLogisticsWarningVo"/>
+        <where>
+            <if test="traceCode != null and traceCode != ''">
+                and trace_code like concat('%', #{traceCode}, '%')
+            </if>
+            <if test="warningType != null and warningType != ''">
+                and warning_type = #{warningType}
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                and warning_level = #{warningLevel}
+            </if>
+            <if test="warningStatus != null and warningStatus != ''">
+                and warning_status = #{warningStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by warning_time desc, warning_id desc
+    </select>
+
+    <select id="selectAgriLogisticsWarningByWarningId" parameterType="Long" resultMap="AgriLogisticsWarningResult">
+        <include refid="selectAgriLogisticsWarningVo"/>
+        where warning_id = #{warningId}
+    </select>
+
+    <select id="selectAgriLogisticsWarningBySourceRecordId" parameterType="Long" resultMap="AgriLogisticsWarningResult">
+        <include refid="selectAgriLogisticsWarningVo"/>
+        where source_record_id = #{sourceRecordId}
+        limit 1
+    </select>
+
+    <insert id="insertAgriLogisticsWarning" parameterType="AgriLogisticsWarning" useGeneratedKeys="true" keyProperty="warningId">
+        insert into agri_logistics_warning
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code,</if>
+            <if test="orderNo != null and orderNo != ''">order_no,</if>
+            <if test="warningType != null and warningType != ''">warning_type,</if>
+            <if test="warningLevel != null and warningLevel != ''">warning_level,</if>
+            <if test="warningStatus != null and warningStatus != ''">warning_status,</if>
+            <if test="sourceRecordId != null">source_record_id,</if>
+            <if test="warningTitle != null and warningTitle != ''">warning_title,</if>
+            <if test="warningContent != null and warningContent != ''">warning_content,</if>
+            <if test="warningTime != null">warning_time,</if>
+            <if test="handler != null and handler != ''">handler,</if>
+            <if test="handleTime != null">handle_time,</if>
+            <if test="handleRemark != null and handleRemark != ''">handle_remark,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">#{traceCode},</if>
+            <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
+            <if test="warningType != null and warningType != ''">#{warningType},</if>
+            <if test="warningLevel != null and warningLevel != ''">#{warningLevel},</if>
+            <if test="warningStatus != null and warningStatus != ''">#{warningStatus},</if>
+            <if test="sourceRecordId != null">#{sourceRecordId},</if>
+            <if test="warningTitle != null and warningTitle != ''">#{warningTitle},</if>
+            <if test="warningContent != null and warningContent != ''">#{warningContent},</if>
+            <if test="warningTime != null">#{warningTime},</if>
+            <if test="handler != null and handler != ''">#{handler},</if>
+            <if test="handleTime != null">#{handleTime},</if>
+            <if test="handleRemark != null and handleRemark != ''">#{handleRemark},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriLogisticsWarning" parameterType="AgriLogisticsWarning">
+        update agri_logistics_warning
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code = #{traceCode},</if>
+            <if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+            <if test="warningType != null and warningType != ''">warning_type = #{warningType},</if>
+            <if test="warningLevel != null and warningLevel != ''">warning_level = #{warningLevel},</if>
+            <if test="warningStatus != null and warningStatus != ''">warning_status = #{warningStatus},</if>
+            <if test="sourceRecordId != null">source_record_id = #{sourceRecordId},</if>
+            <if test="warningTitle != null and warningTitle != ''">warning_title = #{warningTitle},</if>
+            <if test="warningContent != null and warningContent != ''">warning_content = #{warningContent},</if>
+            <if test="warningTime != null">warning_time = #{warningTime},</if>
+            <if test="handler != null">handler = #{handler},</if>
+            <if test="handleTime != null">handle_time = #{handleTime},</if>
+            <if test="handleRemark != null">handle_remark = #{handleRemark},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where warning_id = #{warningId}
+    </update>
+
+    <delete id="deleteAgriLogisticsWarningByWarningId" parameterType="Long">
+        delete from agri_logistics_warning where warning_id = #{warningId}
+    </delete>
+
+    <delete id="deleteAgriLogisticsWarningByWarningIds" parameterType="Long">
+        delete from agri_logistics_warning where warning_id in
+        <foreach item="warningId" collection="array" open="(" separator="," close=")">
+            #{warningId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriBaseRuleMapper">
+
+    <resultMap type="AgriBaseRule" id="AgriBaseRuleResult">
+        <result property="ruleId" column="rule_id" />
+        <result property="ruleName" column="rule_name" />
+        <result property="ruleType" column="rule_type" />
+        <result property="ruleCode" column="rule_code" />
+        <result property="ruleContent" column="rule_content" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriBaseRuleVo">
+        select rule_id, rule_name, rule_type, rule_code, rule_content, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_base_rule
+    </sql>
+
+    <select id="selectAgriBaseRuleList" parameterType="AgriBaseRule" resultMap="AgriBaseRuleResult">
+        <include refid="selectAgriBaseRuleVo"/>
+        <where>
+            <if test="ruleName != null and ruleName != ''">
+                and rule_name like concat('%', #{ruleName}, '%')
+            </if>
+            <if test="ruleType != null and ruleType != ''">
+                and rule_type = #{ruleType}
+            </if>
+            <if test="ruleCode != null and ruleCode != ''">
+                and rule_code like concat('%', #{ruleCode}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''"><!-- start -->
+                and date_format(create_time, '%y%m%d') &gt;= date_format(#{params.beginTime}, '%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''"><!-- end -->
+                and date_format(create_time, '%y%m%d') &lt;= date_format(#{params.endTime}, '%y%m%d')
+            </if>
+        </where>
+        order by rule_id desc
+    </select>
+
+    <select id="selectAgriBaseRuleByRuleId" parameterType="Long" resultMap="AgriBaseRuleResult">
+        <include refid="selectAgriBaseRuleVo"/>
+        where rule_id = #{ruleId}
+    </select>
+
+    <select id="checkRuleCodeUnique" parameterType="String" resultMap="AgriBaseRuleResult">
+        <include refid="selectAgriBaseRuleVo"/>
+        where rule_code = #{ruleCode}
+        limit 1
+    </select>
+
+    <insert id="insertAgriBaseRule" parameterType="AgriBaseRule" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into agri_base_rule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name,</if>
+            <if test="ruleType != null and ruleType != ''">rule_type,</if>
+            <if test="ruleCode != null and ruleCode != ''">rule_code,</if>
+            <if test="ruleContent != null and ruleContent != ''">rule_content,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">#{ruleName},</if>
+            <if test="ruleType != null and ruleType != ''">#{ruleType},</if>
+            <if test="ruleCode != null and ruleCode != ''">#{ruleCode},</if>
+            <if test="ruleContent != null and ruleContent != ''">#{ruleContent},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriBaseRule" parameterType="AgriBaseRule">
+        update agri_base_rule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
+            <if test="ruleType != null and ruleType != ''">rule_type = #{ruleType},</if>
+            <if test="ruleCode != null and ruleCode != ''">rule_code = #{ruleCode},</if>
+            <if test="ruleContent != null and ruleContent != ''">rule_content = #{ruleContent},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where rule_id = #{ruleId}
+    </update>
+
+    <delete id="deleteAgriBaseRuleByRuleId" parameterType="Long">
+        delete from agri_base_rule where rule_id = #{ruleId}
+    </delete>
+
+    <delete id="deleteAgriBaseRuleByRuleIds" parameterType="Long">
+        delete from agri_base_rule where rule_id in
+        <foreach item="ruleId" collection="array" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </delete>
+
+</mapper>

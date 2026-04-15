@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriWarningSummaryMapper">
+
+    <resultMap type="AgriWarningSummary" id="AgriWarningSummaryResult">
+        <result property="summaryId" column="summary_id" />
+        <result property="summaryDate" column="summary_date" />
+        <result property="totalWarningCount" column="total_warning_count" />
+        <result property="level1Count" column="level1_count" />
+        <result property="level2Count" column="level2_count" />
+        <result property="level3Count" column="level3_count" />
+        <result property="handledCount" column="handled_count" />
+        <result property="pendingCount" column="pending_count" />
+        <result property="avgHandleMinutes" column="avg_handle_minutes" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriWarningSummaryVo">
+        select summary_id, summary_date, total_warning_count, level1_count, level2_count,
+               level3_count, handled_count, pending_count, avg_handle_minutes,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_warning_summary
+    </sql>
+
+    <select id="selectAgriWarningSummaryList" parameterType="AgriWarningSummary" resultMap="AgriWarningSummaryResult">
+        <include refid="selectAgriWarningSummaryVo"/>
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="params.beginSummaryDate != null and params.beginSummaryDate != ''">
+                and summary_date &gt;= #{params.beginSummaryDate}
+            </if>
+            <if test="params.endSummaryDate != null and params.endSummaryDate != ''">
+                and summary_date &lt;= #{params.endSummaryDate}
+            </if>
+        </where>
+        order by summary_date desc, summary_id desc
+    </select>
+
+    <select id="selectAgriWarningSummaryBySummaryId" parameterType="Long" resultMap="AgriWarningSummaryResult">
+        <include refid="selectAgriWarningSummaryVo"/>
+        where summary_id = #{summaryId}
+    </select>
+
+    <insert id="insertAgriWarningSummary" parameterType="AgriWarningSummary" useGeneratedKeys="true" keyProperty="summaryId">
+        insert into agri_warning_summary
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="summaryDate != null">summary_date,</if>
+            <if test="totalWarningCount != null">total_warning_count,</if>
+            <if test="level1Count != null">level1_count,</if>
+            <if test="level2Count != null">level2_count,</if>
+            <if test="level3Count != null">level3_count,</if>
+            <if test="handledCount != null">handled_count,</if>
+            <if test="pendingCount != null">pending_count,</if>
+            <if test="avgHandleMinutes != null">avg_handle_minutes,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="summaryDate != null">#{summaryDate},</if>
+            <if test="totalWarningCount != null">#{totalWarningCount},</if>
+            <if test="level1Count != null">#{level1Count},</if>
+            <if test="level2Count != null">#{level2Count},</if>
+            <if test="level3Count != null">#{level3Count},</if>
+            <if test="handledCount != null">#{handledCount},</if>
+            <if test="pendingCount != null">#{pendingCount},</if>
+            <if test="avgHandleMinutes != null">#{avgHandleMinutes},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriWarningSummary" parameterType="AgriWarningSummary">
+        update agri_warning_summary
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="summaryDate != null">summary_date = #{summaryDate},</if>
+            <if test="totalWarningCount != null">total_warning_count = #{totalWarningCount},</if>
+            <if test="level1Count != null">level1_count = #{level1Count},</if>
+            <if test="level2Count != null">level2_count = #{level2Count},</if>
+            <if test="level3Count != null">level3_count = #{level3Count},</if>
+            <if test="handledCount != null">handled_count = #{handledCount},</if>
+            <if test="pendingCount != null">pending_count = #{pendingCount},</if>
+            <if test="avgHandleMinutes != null">avg_handle_minutes = #{avgHandleMinutes},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where summary_id = #{summaryId}
+    </update>
+
+    <delete id="deleteAgriWarningSummaryBySummaryId" parameterType="Long">
+        delete from agri_warning_summary where summary_id = #{summaryId}
+    </delete>
+
+    <delete id="deleteAgriWarningSummaryBySummaryIds" parameterType="Long">
+        delete from agri_warning_summary where summary_id in
+        <foreach item="summaryId" collection="array" open="(" separator="," close=")">
+            #{summaryId}
+        </foreach>
+    </delete>
+
+</mapper>

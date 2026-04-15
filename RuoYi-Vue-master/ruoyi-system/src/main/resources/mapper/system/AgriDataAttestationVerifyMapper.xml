@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriDataAttestationVerifyMapper">
+
+    <resultMap type="AgriDataAttestationVerify" id="AgriDataAttestationVerifyResult">
+        <result property="verifyId" column="verify_id" />
+        <result property="attestationNo" column="attestation_no" />
+        <result property="batchNo" column="batch_no" />
+        <result property="dataType" column="data_type" />
+        <result property="originHash" column="origin_hash" />
+        <result property="chainHash" column="chain_hash" />
+        <result property="verifyStatus" column="verify_status" />
+        <result property="verifyTime" column="verify_time" />
+        <result property="verifyByUser" column="verify_by_user" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriDataAttestationVerifyVo">
+        select verify_id, attestation_no, batch_no, data_type, origin_hash, chain_hash,
+               verify_status, verify_time, verify_by_user, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_data_attestation_verify
+    </sql>
+
+    <select id="selectAgriDataAttestationVerifyList" parameterType="AgriDataAttestationVerify" resultMap="AgriDataAttestationVerifyResult">
+        <include refid="selectAgriDataAttestationVerifyVo"/>
+        <where>
+            <if test="attestationNo != null and attestationNo != ''">
+                and attestation_no like concat('%', #{attestationNo}, '%')
+            </if>
+            <if test="batchNo != null and batchNo != ''">
+                and batch_no like concat('%', #{batchNo}, '%')
+            </if>
+            <if test="dataType != null and dataType != ''">
+                and data_type = #{dataType}
+            </if>
+            <if test="verifyStatus != null and verifyStatus != ''">
+                and verify_status = #{verifyStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by verify_id desc
+    </select>
+
+    <select id="selectAgriDataAttestationVerifyByVerifyId" parameterType="Long" resultMap="AgriDataAttestationVerifyResult">
+        <include refid="selectAgriDataAttestationVerifyVo"/>
+        where verify_id = #{verifyId}
+    </select>
+
+    <insert id="insertAgriDataAttestationVerify" parameterType="AgriDataAttestationVerify" useGeneratedKeys="true" keyProperty="verifyId">
+        insert into agri_data_attestation_verify
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="attestationNo != null and attestationNo != ''">attestation_no,</if>
+            <if test="batchNo != null and batchNo != ''">batch_no,</if>
+            <if test="dataType != null and dataType != ''">data_type,</if>
+            <if test="originHash != null and originHash != ''">origin_hash,</if>
+            <if test="chainHash != null and chainHash != ''">chain_hash,</if>
+            <if test="verifyStatus != null and verifyStatus != ''">verify_status,</if>
+            <if test="verifyTime != null">verify_time,</if>
+            <if test="verifyByUser != null and verifyByUser != ''">verify_by_user,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="attestationNo != null and attestationNo != ''">#{attestationNo},</if>
+            <if test="batchNo != null and batchNo != ''">#{batchNo},</if>
+            <if test="dataType != null and dataType != ''">#{dataType},</if>
+            <if test="originHash != null and originHash != ''">#{originHash},</if>
+            <if test="chainHash != null and chainHash != ''">#{chainHash},</if>
+            <if test="verifyStatus != null and verifyStatus != ''">#{verifyStatus},</if>
+            <if test="verifyTime != null">#{verifyTime},</if>
+            <if test="verifyByUser != null and verifyByUser != ''">#{verifyByUser},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriDataAttestationVerify" parameterType="AgriDataAttestationVerify">
+        update agri_data_attestation_verify
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="attestationNo != null and attestationNo != ''">attestation_no = #{attestationNo},</if>
+            <if test="batchNo != null and batchNo != ''">batch_no = #{batchNo},</if>
+            <if test="dataType != null and dataType != ''">data_type = #{dataType},</if>
+            <if test="originHash != null and originHash != ''">origin_hash = #{originHash},</if>
+            <if test="chainHash != null">chain_hash = #{chainHash},</if>
+            <if test="verifyStatus != null and verifyStatus != ''">verify_status = #{verifyStatus},</if>
+            <if test="verifyTime != null">verify_time = #{verifyTime},</if>
+            <if test="verifyByUser != null">verify_by_user = #{verifyByUser},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where verify_id = #{verifyId}
+    </update>
+
+    <delete id="deleteAgriDataAttestationVerifyByVerifyId" parameterType="Long">
+        delete from agri_data_attestation_verify where verify_id = #{verifyId}
+    </delete>
+
+    <delete id="deleteAgriDataAttestationVerifyByVerifyIds" parameterType="Long">
+        delete from agri_data_attestation_verify where verify_id in
+        <foreach item="verifyId" collection="array" open="(" separator="," close=")">
+            #{verifyId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriQualityInspectTaskMapper">
+
+    <resultMap type="AgriQualityInspectTask" id="AgriQualityInspectTaskResult">
+        <result property="inspectId" column="inspect_id" />
+        <result property="processBatchNo" column="process_batch_no" />
+        <result property="sampleCode" column="sample_code" />
+        <result property="imageUrl" column="image_url" />
+        <result property="inspectStatus" column="inspect_status" />
+        <result property="qualityGrade" column="quality_grade" />
+        <result property="defectRate" column="defect_rate" />
+        <result property="inspectResult" column="inspect_result" />
+        <result property="inspectTime" column="inspect_time" />
+        <result property="modelVersion" column="model_version" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriQualityInspectTaskVo">
+        select inspect_id, process_batch_no, sample_code, image_url, inspect_status,
+               quality_grade, defect_rate, inspect_result, inspect_time, model_version,
+               status, remark, create_by, create_time, update_by, update_time
+        from agri_quality_inspect_task
+    </sql>
+
+    <select id="selectAgriQualityInspectTaskList" parameterType="AgriQualityInspectTask" resultMap="AgriQualityInspectTaskResult">
+        <include refid="selectAgriQualityInspectTaskVo"/>
+        <where>
+            <if test="processBatchNo != null and processBatchNo != ''">
+                and process_batch_no like concat('%', #{processBatchNo}, '%')
+            </if>
+            <if test="sampleCode != null and sampleCode != ''">
+                and sample_code like concat('%', #{sampleCode}, '%')
+            </if>
+            <if test="inspectStatus != null and inspectStatus != ''">
+                and inspect_status = #{inspectStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by inspect_id desc
+    </select>
+
+    <select id="selectAgriQualityInspectTaskByInspectId" parameterType="Long" resultMap="AgriQualityInspectTaskResult">
+        <include refid="selectAgriQualityInspectTaskVo"/>
+        where inspect_id = #{inspectId}
+    </select>
+
+    <insert id="insertAgriQualityInspectTask" parameterType="AgriQualityInspectTask" useGeneratedKeys="true" keyProperty="inspectId">
+        insert into agri_quality_inspect_task
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="processBatchNo != null and processBatchNo != ''">process_batch_no,</if>
+            <if test="sampleCode != null and sampleCode != ''">sample_code,</if>
+            <if test="imageUrl != null and imageUrl != ''">image_url,</if>
+            <if test="inspectStatus != null and inspectStatus != ''">inspect_status,</if>
+            <if test="qualityGrade != null and qualityGrade != ''">quality_grade,</if>
+            <if test="defectRate != null">defect_rate,</if>
+            <if test="inspectResult != null and inspectResult != ''">inspect_result,</if>
+            <if test="inspectTime != null">inspect_time,</if>
+            <if test="modelVersion != null and modelVersion != ''">model_version,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="processBatchNo != null and processBatchNo != ''">#{processBatchNo},</if>
+            <if test="sampleCode != null and sampleCode != ''">#{sampleCode},</if>
+            <if test="imageUrl != null and imageUrl != ''">#{imageUrl},</if>
+            <if test="inspectStatus != null and inspectStatus != ''">#{inspectStatus},</if>
+            <if test="qualityGrade != null and qualityGrade != ''">#{qualityGrade},</if>
+            <if test="defectRate != null">#{defectRate},</if>
+            <if test="inspectResult != null and inspectResult != ''">#{inspectResult},</if>
+            <if test="inspectTime != null">#{inspectTime},</if>
+            <if test="modelVersion != null and modelVersion != ''">#{modelVersion},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriQualityInspectTask" parameterType="AgriQualityInspectTask">
+        update agri_quality_inspect_task
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="processBatchNo != null and processBatchNo != ''">process_batch_no = #{processBatchNo},</if>
+            <if test="sampleCode != null and sampleCode != ''">sample_code = #{sampleCode},</if>
+            <if test="imageUrl != null and imageUrl != ''">image_url = #{imageUrl},</if>
+            <if test="inspectStatus != null and inspectStatus != ''">inspect_status = #{inspectStatus},</if>
+            <if test="qualityGrade != null">quality_grade = #{qualityGrade},</if>
+            <if test="defectRate != null">defect_rate = #{defectRate},</if>
+            <if test="inspectResult != null">inspect_result = #{inspectResult},</if>
+            <if test="inspectTime != null">inspect_time = #{inspectTime},</if>
+            <if test="modelVersion != null">model_version = #{modelVersion},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where inspect_id = #{inspectId}
+    </update>
+
+    <delete id="deleteAgriQualityInspectTaskByInspectId" parameterType="Long">
+        delete from agri_quality_inspect_task where inspect_id = #{inspectId}
+    </delete>
+
+    <delete id="deleteAgriQualityInspectTaskByInspectIds" parameterType="Long">
+        delete from agri_quality_inspect_task where inspect_id in
+        <foreach item="inspectId" collection="array" open="(" separator="," close=")">
+            #{inspectId}
+        </foreach>
+    </delete>
+
+</mapper>

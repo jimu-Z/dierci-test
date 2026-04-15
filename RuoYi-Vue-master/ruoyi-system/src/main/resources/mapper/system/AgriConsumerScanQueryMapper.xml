@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriConsumerScanQueryMapper">
+
+    <resultMap type="AgriConsumerScanQuery" id="AgriConsumerScanQueryResult">
+        <result property="queryId" column="query_id" />
+        <result property="traceCode" column="trace_code" />
+        <result property="consumerName" column="consumer_name" />
+        <result property="consumerPhone" column="consumer_phone" />
+        <result property="scanChannel" column="scan_channel" />
+        <result property="scanAddress" column="scan_address" />
+        <result property="scanIp" column="scan_ip" />
+        <result property="scanResult" column="scan_result" />
+        <result property="queryTime" column="query_time" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="brandName" column="brand_name" />
+        <result property="productName" column="product_name" />
+        <result property="originPlace" column="origin_place" />
+        <result property="pageUrl" column="page_url" />
+        <result property="publishStatus" column="publish_status" />
+    </resultMap>
+
+    <sql id="selectAgriConsumerScanQueryVo">
+        select q.query_id, q.trace_code, q.consumer_name, q.consumer_phone, q.scan_channel,
+               q.scan_address, q.scan_ip, q.scan_result, q.query_time, q.status, q.remark,
+               q.create_by, q.create_time, q.update_by, q.update_time,
+               b.brand_name, b.product_name, b.origin_place, b.page_url, b.publish_status
+        from agri_consumer_scan_query q
+        left join agri_brand_trace_page b on q.trace_code = b.trace_code
+    </sql>
+
+    <select id="selectAgriConsumerScanQueryList" parameterType="AgriConsumerScanQuery" resultMap="AgriConsumerScanQueryResult">
+        <include refid="selectAgriConsumerScanQueryVo"/>
+        <where>
+            <if test="traceCode != null and traceCode != ''">
+                and q.trace_code like concat('%', #{traceCode}, '%')
+            </if>
+            <if test="consumerName != null and consumerName != ''">
+                and q.consumer_name like concat('%', #{consumerName}, '%')
+            </if>
+            <if test="consumerPhone != null and consumerPhone != ''">
+                and q.consumer_phone like concat('%', #{consumerPhone}, '%')
+            </if>
+            <if test="scanChannel != null and scanChannel != ''">
+                and q.scan_channel = #{scanChannel}
+            </if>
+            <if test="scanResult != null and scanResult != ''">
+                and q.scan_result = #{scanResult}
+            </if>
+            <if test="status != null and status != ''">
+                and q.status = #{status}
+            </if>
+            <if test="params.beginQueryTime != null and params.beginQueryTime != ''"><![CDATA[ and q.query_time >= #{params.beginQueryTime} ]]></if>
+            <if test="params.endQueryTime != null and params.endQueryTime != ''"><![CDATA[ and q.query_time <= #{params.endQueryTime} ]]></if>
+        </where>
+        order by q.query_id desc
+    </select>
+
+    <select id="selectAgriConsumerScanQueryByQueryId" parameterType="Long" resultMap="AgriConsumerScanQueryResult">
+        <include refid="selectAgriConsumerScanQueryVo"/>
+        where q.query_id = #{queryId}
+    </select>
+
+    <insert id="insertAgriConsumerScanQuery" parameterType="AgriConsumerScanQuery" useGeneratedKeys="true" keyProperty="queryId">
+        insert into agri_consumer_scan_query
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code,</if>
+            <if test="consumerName != null and consumerName != ''">consumer_name,</if>
+            <if test="consumerPhone != null and consumerPhone != ''">consumer_phone,</if>
+            <if test="scanChannel != null and scanChannel != ''">scan_channel,</if>
+            <if test="scanAddress != null and scanAddress != ''">scan_address,</if>
+            <if test="scanIp != null and scanIp != ''">scan_ip,</if>
+            <if test="scanResult != null and scanResult != ''">scan_result,</if>
+            <if test="queryTime != null">query_time,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">#{traceCode},</if>
+            <if test="consumerName != null and consumerName != ''">#{consumerName},</if>
+            <if test="consumerPhone != null and consumerPhone != ''">#{consumerPhone},</if>
+            <if test="scanChannel != null and scanChannel != ''">#{scanChannel},</if>
+            <if test="scanAddress != null and scanAddress != ''">#{scanAddress},</if>
+            <if test="scanIp != null and scanIp != ''">#{scanIp},</if>
+            <if test="scanResult != null and scanResult != ''">#{scanResult},</if>
+            <if test="queryTime != null">#{queryTime},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriConsumerScanQuery" parameterType="AgriConsumerScanQuery">
+        update agri_consumer_scan_query
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code = #{traceCode},</if>
+            <if test="consumerName != null">consumer_name = #{consumerName},</if>
+            <if test="consumerPhone != null">consumer_phone = #{consumerPhone},</if>
+            <if test="scanChannel != null">scan_channel = #{scanChannel},</if>
+            <if test="scanAddress != null">scan_address = #{scanAddress},</if>
+            <if test="scanIp != null">scan_ip = #{scanIp},</if>
+            <if test="scanResult != null and scanResult != ''">scan_result = #{scanResult},</if>
+            <if test="queryTime != null">query_time = #{queryTime},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where query_id = #{queryId}
+    </update>
+
+    <delete id="deleteAgriConsumerScanQueryByQueryId" parameterType="Long">
+        delete from agri_consumer_scan_query where query_id = #{queryId}
+    </delete>
+
+    <delete id="deleteAgriConsumerScanQueryByQueryIds" parameterType="Long">
+        delete from agri_consumer_scan_query where query_id in
+        <foreach item="queryId" collection="array" open="(" separator="," close=")">
+            #{queryId}
+        </foreach>
+    </delete>
+
+</mapper>

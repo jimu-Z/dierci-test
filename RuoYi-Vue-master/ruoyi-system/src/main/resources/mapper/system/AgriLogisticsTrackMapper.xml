@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriLogisticsTrackMapper">
+
+    <resultMap type="AgriLogisticsTrack" id="AgriLogisticsTrackResult">
+        <result property="trackId" column="track_id" />
+        <result property="traceCode" column="trace_code" />
+        <result property="orderNo" column="order_no" />
+        <result property="productBatchNo" column="product_batch_no" />
+        <result property="vehicleNo" column="vehicle_no" />
+        <result property="driverName" column="driver_name" />
+        <result property="driverPhone" column="driver_phone" />
+        <result property="startLocation" column="start_location" />
+        <result property="currentLocation" column="current_location" />
+        <result property="targetLocation" column="target_location" />
+        <result property="routePath" column="route_path" />
+        <result property="trackStatus" column="track_status" />
+        <result property="eventDesc" column="event_desc" />
+        <result property="eventTime" column="event_time" />
+        <result property="temperature" column="temperature" />
+        <result property="humidity" column="humidity" />
+        <result property="longitude" column="longitude" />
+        <result property="latitude" column="latitude" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectAgriLogisticsTrackVo">
+        select track_id, trace_code, order_no, product_batch_no, vehicle_no, driver_name,
+               driver_phone, start_location, current_location, target_location, route_path,
+               track_status, event_desc, event_time, temperature, humidity, longitude,
+               latitude, status, remark, create_by, create_time, update_by, update_time
+        from agri_logistics_track
+    </sql>
+
+    <select id="selectAgriLogisticsTrackList" parameterType="AgriLogisticsTrack" resultMap="AgriLogisticsTrackResult">
+        <include refid="selectAgriLogisticsTrackVo"/>
+        <where>
+            <if test="traceCode != null and traceCode != ''">
+                and trace_code like concat('%', #{traceCode}, '%')
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                and order_no like concat('%', #{orderNo}, '%')
+            </if>
+            <if test="productBatchNo != null and productBatchNo != ''">
+                and product_batch_no like concat('%', #{productBatchNo}, '%')
+            </if>
+            <if test="trackStatus != null and trackStatus != ''">
+                and track_status = #{trackStatus}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by event_time desc, track_id desc
+    </select>
+
+    <select id="selectAgriLogisticsTrackByTrackId" parameterType="Long" resultMap="AgriLogisticsTrackResult">
+        <include refid="selectAgriLogisticsTrackVo"/>
+        where track_id = #{trackId}
+    </select>
+
+    <select id="selectAgriLogisticsTrackTimeline" parameterType="String" resultMap="AgriLogisticsTrackResult">
+        <include refid="selectAgriLogisticsTrackVo"/>
+        where trace_code = #{traceCode}
+        order by event_time asc, track_id asc
+    </select>
+
+    <insert id="insertAgriLogisticsTrack" parameterType="AgriLogisticsTrack" useGeneratedKeys="true" keyProperty="trackId">
+        insert into agri_logistics_track
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code,</if>
+            <if test="orderNo != null and orderNo != ''">order_no,</if>
+            <if test="productBatchNo != null and productBatchNo != ''">product_batch_no,</if>
+            <if test="vehicleNo != null and vehicleNo != ''">vehicle_no,</if>
+            <if test="driverName != null and driverName != ''">driver_name,</if>
+            <if test="driverPhone != null and driverPhone != ''">driver_phone,</if>
+            <if test="startLocation != null and startLocation != ''">start_location,</if>
+            <if test="currentLocation != null and currentLocation != ''">current_location,</if>
+            <if test="targetLocation != null and targetLocation != ''">target_location,</if>
+            <if test="routePath != null and routePath != ''">route_path,</if>
+            <if test="trackStatus != null and trackStatus != ''">track_status,</if>
+            <if test="eventDesc != null and eventDesc != ''">event_desc,</if>
+            <if test="eventTime != null">event_time,</if>
+            <if test="temperature != null">temperature,</if>
+            <if test="humidity != null">humidity,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">#{traceCode},</if>
+            <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
+            <if test="productBatchNo != null and productBatchNo != ''">#{productBatchNo},</if>
+            <if test="vehicleNo != null and vehicleNo != ''">#{vehicleNo},</if>
+            <if test="driverName != null and driverName != ''">#{driverName},</if>
+            <if test="driverPhone != null and driverPhone != ''">#{driverPhone},</if>
+            <if test="startLocation != null and startLocation != ''">#{startLocation},</if>
+            <if test="currentLocation != null and currentLocation != ''">#{currentLocation},</if>
+            <if test="targetLocation != null and targetLocation != ''">#{targetLocation},</if>
+            <if test="routePath != null and routePath != ''">#{routePath},</if>
+            <if test="trackStatus != null and trackStatus != ''">#{trackStatus},</if>
+            <if test="eventDesc != null and eventDesc != ''">#{eventDesc},</if>
+            <if test="eventTime != null">#{eventTime},</if>
+            <if test="temperature != null">#{temperature},</if>
+            <if test="humidity != null">#{humidity},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriLogisticsTrack" parameterType="AgriLogisticsTrack">
+        update agri_logistics_track
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="traceCode != null and traceCode != ''">trace_code = #{traceCode},</if>
+            <if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+            <if test="productBatchNo != null and productBatchNo != ''">product_batch_no = #{productBatchNo},</if>
+            <if test="vehicleNo != null">vehicle_no = #{vehicleNo},</if>
+            <if test="driverName != null">driver_name = #{driverName},</if>
+            <if test="driverPhone != null">driver_phone = #{driverPhone},</if>
+            <if test="startLocation != null">start_location = #{startLocation},</if>
+            <if test="currentLocation != null">current_location = #{currentLocation},</if>
+            <if test="targetLocation != null">target_location = #{targetLocation},</if>
+            <if test="routePath != null">route_path = #{routePath},</if>
+            <if test="trackStatus != null and trackStatus != ''">track_status = #{trackStatus},</if>
+            <if test="eventDesc != null">event_desc = #{eventDesc},</if>
+            <if test="eventTime != null">event_time = #{eventTime},</if>
+            <if test="temperature != null">temperature = #{temperature},</if>
+            <if test="humidity != null">humidity = #{humidity},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where track_id = #{trackId}
+    </update>
+
+    <delete id="deleteAgriLogisticsTrackByTrackId" parameterType="Long">
+        delete from agri_logistics_track where track_id = #{trackId}
+    </delete>
+
+    <delete id="deleteAgriLogisticsTrackByTrackIds" parameterType="Long">
+        delete from agri_logistics_track where track_id in
+        <foreach item="trackId" collection="array" open="(" separator="," close=")">
+            #{trackId}
+        </foreach>
+    </delete>
+
+</mapper>

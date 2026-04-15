@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AgriOutputSalesTrendMapper">
+
+    <resultMap type="AgriOutputSalesTrend" id="AgriOutputSalesTrendResult">
+        <result property="trendId" column="trend_id" />
+        <result property="statDate" column="stat_date" />
+        <result property="outputValue" column="output_value" />
+        <result property="salesValue" column="sales_value" />
+        <result property="targetOutput" column="target_output" />
+        <result property="targetSales" column="target_sales" />
+        <result property="outputMomRate" column="output_mom_rate" />
+        <result property="salesMomRate" column="sales_mom_rate" />
+        <result property="status" column="status" />
+        <result property="remark" column="remark" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectAgriOutputSalesTrendVo">
+        select trend_id, stat_date, output_value, sales_value, target_output, target_sales,
+               output_mom_rate, sales_mom_rate, status, remark,
+               create_by, create_time, update_by, update_time
+        from agri_output_sales_trend
+    </sql>
+
+    <select id="selectAgriOutputSalesTrendList" parameterType="AgriOutputSalesTrend" resultMap="AgriOutputSalesTrendResult">
+        <include refid="selectAgriOutputSalesTrendVo"/>
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="params.beginStatDate != null and params.beginStatDate != ''">
+                and stat_date &gt;= #{params.beginStatDate}
+            </if>
+            <if test="params.endStatDate != null and params.endStatDate != ''">
+                and stat_date &lt;= #{params.endStatDate}
+            </if>
+        </where>
+        order by stat_date desc, trend_id desc
+    </select>
+
+    <select id="selectAgriOutputSalesTrendByTrendId" parameterType="Long" resultMap="AgriOutputSalesTrendResult">
+        <include refid="selectAgriOutputSalesTrendVo"/>
+        where trend_id = #{trendId}
+    </select>
+
+    <insert id="insertAgriOutputSalesTrend" parameterType="AgriOutputSalesTrend" useGeneratedKeys="true" keyProperty="trendId">
+        insert into agri_output_sales_trend
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">stat_date,</if>
+            <if test="outputValue != null">output_value,</if>
+            <if test="salesValue != null">sales_value,</if>
+            <if test="targetOutput != null">target_output,</if>
+            <if test="targetSales != null">target_sales,</if>
+            <if test="outputMomRate != null">output_mom_rate,</if>
+            <if test="salesMomRate != null">sales_mom_rate,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">#{statDate},</if>
+            <if test="outputValue != null">#{outputValue},</if>
+            <if test="salesValue != null">#{salesValue},</if>
+            <if test="targetOutput != null">#{targetOutput},</if>
+            <if test="targetSales != null">#{targetSales},</if>
+            <if test="outputMomRate != null">#{outputMomRate},</if>
+            <if test="salesMomRate != null">#{salesMomRate},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateAgriOutputSalesTrend" parameterType="AgriOutputSalesTrend">
+        update agri_output_sales_trend
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="statDate != null">stat_date = #{statDate},</if>
+            <if test="outputValue != null">output_value = #{outputValue},</if>
+            <if test="salesValue != null">sales_value = #{salesValue},</if>
+            <if test="targetOutput != null">target_output = #{targetOutput},</if>
+            <if test="targetSales != null">target_sales = #{targetSales},</if>
+            <if test="outputMomRate != null">output_mom_rate = #{outputMomRate},</if>
+            <if test="salesMomRate != null">sales_mom_rate = #{salesMomRate},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </trim>
+        where trend_id = #{trendId}
+    </update>
+
+    <delete id="deleteAgriOutputSalesTrendByTrendId" parameterType="Long">
+        delete from agri_output_sales_trend where trend_id = #{trendId}
+    </delete>
+
+    <delete id="deleteAgriOutputSalesTrendByTrendIds" parameterType="Long">
+        delete from agri_output_sales_trend where trend_id in
+        <foreach item="trendId" collection="array" open="(" separator="," close=")">
+            #{trendId}
+        </foreach>
+    </delete>
+
+</mapper>

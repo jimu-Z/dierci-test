@@ -1,0 +1,57 @@
+// base color
+$blue: #2f7d53;
+$light-blue: #5b9cff;
+$red: #c4584d;
+$pink: #d96b8c;
+$green: #2f7d53;
+$tiffany: #4aa9ad;
+$yellow: #d8a13f;
+$panGreen: #2f7d53;
+
+// brand palette
+$brand-primary: #2f7d53;
+$brand-primary-strong: #1f5f3e;
+$brand-primary-soft: rgba(47, 125, 83, 0.12);
+$brand-accent: #c58b2a;
+$brand-surface: #f7f4ec;
+$brand-surface-strong: #edf6ef;
+$brand-text: #182b24;
+$brand-muted: #5d6b64;
+$brand-border: #d9e3da;
+
+// 默认菜单主题风格
+$base-menu-color: #d7e8dc;
+$base-menu-color-active: #ffffff;
+$base-menu-background: #0f2019;
+$base-logo-title-color: #ffffff;
+
+$base-menu-light-color: rgba(24, 43, 36, .75);
+$base-menu-light-background: #f8f5ef;
+$base-logo-light-title-color: #173125;
+
+$base-sub-menu-background: #0b1712;
+$base-sub-menu-hover: rgba(255, 255, 255, .08);
+
+$base-sidebar-width: 224px;
+
+// the :export directive is the magic sauce for webpack
+// https://www.bluematador.com/blog/how-to-share-variables-between-js-and-sass
+:export {
+  brandPrimary: $brand-primary;
+  brandAccent: $brand-accent;
+  brandSurface: $brand-surface;
+  brandSurfaceStrong: $brand-surface-strong;
+  brandText: $brand-text;
+  brandMuted: $brand-muted;
+  brandBorder: $brand-border;
+  menuColor: $base-menu-color;
+  menuLightColor: $base-menu-light-color;
+  menuColorActive: $base-menu-color-active;
+  menuBackground: $base-menu-background;
+  menuLightBackground: $base-menu-light-background;
+  subMenuBackground: $base-sub-menu-background;
+  subMenuHover: $base-sub-menu-hover;
+  sideBarWidth: $base-sidebar-width;
+  logoTitleColor: $base-logo-title-color;
+  logoLightTitleColor: $base-logo-light-title-color
+}
