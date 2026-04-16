@@ -39,6 +39,13 @@ export function predictMarketForecast(data) {
     })
 }
 
+export function invokeMarketForecast(forecastId) {
+    return request({
+        url: '/agri/marketForecast/invoke/' + forecastId,
+        method: 'post'
+    })
+}
+
 export function delMarketForecast(forecastId) {
     return request({
         url: '/agri/marketForecast/' + forecastId,

@@ -35,7 +35,9 @@
       <el-table-column label="识别状态" align="center" width="100">
         <template slot-scope="scope">{{ formatIdentifyStatus(scope.row.identifyStatus) }}</template>
       </el-table-column>
-      <el-table-column label="识别结果" prop="identifyResult" align="center" :show-overflow-tooltip="true" />
+      <el-table-column label="识别结果" prop="identifyResult" align="left" min-width="240">
+        <template slot-scope="scope"><div class="agri-text-cell">{{ scope.row.identifyResult }}</div></template>
+      </el-table-column>
       <el-table-column label="置信度" prop="confidence" align="center" width="90" />
       <el-table-column label="模型版本" prop="modelVersion" align="center" width="100" />
       <el-table-column label="识别时间" prop="identifyTime" align="center" width="160">
@@ -44,6 +46,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:pestIdentify:edit']">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-video-play" @click="handleInvoke(scope.row)" v-hasPermi="['agri:pestIdentify:edit']">调用AI</el-button>
           <el-button size="mini" type="text" icon="el-icon-cpu" @click="handleFeedback(scope.row)" v-hasPermi="['agri:pestIdentify:edit']">回写识别</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:pestIdentify:remove']">删除</el-button>
         </template>
@@ -103,6 +106,7 @@ import {
   getPestIdentify,
   addPestIdentify,
   updatePestIdentify,
+  invokePestIdentify,
   feedbackPestIdentify,
   delPestIdentify
 } from '@/api/agri/pestIdentify'
@@ -225,6 +229,16 @@ export default {
       }
       this.feedbackOpen = true
     },
+    handleInvoke(row) {
+      this.$modal
+        .confirm('是否确认调用AI识别任务编号为"' + row.taskId + '"的数据项？')
+        .then(() => invokePestIdentify(row.taskId))
+        .then(() => {
+          this.$modal.msgSuccess('AI调用成功')
+          this.getList()
+        })
+        .catch(() => {})
+    },
     submitForm() {
       this.$refs.form.validate(valid => {
         if (!valid) {
@@ -282,3 +296,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.agri-text-cell {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 20px;
+  text-align: left;
+}
+</style>

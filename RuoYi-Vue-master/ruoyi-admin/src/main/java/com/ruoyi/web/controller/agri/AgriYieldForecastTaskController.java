@@ -8,6 +8,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriYieldForecastTask;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriYieldForecastTaskService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -36,6 +37,9 @@ public class AgriYieldForecastTaskController extends BaseController
 {
     @Autowired
     private IAgriYieldForecastTaskService agriYieldForecastTaskService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:yieldForecast:list')")
     @GetMapping("/list")
@@ -117,5 +121,38 @@ public class AgriYieldForecastTaskController extends BaseController
         db.setModelVersion(agriYieldForecastTask.getModelVersion());
         db.setUpdateBy(getUsername());
         return toAjax(agriYieldForecastTaskService.updateAgriYieldForecastTask(db));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:yieldForecast:edit')")
+    @Log(title = "产量预测调用", businessType = BusinessType.UPDATE)
+    @PostMapping("/invoke/{forecastId}")
+    public AjaxResult invoke(@PathVariable("forecastId") Long forecastId)
+    {
+        AgriYieldForecastTask db = agriYieldForecastTaskService.selectAgriYieldForecastTaskByForecastId(forecastId);
+        if (db == null)
+        {
+            return error("任务不存在");
+        }
+
+        try
+        {
+            AgriHttpIntegrationClient.YieldResult result = agriHttpIntegrationClient.invokeYield(db);
+            db.setForecastYieldKg(result.getForecastYieldKg());
+            db.setModelVersion(result.getModelVersion());
+            db.setForecastStatus("1");
+            db.setForecastTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriYieldForecastTaskService.updateAgriYieldForecastTask(db);
+            return success("预测调用成功");
+        }
+        catch (Exception ex)
+        {
+            db.setForecastStatus("2");
+            db.setRemark("调用失败: " + ex.getMessage());
+            db.setForecastTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriYieldForecastTaskService.updateAgriYieldForecastTask(db);
+            return error("预测调用失败: " + ex.getMessage());
+        }
     }
 }

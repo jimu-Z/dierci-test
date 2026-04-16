@@ -8,6 +8,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriPestIdentifyTask;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriPestIdentifyTaskService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -35,6 +36,9 @@ public class AgriPestIdentifyTaskController extends BaseController
 {
     @Autowired
     private IAgriPestIdentifyTaskService agriPestIdentifyTaskService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     /**
      * 查询病虫害识别任务列表
@@ -130,5 +134,42 @@ public class AgriPestIdentifyTaskController extends BaseController
         db.setModelVersion(agriPestIdentifyTask.getModelVersion());
         db.setUpdateBy(getUsername());
         return toAjax(agriPestIdentifyTaskService.updateAgriPestIdentifyTask(db));
+    }
+
+    /**
+     * 触发真实AI识别调用
+     */
+    @PreAuthorize("@ss.hasPermi('agri:pestIdentify:edit')")
+    @Log(title = "病虫害识别调用", businessType = BusinessType.UPDATE)
+    @PostMapping("/invoke/{taskId}")
+    public AjaxResult invoke(@PathVariable("taskId") Long taskId)
+    {
+        AgriPestIdentifyTask db = agriPestIdentifyTaskService.selectAgriPestIdentifyTaskByTaskId(taskId);
+        if (db == null)
+        {
+            return error("任务不存在");
+        }
+
+        try
+        {
+            AgriHttpIntegrationClient.PestResult result = agriHttpIntegrationClient.invokePest(db);
+            db.setIdentifyStatus("1");
+            db.setIdentifyResult(result.getIdentifyResult());
+            db.setConfidence(result.getConfidence() == null ? BigDecimal.ZERO : result.getConfidence());
+            db.setModelVersion(result.getModelVersion());
+            db.setIdentifyTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriPestIdentifyTaskService.updateAgriPestIdentifyTask(db);
+            return success("识别调用成功");
+        }
+        catch (Exception ex)
+        {
+            db.setIdentifyStatus("2");
+            db.setIdentifyResult("调用失败: " + ex.getMessage());
+            db.setIdentifyTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriPestIdentifyTaskService.updateAgriPestIdentifyTask(db);
+            return error("识别调用失败: " + ex.getMessage());
+        }
     }
 }

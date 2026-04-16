@@ -125,9 +125,9 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
   group-configs:
-    - group: 'default'
-      display-name: '测试模块'
-      paths-to-match: '/**'
+    - group: "default"
+      display-name: "测试模块"
+      paths-to-match: "/**"
       packages-to-scan: com.ruoyi.web.controller.tool
 
 # 防盗链配置
@@ -145,3 +145,25 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# 农业外部接入配置
+agri:
+  integration:
+    ai:
+      enabled: ${AGRI_AI_ENABLED:true}
+      baseUrl: ${AGRI_AI_BASE_URL:https://api.deepseek.com}
+      apiKey: ${AGRI_AI_API_KEY:}
+      model: ${AGRI_AI_MODEL:deepseek-chat}
+      connectTimeoutMs: ${AGRI_AI_CONNECT_TIMEOUT_MS:3000}
+      readTimeoutMs: ${AGRI_AI_READ_TIMEOUT_MS:8000}
+      pestPath: ${AGRI_AI_PEST_PATH:/chat/completions}
+      yieldPath: ${AGRI_AI_YIELD_PATH:/chat/completions}
+      qualityPath: ${AGRI_AI_QUALITY_PATH:/chat/completions}
+      marketPath: ${AGRI_AI_MARKET_PATH:/chat/completions}
+      outputSalesPath: ${AGRI_AI_OUTPUT_SALES_PATH:/chat/completions}
+    sensor:
+      ingestToken: ${AGRI_SENSOR_INGEST_TOKEN:}
+      authHeaderName: ${AGRI_SENSOR_AUTH_HEADER:X-Agri-Token}
+      dataSource: ${AGRI_SENSOR_DATA_SOURCE:gateway-http}
+      tempAlertHigh: ${AGRI_SENSOR_TEMP_ALERT_HIGH:35}
+      humidityAlertHigh: ${AGRI_SENSOR_HUMIDITY_ALERT_HIGH:85}

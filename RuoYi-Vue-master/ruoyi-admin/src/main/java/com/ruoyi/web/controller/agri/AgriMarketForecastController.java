@@ -8,6 +8,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriMarketForecast;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriMarketForecastService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -36,6 +37,9 @@ public class AgriMarketForecastController extends BaseController
 {
     @Autowired
     private IAgriMarketForecastService agriMarketForecastService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:marketForecast:list')")
     @GetMapping("/list")
@@ -126,5 +130,41 @@ public class AgriMarketForecastController extends BaseController
         db.setForecastTime(DateUtils.getNowDate());
         db.setUpdateBy(getUsername());
         return toAjax(agriMarketForecastService.updateAgriMarketForecast(db));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:marketForecast:edit')")
+    @Log(title = "市场预测AI调用", businessType = BusinessType.UPDATE)
+    @PostMapping("/invoke/{forecastId}")
+    public AjaxResult invoke(@PathVariable("forecastId") Long forecastId)
+    {
+        AgriMarketForecast db = agriMarketForecastService.selectAgriMarketForecastByForecastId(forecastId);
+        if (db == null)
+        {
+            return error("任务不存在");
+        }
+
+        try
+        {
+            AgriHttpIntegrationClient.MarketForecastResult result = agriHttpIntegrationClient.invokeMarketForecast(db);
+            db.setForecastSalesKg(result.getForecastSalesKg());
+            db.setForecastPrice(result.getForecastPrice());
+            db.setConfidenceRate(result.getConfidenceRate() == null ? new BigDecimal("0.82") : result.getConfidenceRate());
+            db.setModelVersion(result.getModelVersion());
+            db.setForecastStatus("1");
+            db.setForecastTime(DateUtils.getNowDate());
+            db.setRemark(result.getForecastSummary());
+            db.setUpdateBy(getUsername());
+            agriMarketForecastService.updateAgriMarketForecast(db);
+            return success("市场预测调用成功");
+        }
+        catch (Exception ex)
+        {
+            db.setForecastStatus("2");
+            db.setRemark("调用失败: " + ex.getMessage());
+            db.setForecastTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriMarketForecastService.updateAgriMarketForecast(db);
+            return error("市场预测调用失败: " + ex.getMessage());
+        }
     }
 }

@@ -38,12 +38,16 @@
         <template slot-scope="scope">{{ formatForecastStatus(scope.row.forecastStatus) }}</template>
       </el-table-column>
       <el-table-column label="模型版本" prop="modelVersion" align="center" width="100" />
+      <el-table-column label="预测说明" prop="remark" align="left" min-width="260">
+        <template slot-scope="scope"><div class="agri-text-cell">{{ scope.row.remark }}</div></template>
+      </el-table-column>
       <el-table-column label="预测时间" prop="forecastTime" align="center" width="160">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.forecastTime) }}</span></template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="210">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="250">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:yieldForecast:edit']">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-video-play" @click="handleInvoke(scope.row)" v-hasPermi="['agri:yieldForecast:edit']">调用AI</el-button>
           <el-button size="mini" type="text" icon="el-icon-data-analysis" @click="handlePredict(scope.row)" v-hasPermi="['agri:yieldForecast:edit']">执行预测</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:yieldForecast:remove']">删除</el-button>
         </template>
@@ -98,6 +102,7 @@ import {
   getYieldForecast,
   addYieldForecast,
   updateYieldForecast,
+  invokeYieldForecast,
   predictYieldForecast,
   delYieldForecast
 } from '@/api/agri/yieldForecast'
@@ -217,6 +222,16 @@ export default {
       }
       this.predictOpen = true
     },
+    handleInvoke(row) {
+      this.$modal
+        .confirm('是否确认调用AI预测任务编号为"' + row.forecastId + '"的数据项？')
+        .then(() => invokeYieldForecast(row.forecastId))
+        .then(() => {
+          this.$modal.msgSuccess('AI调用成功')
+          this.getList()
+        })
+        .catch(() => {})
+    },
     submitForm() {
       this.$refs.form.validate(valid => {
         if (!valid) {
@@ -274,3 +289,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.agri-text-cell {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 20px;
+  text-align: left;
+}
+</style>

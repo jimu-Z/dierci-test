@@ -8,6 +8,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriQualityInspectTask;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriQualityInspectTaskService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -35,6 +36,9 @@ public class AgriQualityInspectTaskController extends BaseController
 {
     @Autowired
     private IAgriQualityInspectTaskService agriQualityInspectTaskService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:qualityInspect:list')")
     @GetMapping("/list")
@@ -111,5 +115,40 @@ public class AgriQualityInspectTaskController extends BaseController
         db.setModelVersion(agriQualityInspectTask.getModelVersion());
         db.setUpdateBy(getUsername());
         return toAjax(agriQualityInspectTaskService.updateAgriQualityInspectTask(db));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:qualityInspect:edit')")
+    @Log(title = "视觉品质检测调用", businessType = BusinessType.UPDATE)
+    @PostMapping("/invoke/{inspectId}")
+    public AjaxResult invoke(@PathVariable("inspectId") Long inspectId)
+    {
+        AgriQualityInspectTask db = agriQualityInspectTaskService.selectAgriQualityInspectTaskByInspectId(inspectId);
+        if (db == null)
+        {
+            return error("任务不存在");
+        }
+
+        try
+        {
+            AgriHttpIntegrationClient.QualityResult result = agriHttpIntegrationClient.invokeQuality(db);
+            db.setInspectStatus("1");
+            db.setQualityGrade(result.getQualityGrade());
+            db.setDefectRate(result.getDefectRate() == null ? BigDecimal.ZERO : result.getDefectRate());
+            db.setInspectResult(result.getInspectResult());
+            db.setModelVersion(result.getModelVersion());
+            db.setInspectTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriQualityInspectTaskService.updateAgriQualityInspectTask(db);
+            return success("质检调用成功");
+        }
+        catch (Exception ex)
+        {
+            db.setInspectStatus("2");
+            db.setInspectResult("调用失败: " + ex.getMessage());
+            db.setInspectTime(DateUtils.getNowDate());
+            db.setUpdateBy(getUsername());
+            agriQualityInspectTaskService.updateAgriQualityInspectTask(db);
+            return error("质检调用失败: " + ex.getMessage());
+        }
     }
 }

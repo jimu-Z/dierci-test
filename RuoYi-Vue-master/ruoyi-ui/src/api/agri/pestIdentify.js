@@ -39,6 +39,13 @@ export function feedbackPestIdentify(data) {
     })
 }
 
+export function invokePestIdentify(taskId) {
+    return request({
+        url: '/agri/pestIdentify/invoke/' + taskId,
+        method: 'post'
+    })
+}
+
 export function delPestIdentify(taskId) {
     return request({
         url: '/agri/pestIdentify/' + taskId,

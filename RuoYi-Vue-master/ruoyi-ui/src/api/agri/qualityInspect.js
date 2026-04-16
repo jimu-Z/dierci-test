@@ -39,6 +39,13 @@ export function feedbackQualityInspect(data) {
     })
 }
 
+export function invokeQualityInspect(inspectId) {
+    return request({
+        url: '/agri/qualityInspect/invoke/' + inspectId,
+        method: 'post'
+    })
+}
+
 export function delQualityInspect(inspectId) {
     return request({
         url: '/agri/qualityInspect/' + inspectId,

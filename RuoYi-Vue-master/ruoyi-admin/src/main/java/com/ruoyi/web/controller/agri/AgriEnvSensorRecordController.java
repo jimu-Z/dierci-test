@@ -1,16 +1,24 @@
 package com.ruoyi.web.controller.agri;
 
+import com.ruoyi.common.annotation.Anonymous;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.system.domain.AgriDeviceAccessNode;
 import com.ruoyi.system.domain.AgriEnvSensorRecord;
+import com.ruoyi.system.integration.AgriIntegrationProperties;
+import com.ruoyi.system.service.IAgriDeviceAccessNodeService;
 import com.ruoyi.system.service.IAgriEnvSensorRecordService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +41,12 @@ public class AgriEnvSensorRecordController extends BaseController
 {
     @Autowired
     private IAgriEnvSensorRecordService agriEnvSensorRecordService;
+
+    @Autowired
+    private IAgriDeviceAccessNodeService agriDeviceAccessNodeService;
+
+    @Autowired
+    private AgriIntegrationProperties agriIntegrationProperties;
 
     /**
      * 查询环境传感器数据列表
@@ -102,5 +116,70 @@ public class AgriEnvSensorRecordController extends BaseController
     public AjaxResult remove(@PathVariable Long[] recordIds)
     {
         return toAjax(agriEnvSensorRecordService.deleteAgriEnvSensorRecordByRecordIds(recordIds));
+    }
+
+    @Anonymous
+    @PostMapping("/ingest")
+    public AjaxResult ingest(@RequestBody AgriEnvSensorRecord agriEnvSensorRecord, HttpServletRequest request)
+    {
+        String configuredToken = agriIntegrationProperties.getSensor().getIngestToken();
+        if (StringUtils.isNotBlank(configuredToken))
+        {
+            String headerName = agriIntegrationProperties.getSensor().getAuthHeaderName();
+            String requestToken = request.getHeader(headerName);
+            if (StringUtils.isBlank(requestToken))
+            {
+                requestToken = request.getHeader("X-Agri-Token");
+            }
+            if (!StringUtils.equals(configuredToken, requestToken))
+            {
+                return error("传感器接入令牌无效");
+            }
+        }
+
+        if (StringUtils.isBlank(agriEnvSensorRecord.getDeviceCode()) || StringUtils.isBlank(agriEnvSensorRecord.getPlotCode()))
+        {
+            return error("设备编码和地块编码不能为空");
+        }
+
+        AgriDeviceAccessNode query = new AgriDeviceAccessNode();
+        query.setDeviceCode(agriEnvSensorRecord.getDeviceCode());
+        List<AgriDeviceAccessNode> nodes = agriDeviceAccessNodeService.selectAgriDeviceAccessNodeList(query);
+        if (nodes == null || nodes.isEmpty())
+        {
+            return error("设备未注册，拒绝接入");
+        }
+
+        AgriDeviceAccessNode node = nodes.get(0);
+        node.setAccessStatus("1");
+        node.setLastOnlineTime(DateUtils.getNowDate());
+        node.setUpdateBy("gateway");
+        agriDeviceAccessNodeService.updateAgriDeviceAccessNode(node);
+
+        agriEnvSensorRecord.setDataSource(agriIntegrationProperties.getSensor().getDataSource());
+        if (agriEnvSensorRecord.getCollectTime() == null)
+        {
+            agriEnvSensorRecord.setCollectTime(DateUtils.getNowDate());
+        }
+        agriEnvSensorRecord.setStatus(isAlert(agriEnvSensorRecord) ? "1" : "0");
+        agriEnvSensorRecord.setCreateBy("gateway");
+
+        int rows = agriEnvSensorRecordService.insertAgriEnvSensorRecord(agriEnvSensorRecord);
+        if (rows <= 0)
+        {
+            return error("上报入库失败");
+        }
+        return success("接收成功");
+    }
+
+    private boolean isAlert(AgriEnvSensorRecord record)
+    {
+        BigDecimal t = record.getTemperature();
+        BigDecimal h = record.getHumidity();
+        if (t != null && t.compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getTempAlertHigh())) > 0)
+        {
+            return true;
+        }
+        return h != null && h.compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getHumidityAlertHigh())) > 0;
     }
 }

@@ -39,6 +39,13 @@ export function predictYieldForecast(data) {
     })
 }
 
+export function invokeYieldForecast(forecastId) {
+    return request({
+        url: '/agri/yieldForecast/invoke/' + forecastId,
+        method: 'post'
+    })
+}
+
 export function delYieldForecast(forecastId) {
     return request({
         url: '/agri/yieldForecast/' + forecastId,

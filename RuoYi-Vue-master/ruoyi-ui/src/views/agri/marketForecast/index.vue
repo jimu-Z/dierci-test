@@ -20,6 +20,7 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['agri:marketForecast:add']">新增</el-button></el-col>
+      <el-col :span="1.5"><el-button type="success" plain icon="el-icon-video-play" size="mini" :disabled="single" @click="handleInvoke" v-hasPermi="['agri:marketForecast:edit']">调用AI</el-button></el-col>
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-data-analysis" size="mini" :disabled="single" @click="handlePredict" v-hasPermi="['agri:marketForecast:edit']">执行预测</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['agri:marketForecast:export']">导出</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['agri:marketForecast:remove']">删除</el-button></el-col>
@@ -36,6 +37,9 @@
       <el-table-column label="预测销量(kg)" prop="forecastSalesKg" align="center" width="110" />
       <el-table-column label="预测价格" prop="forecastPrice" align="center" width="100" />
       <el-table-column label="置信度" prop="confidenceRate" align="center" width="90" />
+      <el-table-column label="预测摘要" prop="remark" align="left" min-width="280">
+        <template slot-scope="scope"><div class="agri-text-cell">{{ scope.row.remark }}</div></template>
+      </el-table-column>
       <el-table-column label="状态" align="center" width="100">
         <template slot-scope="scope">{{ formatStatus(scope.row.forecastStatus) }}</template>
       </el-table-column>
@@ -100,6 +104,7 @@ import {
   getMarketForecast,
   addMarketForecast,
   updateMarketForecast,
+  invokeMarketForecast,
   predictMarketForecast,
   delMarketForecast
 } from '@/api/agri/marketForecast'
@@ -216,6 +221,21 @@ export default {
         this.title = '修改市场预测分析'
       })
     },
+    handleInvoke(row) {
+      const forecastId = row.forecastId || this.ids[0]
+      if (!forecastId) {
+        this.$modal.msgWarning('请选择一条预测任务调用AI')
+        return
+      }
+      this.$modal
+        .confirm('是否确认调用市场预测AI任务编号为"' + forecastId + '"的数据项？')
+        .then(() => invokeMarketForecast(forecastId))
+        .then(() => {
+          this.$modal.msgSuccess('AI调用成功')
+          this.getList()
+        })
+        .catch(() => {})
+    },
     handlePredict() {
       if (this.ids.length !== 1) {
         this.$modal.msgWarning('请选择一条预测任务执行预测')
@@ -288,3 +308,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.agri-text-cell {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 20px;
+  text-align: left;
+}
+</style>

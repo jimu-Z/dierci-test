@@ -5,10 +5,13 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriThirdPartyApiAccess;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriThirdPartyApiAccessService;
 import jakarta.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -32,6 +35,9 @@ public class AgriThirdPartyApiAccessController extends BaseController
 {
     @Autowired
     private IAgriThirdPartyApiAccessService agriThirdPartyApiAccessService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:thirdApi:list')")
     @GetMapping("/list")
@@ -79,5 +85,38 @@ public class AgriThirdPartyApiAccessController extends BaseController
     public AjaxResult remove(@PathVariable Long[] accessIds)
     {
         return toAjax(agriThirdPartyApiAccessService.deleteAgriThirdPartyApiAccessByAccessIds(accessIds));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:thirdApi:edit')")
+    @Log(title = "第三方API探活", businessType = BusinessType.UPDATE)
+    @PostMapping("/probe/{accessId}")
+    public AjaxResult probe(@PathVariable("accessId") Long accessId)
+    {
+        AgriThirdPartyApiAccess access = agriThirdPartyApiAccessService.selectAgriThirdPartyApiAccessByAccessId(accessId);
+        if (access == null)
+        {
+            return error("接入配置不存在");
+        }
+
+        try
+        {
+            AgriHttpIntegrationClient.ThirdApiResult result =
+                agriHttpIntegrationClient.probe(access.getEndpointUrl(), access.getTimeoutSec());
+            access.setCallStatus(result.isSuccess() ? "1" : "2");
+            access.setSuccessRate(result.isSuccess() ? BigDecimal.valueOf(100) : BigDecimal.ZERO);
+            access.setLastCallTime(DateUtils.getNowDate());
+            access.setRemark("HTTP " + result.getHttpStatus() + " | " + result.getResponseSnippet());
+            agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
+            return result.isSuccess() ? success("探活成功") : error("探活失败，HTTP状态: " + result.getHttpStatus());
+        }
+        catch (Exception ex)
+        {
+            access.setCallStatus("2");
+            access.setLastCallTime(DateUtils.getNowDate());
+            access.setSuccessRate(BigDecimal.ZERO);
+            access.setRemark("探活异常: " + ex.getMessage());
+            agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
+            return error("探活异常: " + ex.getMessage());
+        }
     }
 }

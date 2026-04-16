@@ -37,3 +37,11 @@ export function delOutputSalesTrend(trendId) {
         method: 'delete'
     })
 }
+
+export function getOutputSalesDashboard(query) {
+    return request({
+        url: '/agri/outputSalesTrend/dashboard',
+        method: 'get',
+        params: query
+    })
+}
