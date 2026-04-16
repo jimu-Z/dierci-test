@@ -17,7 +17,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -122,6 +124,19 @@ public class AgriEnvSensorRecordController extends BaseController
     @PostMapping("/ingest")
     public AjaxResult ingest(@RequestBody AgriEnvSensorRecord agriEnvSensorRecord, HttpServletRequest request)
     {
+        return ingestInternal(agriEnvSensorRecord, request, agriIntegrationProperties.getSensor().getDataSource());
+    }
+
+    @Anonymous
+    @PostMapping("/ingest/emqx")
+    public AjaxResult ingestEmqx(@RequestBody Map<String, Object> body, HttpServletRequest request)
+    {
+        AgriEnvSensorRecord agriEnvSensorRecord = mapFromEmqx(body);
+        return ingestInternal(agriEnvSensorRecord, request, agriIntegrationProperties.getSensor().getEmqx().getDataSource());
+    }
+
+    private AjaxResult ingestInternal(AgriEnvSensorRecord agriEnvSensorRecord, HttpServletRequest request, String dataSource)
+    {
         String configuredToken = agriIntegrationProperties.getSensor().getIngestToken();
         if (StringUtils.isNotBlank(configuredToken))
         {
@@ -156,7 +171,7 @@ public class AgriEnvSensorRecordController extends BaseController
         node.setUpdateBy("gateway");
         agriDeviceAccessNodeService.updateAgriDeviceAccessNode(node);
 
-        agriEnvSensorRecord.setDataSource(agriIntegrationProperties.getSensor().getDataSource());
+        agriEnvSensorRecord.setDataSource(StringUtils.defaultIfBlank(dataSource, agriIntegrationProperties.getSensor().getDataSource()));
         if (agriEnvSensorRecord.getCollectTime() == null)
         {
             agriEnvSensorRecord.setCollectTime(DateUtils.getNowDate());
@@ -170,6 +185,224 @@ public class AgriEnvSensorRecordController extends BaseController
             return error("上报入库失败");
         }
         return success("接收成功");
+    }
+
+    private AgriEnvSensorRecord mapFromEmqx(Map<String, Object> body)
+    {
+        Map<String, Object> safeBody = body == null ? Map.of() : body;
+        Map<String, Object> payload = asMap(safeBody.get("payload"));
+        Map<String, Object> data = asMap(safeBody.get("data"));
+
+        AgriEnvSensorRecord record = new AgriEnvSensorRecord();
+        record.setDeviceCode(firstNonBlank(
+            readString(safeBody, "deviceCode", "device_code", "deviceId", "clientid", "clientId"),
+            readString(payload, "deviceCode", "device_code", "deviceId", "clientid", "clientId"),
+            readString(data, "deviceCode", "device_code", "deviceId", "clientid", "clientId")
+        ));
+        record.setPlotCode(firstNonBlank(
+            readString(safeBody, "plotCode", "plot_code"),
+            readString(payload, "plotCode", "plot_code"),
+            readString(data, "plotCode", "plot_code")
+        ));
+        record.setTemperature(firstDecimal(
+            readDecimal(safeBody, "temperature", "temp"),
+            readDecimal(payload, "temperature", "temp"),
+            readDecimal(data, "temperature", "temp")
+        ));
+        record.setHumidity(firstDecimal(
+            readDecimal(safeBody, "humidity", "hum"),
+            readDecimal(payload, "humidity", "hum"),
+            readDecimal(data, "humidity", "hum")
+        ));
+        record.setCo2Value(firstDecimal(
+            readDecimal(safeBody, "co2", "co2Value", "co2_value"),
+            readDecimal(payload, "co2", "co2Value", "co2_value"),
+            readDecimal(data, "co2", "co2Value", "co2_value")
+        ));
+
+        Date collectTime = firstDate(
+            readDate(safeBody, "collectTime", "collect_time", "timestamp", "ts"),
+            readDate(payload, "collectTime", "collect_time", "timestamp", "ts"),
+            readDate(data, "collectTime", "collect_time", "timestamp", "ts")
+        );
+        if (collectTime != null)
+        {
+            record.setCollectTime(collectTime);
+        }
+
+        String topic = firstNonBlank(
+            readString(safeBody, "topic"),
+            readString(payload, "topic"),
+            readString(data, "topic")
+        );
+        applyTopicFallback(record, topic);
+        return record;
+    }
+
+    private void applyTopicFallback(AgriEnvSensorRecord record, String topic)
+    {
+        if (StringUtils.isBlank(topic))
+        {
+            return;
+        }
+        String[] segments = StringUtils.split(topic, '/');
+        if (segments == null || segments.length < 2)
+        {
+            return;
+        }
+        if (StringUtils.isBlank(record.getPlotCode()))
+        {
+            record.setPlotCode(segments[segments.length - 2]);
+        }
+        if (StringUtils.isBlank(record.getDeviceCode()))
+        {
+            record.setDeviceCode(segments[segments.length - 1]);
+        }
+    }
+
+    private String firstNonBlank(String... values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+        for (String value : values)
+        {
+            if (StringUtils.isNotBlank(value))
+            {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal firstDecimal(BigDecimal... values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+        for (BigDecimal value : values)
+        {
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private Date firstDate(Date... values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+        for (Date value : values)
+        {
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String readString(Map<String, Object> source, String... keys)
+    {
+        if (source == null || keys == null)
+        {
+            return null;
+        }
+        for (String key : keys)
+        {
+            Object value = source.get(key);
+            if (value != null)
+            {
+                String text = String.valueOf(value);
+                if (StringUtils.isNotBlank(text))
+                {
+                    return text;
+                }
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal readDecimal(Map<String, Object> source, String... keys)
+    {
+        if (source == null || keys == null)
+        {
+            return null;
+        }
+        for (String key : keys)
+        {
+            Object value = source.get(key);
+            if (value == null)
+            {
+                continue;
+            }
+            if (value instanceof Number)
+            {
+                return BigDecimal.valueOf(((Number) value).doubleValue());
+            }
+            try
+            {
+                return new BigDecimal(String.valueOf(value));
+            }
+            catch (Exception ignored)
+            {
+                // ignore invalid numeric field and continue fallback
+            }
+        }
+        return null;
+    }
+
+    private Date readDate(Map<String, Object> source, String... keys)
+    {
+        if (source == null || keys == null)
+        {
+            return null;
+        }
+        for (String key : keys)
+        {
+            Object value = source.get(key);
+            if (value == null)
+            {
+                continue;
+            }
+            if (value instanceof Number)
+            {
+                long ts = ((Number) value).longValue();
+                if (ts > 0)
+                {
+                    if (ts < 100000000000L)
+                    {
+                        ts = ts * 1000;
+                    }
+                    return new Date(ts);
+                }
+            }
+            try
+            {
+                return DateUtils.parseDate(value);
+            }
+            catch (Exception ignored)
+            {
+                // ignore invalid date field and continue fallback
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value)
+    {
+        if (value instanceof Map<?, ?> map)
+        {
+            return (Map<String, Object>) map;
+        }
+        return Map.of();
     }
 
     private boolean isAlert(AgriEnvSensorRecord record)

@@ -14,6 +14,10 @@ public class AgriIntegrationProperties
 
     private final Sensor sensor = new Sensor();
 
+    private final Weather weather = new Weather();
+
+    private final Map map = new Map();
+
     public Ai getAi()
     {
         return ai;
@@ -22,6 +26,16 @@ public class AgriIntegrationProperties
     public Sensor getSensor()
     {
         return sensor;
+    }
+
+    public Weather getWeather()
+    {
+        return weather;
+    }
+
+    public Map getMap()
+    {
+        return map;
     }
 
     public static class Ai
@@ -167,6 +181,8 @@ public class AgriIntegrationProperties
 
         private String dataSource = "gateway-http";
 
+        private final Emqx emqx = new Emqx();
+
         private double tempAlertHigh = 35D;
 
         private double humidityAlertHigh = 85D;
@@ -201,6 +217,11 @@ public class AgriIntegrationProperties
             this.dataSource = dataSource;
         }
 
+        public Emqx getEmqx()
+        {
+            return emqx;
+        }
+
         public double getTempAlertHigh()
         {
             return tempAlertHigh;
@@ -219,6 +240,219 @@ public class AgriIntegrationProperties
         public void setHumidityAlertHigh(double humidityAlertHigh)
         {
             this.humidityAlertHigh = humidityAlertHigh;
+        }
+
+        public static class Emqx
+        {
+            private String dataSource = "emqx-webhook";
+
+            public String getDataSource()
+            {
+                return dataSource;
+            }
+
+            public void setDataSource(String dataSource)
+            {
+                this.dataSource = dataSource;
+            }
+        }
+    }
+
+    public static class Weather
+    {
+        private boolean enabled = false;
+
+        private String provider = "qweather";
+
+        private String baseUrl;
+
+        private String apiKey;
+
+        private String location = "118.7853,31.9998";
+
+        private String language = "zh-Hans";
+
+        private String unit = "m";
+
+        private int timeoutSec = 8;
+
+        public boolean isEnabled()
+        {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            this.enabled = enabled;
+        }
+
+        public String getProvider()
+        {
+            return provider;
+        }
+
+        public void setProvider(String provider)
+        {
+            this.provider = provider;
+        }
+
+        public String getBaseUrl()
+        {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl)
+        {
+            this.baseUrl = baseUrl;
+        }
+
+        public String getApiKey()
+        {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey)
+        {
+            this.apiKey = apiKey;
+        }
+
+        public String getLocation()
+        {
+            return location;
+        }
+
+        public void setLocation(String location)
+        {
+            this.location = location;
+        }
+
+        public String getLanguage()
+        {
+            return language;
+        }
+
+        public void setLanguage(String language)
+        {
+            this.language = language;
+        }
+
+        public String getUnit()
+        {
+            return unit;
+        }
+
+        public void setUnit(String unit)
+        {
+            this.unit = unit;
+        }
+
+        public int getTimeoutSec()
+        {
+            return timeoutSec;
+        }
+
+        public void setTimeoutSec(int timeoutSec)
+        {
+            this.timeoutSec = timeoutSec;
+        }
+    }
+
+    public static class Map
+    {
+        private boolean enabled = false;
+
+        private String provider = "amap";
+
+        private String baseUrl = "https://restapi.amap.com";
+
+        private String apiKey;
+
+        private String location = "118.7853,31.9998";
+
+        private String securityJsCode;
+
+        private String geocodePath = "/v3/geocode/geo";
+
+        private String drivingPath = "/v3/direction/driving";
+
+        public boolean isEnabled()
+        {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            this.enabled = enabled;
+        }
+
+        public String getProvider()
+        {
+            return provider;
+        }
+
+        public void setProvider(String provider)
+        {
+            this.provider = provider;
+        }
+
+        public String getBaseUrl()
+        {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl)
+        {
+            this.baseUrl = baseUrl;
+        }
+
+        public String getApiKey()
+        {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey)
+        {
+            this.apiKey = apiKey;
+        }
+
+        public String getLocation()
+        {
+            return location;
+        }
+
+        public void setLocation(String location)
+        {
+            this.location = location;
+        }
+
+        public String getSecurityJsCode()
+        {
+            return securityJsCode;
+        }
+
+        public void setSecurityJsCode(String securityJsCode)
+        {
+            this.securityJsCode = securityJsCode;
+        }
+
+        public String getGeocodePath()
+        {
+            return geocodePath;
+        }
+
+        public void setGeocodePath(String geocodePath)
+        {
+            this.geocodePath = geocodePath;
+        }
+
+        public String getDrivingPath()
+        {
+            return drivingPath;
+        }
+
+        public void setDrivingPath(String drivingPath)
+        {
+            this.drivingPath = drivingPath;
         }
     }
 }

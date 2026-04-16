@@ -9,7 +9,9 @@ import com.ruoyi.system.domain.AgriQualityInspectTask;
 import com.ruoyi.system.domain.AgriYieldForecastTask;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -127,6 +129,86 @@ public class AgriHttpIntegrationClient
             body = body.substring(0, 300);
         }
         result.setResponseSnippet(body);
+        return result;
+    }
+
+    public WeatherProbeResult probeWeather(String endpointUrl, Integer timeoutSec) throws IOException, InterruptedException
+    {
+        int timeout = timeoutSec == null || timeoutSec <= 0 ? 8 : timeoutSec;
+        HttpClient client = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(timeout))
+            .build();
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(endpointUrl))
+            .timeout(Duration.ofSeconds(timeout))
+            .header("Accept", "application/json")
+            .GET()
+            .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        WeatherProbeResult result = new WeatherProbeResult();
+        result.setHttpStatus(response.statusCode());
+        result.setSuccess(response.statusCode() >= 200 && response.statusCode() < 300);
+        String body = response.body() == null ? "" : response.body();
+        result.setResponseSnippet(trimToLength(body, 400));
+        if (result.isSuccess() && StringUtils.isNotBlank(body))
+        {
+            result.setWeatherSummary(buildWeatherSummary(body));
+        }
+        return result;
+    }
+
+    public MapProbeResult probeMap(String endpointUrl, Integer timeoutSec) throws IOException, InterruptedException
+    {
+        AgriIntegrationProperties.Map map = properties.getMap();
+        if (!map.isEnabled() && StringUtils.isBlank(map.getBaseUrl()))
+        {
+            throw new IllegalStateException("地图接入已禁用，请在配置中启用 agri.integration.map.enabled");
+        }
+        if (StringUtils.isBlank(map.getBaseUrl()))
+        {
+            throw new IllegalStateException("地图接入缺少 baseUrl 配置");
+        }
+        if (StringUtils.isBlank(map.getApiKey()))
+        {
+            throw new IllegalStateException("地图接入缺少 apiKey 配置，请先配置 AGRI_MAP_API_KEY 并重启后端");
+        }
+
+        int timeout = timeoutSec == null || timeoutSec <= 0 ? 8 : timeoutSec;
+        HttpClient client = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(timeout))
+            .build();
+
+        String requestUrl = buildMapRequestUrl(endpointUrl);
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(requestUrl))
+            .timeout(Duration.ofSeconds(timeout))
+            .header("Accept", "application/json")
+            .GET()
+            .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        String body = response.body() == null ? "" : response.body();
+        MapProbeResult result = new MapProbeResult();
+        result.setHttpStatus(response.statusCode());
+        result.setSuccess(response.statusCode() >= 200 && response.statusCode() < 300);
+        result.setResponseSnippet(trimToLength(body, 400));
+        if (result.isSuccess() && StringUtils.isNotBlank(body))
+        {
+            JSONObject root = JSON.parseObject(body);
+            result.setMapSummary(buildMapSummary(root));
+            String status = readString(root, "status");
+            if (!"1".equals(status))
+            {
+                result.setSuccess(false);
+                String info = firstNonBlank(readString(root, "info"), readString(root, "infocode"));
+                if (StringUtils.isNotBlank(info))
+                {
+                    result.setMapSummary("地图接口返回异常: " + info);
+                }
+            }
+        }
         return result;
     }
 
@@ -367,9 +449,232 @@ public class AgriHttpIntegrationClient
         return value.substring(0, maxLength);
     }
 
+    private String buildWeatherSummary(String body)
+    {
+        try
+        {
+            JSONObject root = JSON.parseObject(body);
+            if (root == null)
+            {
+                return null;
+            }
+
+            JSONObject now = firstObject(root, "now", "current", "realtime", "weather", "data");
+            JSONArray daily = root.getJSONArray("daily");
+            JSONObject firstDaily = daily == null || daily.isEmpty() ? null : daily.getJSONObject(0);
+            JSONArray hourly = root.getJSONArray("hourly");
+            JSONObject firstHourly = hourly == null || hourly.isEmpty() ? null : hourly.getJSONObject(0);
+
+            String text = firstNonBlank(
+                readString(now, "text", "weatherText", "condition", "description"),
+                readString(firstDaily, "textDay", "text", "weatherText", "conditionDay"),
+                readString(firstHourly, "text", "weatherText", "condition")
+            );
+            BigDecimal temperature = firstDecimal(
+                readDecimal(now, "temp", "temperature", "feelsLike"),
+                readDecimal(firstDaily, "tempMax", "tempMin", "temperature"),
+                readDecimal(firstHourly, "temp", "temperature")
+            );
+            BigDecimal humidity = firstDecimal(
+                readDecimal(now, "humidity"),
+                readDecimal(firstDaily, "humidity")
+            );
+            BigDecimal precipitation = firstDecimal(
+                readDecimal(now, "precip", "rain", "precipitation"),
+                readDecimal(firstDaily, "precip", "rain", "precipitation")
+            );
+            BigDecimal rainProbability = firstDecimal(
+                readDecimal(firstDaily, "precipProbability", "pop", "rainProbability"),
+                readDecimal(firstHourly, "precipProbability", "pop", "rainProbability")
+            );
+            String forecastTime = firstNonBlank(
+                readString(now, "obsTime", "fxTime", "updateTime"),
+                readString(firstDaily, "fxDate", "date"),
+                readString(firstHourly, "fxTime", "dateTime")
+            );
+
+            List<String> parts = new ArrayList<>();
+            if (StringUtils.isNotBlank(text))
+            {
+                parts.add("天气=" + text);
+            }
+            if (temperature != null)
+            {
+                parts.add("温度=" + temperature + "℃");
+            }
+            if (humidity != null)
+            {
+                parts.add("湿度=" + humidity + "%");
+            }
+            if (precipitation != null)
+            {
+                parts.add("降水=" + precipitation);
+            }
+            if (rainProbability != null)
+            {
+                parts.add("降雨概率=" + rainProbability + "%");
+            }
+            if (StringUtils.isNotBlank(forecastTime))
+            {
+                parts.add("时间=" + forecastTime);
+            }
+            return String.join(" | ", parts);
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+    private String buildMapRequestUrl(String endpointUrl)
+    {
+        AgriIntegrationProperties.Map map = properties.getMap();
+        String baseUrl = StringUtils.defaultIfBlank(endpointUrl, map.getBaseUrl() + map.getDrivingPath());
+        String location = StringUtils.defaultIfBlank(map.getLocation(), "118.7853,31.9998");
+        String[] parts = StringUtils.split(location, ',');
+        if (parts == null || parts.length != 2)
+        {
+            throw new IllegalStateException("地图 location 配置格式不正确，请使用 lng,lat 形式");
+        }
+
+        BigDecimal longitude = new BigDecimal(parts[0].trim());
+        BigDecimal latitude = new BigDecimal(parts[1].trim());
+        String origin = longitude.setScale(6, RoundingMode.HALF_UP) + "," + latitude.setScale(6, RoundingMode.HALF_UP);
+        String destination = longitude.add(new BigDecimal("0.01")).setScale(6, RoundingMode.HALF_UP)
+            + "," + latitude.add(new BigDecimal("0.01")).setScale(6, RoundingMode.HALF_UP);
+
+        String requestUrl = appendQueryParam(baseUrl, "key", map.getApiKey());
+        requestUrl = appendQueryParam(requestUrl, "origin", origin);
+        requestUrl = appendQueryParam(requestUrl, "destination", destination);
+        requestUrl = appendQueryParam(requestUrl, "extensions", "base");
+        return requestUrl;
+    }
+
+    private String buildMapSummary(JSONObject root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        JSONObject route = root.getJSONObject("route");
+        JSONObject firstPath = null;
+        JSONArray paths = route == null ? null : route.getJSONArray("paths");
+        if (paths != null && !paths.isEmpty())
+        {
+            firstPath = paths.getJSONObject(0);
+        }
+
+        BigDecimal distance = firstDecimal(
+            readDecimal(route, "distance"),
+            readDecimal(firstPath, "distance")
+        );
+        BigDecimal duration = firstDecimal(
+            readDecimal(route, "duration"),
+            readDecimal(firstPath, "duration")
+        );
+        String info = firstNonBlank(readString(root, "info"), readString(root, "infocode"));
+
+        List<String> parts = new ArrayList<>();
+        if (distance != null)
+        {
+            parts.add("路线距离=" + formatDistance(distance));
+        }
+        if (duration != null)
+        {
+            parts.add("预计时长=" + formatDuration(duration));
+        }
+        if (StringUtils.isNotBlank(info))
+        {
+            parts.add("接口信息=" + info);
+        }
+        return parts.isEmpty() ? null : String.join(" | ", parts);
+    }
+
+    private String appendQueryParam(String url, String key, String value)
+    {
+        String separator = url.contains("?") ? "&" : "?";
+        return url + separator + key + "=" + URLEncoder.encode(StringUtils.defaultString(value), StandardCharsets.UTF_8);
+    }
+
+    private String formatDistance(BigDecimal distance)
+    {
+        if (distance == null)
+        {
+            return null;
+        }
+        if (distance.compareTo(new BigDecimal("1000")) >= 0)
+        {
+            return distance.divide(new BigDecimal("1000"), 1, RoundingMode.HALF_UP) + "km";
+        }
+        return distance.setScale(0, RoundingMode.HALF_UP) + "m";
+    }
+
+    private String formatDuration(BigDecimal duration)
+    {
+        if (duration == null)
+        {
+            return null;
+        }
+        if (duration.compareTo(new BigDecimal("60")) >= 0)
+        {
+            return duration.divide(new BigDecimal("60"), 1, RoundingMode.HALF_UP) + "min";
+        }
+        return duration.setScale(0, RoundingMode.HALF_UP) + "s";
+    }
+
+    private JSONObject firstObject(JSONObject root, String... keys)
+    {
+        if (root == null || keys == null)
+        {
+            return null;
+        }
+        for (String key : keys)
+        {
+            JSONObject value = root.getJSONObject(key);
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private String nullSafe(Object value)
     {
         return value == null ? "" : String.valueOf(value);
+    }
+
+    private String firstNonBlank(String... values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+        for (String value : values)
+        {
+            if (StringUtils.isNotBlank(value))
+            {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal firstDecimal(BigDecimal... values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+        for (BigDecimal value : values)
+        {
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return null;
     }
 
     private String readString(JSONObject json, String... keys)
@@ -674,6 +979,108 @@ public class AgriHttpIntegrationClient
         public void setResponseSnippet(String responseSnippet)
         {
             this.responseSnippet = responseSnippet;
+        }
+    }
+
+    public static class WeatherProbeResult
+    {
+        private boolean success;
+
+        private int httpStatus;
+
+        private String responseSnippet;
+
+        private String weatherSummary;
+
+        public boolean isSuccess()
+        {
+            return success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            this.success = success;
+        }
+
+        public int getHttpStatus()
+        {
+            return httpStatus;
+        }
+
+        public void setHttpStatus(int httpStatus)
+        {
+            this.httpStatus = httpStatus;
+        }
+
+        public String getResponseSnippet()
+        {
+            return responseSnippet;
+        }
+
+        public void setResponseSnippet(String responseSnippet)
+        {
+            this.responseSnippet = responseSnippet;
+        }
+
+        public String getWeatherSummary()
+        {
+            return weatherSummary;
+        }
+
+        public void setWeatherSummary(String weatherSummary)
+        {
+            this.weatherSummary = weatherSummary;
+        }
+    }
+
+    public static class MapProbeResult
+    {
+        private boolean success;
+
+        private int httpStatus;
+
+        private String responseSnippet;
+
+        private String mapSummary;
+
+        public boolean isSuccess()
+        {
+            return success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            this.success = success;
+        }
+
+        public int getHttpStatus()
+        {
+            return httpStatus;
+        }
+
+        public void setHttpStatus(int httpStatus)
+        {
+            this.httpStatus = httpStatus;
+        }
+
+        public String getResponseSnippet()
+        {
+            return responseSnippet;
+        }
+
+        public void setResponseSnippet(String responseSnippet)
+        {
+            this.responseSnippet = responseSnippet;
+        }
+
+        public String getMapSummary()
+        {
+            return mapSummary;
+        }
+
+        public void setMapSummary(String mapSummary)
+        {
+            this.mapSummary = mapSummary;
         }
     }
 

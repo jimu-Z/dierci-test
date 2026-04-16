@@ -60,6 +60,7 @@
       <el-table-column label="最近调用时间" align="center" prop="lastCallTime" width="160" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-connection" @click="handleProbe(scope.row)" v-hasPermi="['agri:thirdApi:edit']">探活</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:thirdApi:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:thirdApi:remove']">删除</el-button>
         </template>
@@ -77,14 +78,14 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="API类型" prop="apiType">
-              <el-select v-model="form.apiType" placeholder="请选择API类型" style="width: 100%">
+              <el-select v-model="form.apiType" placeholder="请选择API类型" style="width: 100%" @change="handleApiTypeChange">
                 <el-option v-for="dict in dict.type.agri_api_type" :key="dict.value" :label="dict.label" :value="dict.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12"><el-form-item label="供应商" prop="provider"><el-input v-model="form.provider" placeholder="请输入供应商" /></el-form-item></el-col>
         </el-row>
-        <el-form-item label="请求地址" prop="endpointUrl"><el-input v-model="form.endpointUrl" placeholder="请输入请求地址" /></el-form-item>
+        <el-form-item label="请求地址" prop="endpointUrl"><el-input v-model="form.endpointUrl" :placeholder="getEndpointPlaceholder()" /></el-form-item>
         <el-row>
           <el-col :span="12"><el-form-item label="超时(秒)" prop="timeoutSec"><el-input-number v-model="form.timeoutSec" :min="1" :max="600" style="width: 100%" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="成功率(%)" prop="successRate"><el-input-number v-model="form.successRate" :precision="2" :min="0" :max="100" style="width: 100%" /></el-form-item></el-col>
@@ -119,7 +120,8 @@ import {
   getThirdApi,
   delThirdApi,
   addThirdApi,
-  updateThirdApi
+  updateThirdApi,
+  probeThirdApi
 } from '@/api/agri/thirdApi'
 
 export default {
@@ -212,6 +214,33 @@ export default {
         this.open = true
         this.title = '修改第三方API接入'
       })
+    },
+    handleProbe(row) {
+      const accessId = row.accessId || this.ids[0]
+      this.$modal.confirm('是否确认对接入编号为"' + accessId + '"的第三方API执行探活？').then(() => {
+        return probeThirdApi(accessId)
+      }).then(response => {
+        this.$modal.msgSuccess(response.msg || '探活完成')
+        this.getList()
+      }).catch(() => {})
+    },
+    handleApiTypeChange(value) {
+      if (value === 'weather') {
+        this.form.provider = this.form.provider || '和风天气'
+        this.form.endpointUrl = 'https://devapi.qweather.com/v7/weather/now'
+      } else if (value === 'map' || value === 'amap') {
+        this.form.provider = this.form.provider || '高德地图'
+        this.form.endpointUrl = 'https://restapi.amap.com/v3/direction/driving'
+      }
+    },
+    getEndpointPlaceholder() {
+      if (this.form.apiType === 'weather') {
+        return '示例：https://devapi.qweather.com/v7/weather/now'
+      }
+      if (this.form.apiType === 'map' || this.form.apiType === 'amap') {
+        return '示例：https://restapi.amap.com/v3/direction/driving'
+      }
+      return '请输入请求地址'
     },
     submitForm() {
       this.$refs.form.validate(valid => {

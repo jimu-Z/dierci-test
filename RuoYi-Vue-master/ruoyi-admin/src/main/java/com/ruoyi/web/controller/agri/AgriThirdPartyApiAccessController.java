@@ -100,6 +100,16 @@ public class AgriThirdPartyApiAccessController extends BaseController
 
         try
         {
+            String apiType = access.getApiType();
+            if ("weather".equalsIgnoreCase(apiType))
+            {
+                return probeWeather(access);
+            }
+            if ("map".equalsIgnoreCase(apiType) || "amap".equalsIgnoreCase(apiType))
+            {
+                return probeMap(access);
+            }
+
             AgriHttpIntegrationClient.ThirdApiResult result =
                 agriHttpIntegrationClient.probe(access.getEndpointUrl(), access.getTimeoutSec());
             access.setCallStatus(result.isSuccess() ? "1" : "2");
@@ -117,6 +127,72 @@ public class AgriThirdPartyApiAccessController extends BaseController
             access.setRemark("探活异常: " + ex.getMessage());
             agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
             return error("探活异常: " + ex.getMessage());
+        }
+    }
+
+    private AjaxResult probeWeather(AgriThirdPartyApiAccess access)
+    {
+        try
+        {
+            AgriHttpIntegrationClient.WeatherProbeResult result =
+                agriHttpIntegrationClient.probeWeather(access.getEndpointUrl(), access.getTimeoutSec());
+            access.setCallStatus(result.isSuccess() ? "1" : "2");
+            access.setSuccessRate(result.isSuccess() ? BigDecimal.valueOf(100) : BigDecimal.ZERO);
+            access.setLastCallTime(DateUtils.getNowDate());
+            String remark = "HTTP " + result.getHttpStatus();
+            if (result.getWeatherSummary() != null)
+            {
+                remark = remark + " | " + result.getWeatherSummary();
+            }
+            if (result.getResponseSnippet() != null)
+            {
+                remark = remark + " | " + result.getResponseSnippet();
+            }
+            access.setRemark(remark);
+            agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
+            return result.isSuccess() ? success("天气探活成功") : error("天气探活失败，HTTP状态: " + result.getHttpStatus());
+        }
+        catch (Exception ex)
+        {
+            access.setCallStatus("2");
+            access.setLastCallTime(DateUtils.getNowDate());
+            access.setSuccessRate(BigDecimal.ZERO);
+            access.setRemark("天气探活异常: " + ex.getMessage());
+            agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
+            return error("天气探活异常: " + ex.getMessage());
+        }
+    }
+
+    private AjaxResult probeMap(AgriThirdPartyApiAccess access)
+    {
+        try
+        {
+            AgriHttpIntegrationClient.MapProbeResult result =
+                agriHttpIntegrationClient.probeMap(access.getEndpointUrl(), access.getTimeoutSec());
+            access.setCallStatus(result.isSuccess() ? "1" : "2");
+            access.setSuccessRate(result.isSuccess() ? BigDecimal.valueOf(100) : BigDecimal.ZERO);
+            access.setLastCallTime(DateUtils.getNowDate());
+            String remark = "HTTP " + result.getHttpStatus();
+            if (result.getMapSummary() != null)
+            {
+                remark = remark + " | " + result.getMapSummary();
+            }
+            if (result.getResponseSnippet() != null)
+            {
+                remark = remark + " | " + result.getResponseSnippet();
+            }
+            access.setRemark(remark);
+            agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
+            return result.isSuccess() ? success("地图探活成功") : error("地图探活失败，HTTP状态: " + result.getHttpStatus());
+        }
+        catch (Exception ex)
+        {
+            access.setCallStatus("2");
+            access.setLastCallTime(DateUtils.getNowDate());
+            access.setSuccessRate(BigDecimal.ZERO);
+            access.setRemark("地图探活异常: " + ex.getMessage());
+            agriThirdPartyApiAccessService.updateAgriThirdPartyApiAccess(access);
+            return error("地图探活异常: " + ex.getMessage());
         }
     }
 }

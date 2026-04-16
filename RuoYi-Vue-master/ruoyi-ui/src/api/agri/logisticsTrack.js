@@ -44,3 +44,10 @@ export function listLogisticsTimeline(traceCode) {
         method: 'get'
     })
 }
+
+export function getLogisticsTrackSummary(traceCode) {
+    return request({
+        url: '/agri/logisticsTrack/summary/' + traceCode,
+        method: 'get'
+    })
+}

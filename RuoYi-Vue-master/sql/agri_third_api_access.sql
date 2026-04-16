@@ -39,6 +39,10 @@ insert into sys_dict_data (dict_sort, dict_label, dict_value, dict_type, css_cla
 select 3, '物流查询', 'logistics', 'agri_api_type', '', 'warning', 'N', '0', 'admin', now(), '物流跟踪API'
 where not exists (select 1 from sys_dict_data where dict_type = 'agri_api_type' and dict_value = 'logistics');
 
+insert into sys_dict_data (dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark)
+select 4, '地图服务', 'map', 'agri_api_type', '', 'info', 'N', '0', 'admin', now(), '高德地图API'
+where not exists (select 1 from sys_dict_data where dict_type = 'agri_api_type' and dict_value = 'map');
+
 -- 字典：调用状态
 insert into sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
 select 'API调用状态', 'agri_api_call_status', '0', 'admin', now(), '第三方API调用状态'

@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 import com.ruoyi.system.domain.AgriLogisticsTrack;
+import com.ruoyi.system.domain.AgriLogisticsTrackSummary;
 import java.util.List;
 
 /**
@@ -21,4 +22,6 @@ public interface IAgriLogisticsTrackService
     public int deleteAgriLogisticsTrackByTrackIds(Long[] trackIds);
 
     public List<AgriLogisticsTrack> selectAgriLogisticsTrackTimeline(String traceCode);
+
+    public AgriLogisticsTrackSummary selectAgriLogisticsTrackSummary(String traceCode);
 }

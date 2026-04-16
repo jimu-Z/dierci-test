@@ -165,5 +165,25 @@ agri:
       ingestToken: ${AGRI_SENSOR_INGEST_TOKEN:}
       authHeaderName: ${AGRI_SENSOR_AUTH_HEADER:X-Agri-Token}
       dataSource: ${AGRI_SENSOR_DATA_SOURCE:gateway-http}
+      emqx:
+        dataSource: ${AGRI_SENSOR_EMQX_DATA_SOURCE:emqx-webhook}
       tempAlertHigh: ${AGRI_SENSOR_TEMP_ALERT_HIGH:35}
       humidityAlertHigh: ${AGRI_SENSOR_HUMIDITY_ALERT_HIGH:85}
+    weather:
+      enabled: ${AGRI_WEATHER_ENABLED:false}
+      provider: ${AGRI_WEATHER_PROVIDER:qweather}
+      baseUrl: ${AGRI_WEATHER_BASE_URL:https://devapi.qweather.com}
+      apiKey: ${AGRI_WEATHER_API_KEY:}
+      location: ${AGRI_WEATHER_LOCATION:118.7853,31.9998}
+      language: ${AGRI_WEATHER_LANGUAGE:zh-Hans}
+      unit: ${AGRI_WEATHER_UNIT:m}
+      timeoutSec: ${AGRI_WEATHER_TIMEOUT_SEC:8}
+    map:
+      enabled: ${AGRI_MAP_ENABLED:false}
+      provider: ${AGRI_MAP_PROVIDER:amap}
+      baseUrl: ${AGRI_MAP_BASE_URL:https://restapi.amap.com}
+      apiKey: ${AGRI_MAP_API_KEY:}
+      location: ${AGRI_MAP_LOCATION:118.7853,31.9998}
+      securityJsCode: ${AGRI_MAP_SECURITY_JS_CODE:}
+      geocodePath: ${AGRI_MAP_GEOCODE_PATH:/v3/geocode/geo}
+      drivingPath: ${AGRI_MAP_DRIVING_PATH:/v3/direction/driving}

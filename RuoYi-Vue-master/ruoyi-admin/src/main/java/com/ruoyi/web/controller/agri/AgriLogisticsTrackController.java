@@ -67,6 +67,13 @@ public class AgriLogisticsTrackController extends BaseController
         return success(agriLogisticsTrackService.selectAgriLogisticsTrackTimeline(traceCode));
     }
 
+    @PreAuthorize("@ss.hasPermi('agri:logisticsTrack:query')")
+    @GetMapping("/summary/{traceCode}")
+    public AjaxResult summary(@PathVariable("traceCode") String traceCode)
+    {
+        return success(agriLogisticsTrackService.selectAgriLogisticsTrackSummary(traceCode));
+    }
+
     @PreAuthorize("@ss.hasPermi('agri:logisticsTrack:add')")
     @Log(title = "物流路径追踪", businessType = BusinessType.INSERT)
     @PostMapping

@@ -37,3 +37,10 @@ export function delThirdApi(accessId) {
         method: 'delete'
     })
 }
+
+export function probeThirdApi(accessId) {
+    return request({
+        url: '/agri/thirdApi/probe/' + accessId,
+        method: 'post'
+    })
+}
