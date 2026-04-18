@@ -62,6 +62,8 @@ public class AgriIntegrationProperties
 
         private String outputSalesPath = "/chat/completions";
 
+        private String carbonFootprintPath = "/chat/completions";
+
         public boolean isEnabled()
         {
             return enabled;
@@ -170,6 +172,16 @@ public class AgriIntegrationProperties
         public void setOutputSalesPath(String outputSalesPath)
         {
             this.outputSalesPath = outputSalesPath;
+        }
+
+        public String getCarbonFootprintPath()
+        {
+            return carbonFootprintPath;
+        }
+
+        public void setCarbonFootprintPath(String carbonFootprintPath)
+        {
+            this.carbonFootprintPath = carbonFootprintPath;
         }
     }
 

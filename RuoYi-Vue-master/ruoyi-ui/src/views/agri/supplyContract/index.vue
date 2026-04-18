@@ -1,72 +1,175 @@
 <template>
-  <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="98px">
-      <el-form-item label="合约编号" prop="contractNo">
-        <el-input v-model="queryParams.contractNo" placeholder="请输入合约编号" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="合约名称" prop="contractName">
-        <el-input v-model="queryParams.contractName" placeholder="请输入合约名称" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="合约状态" prop="contractStatus">
-        <el-select v-model="queryParams.contractStatus" placeholder="请选择合约状态" clearable>
-          <el-option v-for="dict in dict.type.agri_contract_status" :key="dict.value" :label="dict.label" :value="dict.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="风控等级" prop="riskLevel">
-        <el-select v-model="queryParams.riskLevel" placeholder="请选择风控等级" clearable>
-          <el-option v-for="dict in dict.type.agri_risk_level" :key="dict.value" :label="dict.label" :value="dict.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+  <div class="app-container supply-contract-ops">
+    <section class="hero-panel">
+      <div>
+        <p class="hero-tag">供应链金融合约运营台</p>
+        <h2>融资敞口、到期压力、履约分层一体化管理</h2>
+      </div>
+      <div class="hero-actions">
+        <el-button icon="el-icon-refresh" size="mini" @click="refreshAll">刷新面板</el-button>
+        <el-button type="primary" icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['agri:supplyContract:add']">新增合约</el-button>
+        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['agri:supplyContract:export']">导出台账</el-button>
+      </div>
+    </section>
 
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['agri:supplyContract:add']">新增</el-button>
+    <el-row :gutter="14" class="kpi-row">
+      <el-col :xs="12" :sm="8" :md="4.8" v-for="card in kpiCards" :key="card.label">
+        <div class="kpi-card">
+          <div class="kpi-label">{{ card.label }}</div>
+          <div class="kpi-value">{{ card.value }}</div>
+        </div>
       </el-col>
-      <el-col :span="1.5">
-        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['agri:supplyContract:edit']">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['agri:supplyContract:remove']">删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['agri:supplyContract:export']">导出</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="supplyContractList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键" align="center" prop="contractId" width="80" />
-      <el-table-column label="合约编号" align="center" prop="contractNo" min-width="120" show-overflow-tooltip />
-      <el-table-column label="合约名称" align="center" prop="contractName" min-width="130" show-overflow-tooltip />
-      <el-table-column label="融资主体" align="center" prop="financeSubject" min-width="130" show-overflow-tooltip />
-      <el-table-column label="融资金额" align="center" prop="financeAmount" width="110" />
-      <el-table-column label="利率(%)" align="center" prop="interestRate" width="90" />
-      <el-table-column label="合约状态" align="center" prop="contractStatus">
-        <template slot-scope="scope">
-          <dict-tag :options="dict.type.agri_contract_status" :value="scope.row.contractStatus" />
-        </template>
-      </el-table-column>
-      <el-table-column label="风控等级" align="center" prop="riskLevel">
-        <template slot-scope="scope">
-          <dict-tag :options="dict.type.agri_risk_level" :value="scope.row.riskLevel" />
-        </template>
-      </el-table-column>
-      <el-table-column label="到期日期" align="center" prop="endDate" width="110" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
-        <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:supplyContract:edit']">修改</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:supplyContract:remove']">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-row :gutter="14" class="board-row">
+      <el-col :xs="24" :lg="14">
+        <el-card shadow="never" class="panel-card">
+          <div slot="header" class="card-header">
+            <span>合约状态分布</span>
+            <el-tag size="mini" type="info">动态漏斗</el-tag>
+          </div>
+          <div class="status-grid">
+            <div class="status-item" v-for="item in statusCards" :key="item.key">
+              <span>{{ item.label }}</span>
+              <b>{{ item.value }}</b>
+              <el-progress :percentage="item.percent" :stroke-width="10" :color="item.color" />
+            </div>
+          </div>
+        </el-card>
 
-    <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+        <el-card shadow="never" class="panel-card">
+          <div slot="header" class="card-header">
+            <span>到期压力队列</span>
+            <el-tag size="mini" type="warning">Top {{ (opsData.pressureQueue || []).length }}</el-tag>
+          </div>
+          <el-table :data="opsData.pressureQueue" size="mini" v-loading="opsLoading" stripe>
+            <el-table-column label="合约编号" prop="contractNo" min-width="140" />
+            <el-table-column label="合约名称" prop="contractName" min-width="150" />
+            <el-table-column label="融资主体" prop="financeSubject" min-width="130" />
+            <el-table-column label="金额" prop="financeAmount" width="110" align="center" />
+            <el-table-column label="剩余天数" width="100" align="center">
+              <template slot-scope="scope">
+                <el-tag size="mini" :type="remainTagType(scope.row.remainDays)">{{ formatRemainDays(scope.row.remainDays) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="170" align="center">
+              <template slot-scope="scope">
+                <el-button size="mini" type="text" @click="handleAssess(scope.row)">智能评估</el-button>
+                <el-button size="mini" type="text" @click="handleUpdate(scope.row)" v-hasPermi="['agri:supplyContract:edit']">复核</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+
+      <el-col :xs="24" :lg="10">
+        <el-card shadow="never" class="panel-card">
+          <div slot="header" class="card-header">
+            <span>处置建议</span>
+          </div>
+          <div class="suggestion-list">
+            <div class="suggestion-item" v-for="(item, index) in opsData.suggestions" :key="index">
+              <span>{{ index + 1 }}</span>
+              <p>{{ item }}</p>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card shadow="never" class="panel-card">
+          <div slot="header" class="card-header">
+            <span>重点合约预警</span>
+          </div>
+          <div class="alert-list" v-loading="opsLoading">
+            <div class="alert-item" v-for="item in opsData.alerts" :key="item.contractId">
+              <div>
+                <b>{{ item.contractName }}</b>
+                <p>{{ item.contractNo }} · {{ item.financeSubject }} · {{ item.interestRate }}%</p>
+              </div>
+              <div class="alert-actions">
+                <el-tag size="mini" :type="riskTagType(item.riskLevel)">{{ levelText(item.riskLevel) }}</el-tag>
+                <el-button type="text" size="mini" @click="handleAssess(item)">评估</el-button>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-card shadow="never" class="panel-card">
+      <div slot="header" class="card-header">
+        <span>合约台账</span>
+        <div>
+          <el-button type="text" @click="showSearch = !showSearch">筛选</el-button>
+          <el-button type="text" @click="handleExport" v-hasPermi="['agri:supplyContract:export']">导出</el-button>
+        </div>
+      </div>
+
+      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="80px">
+        <el-form-item label="合约编号" prop="contractNo">
+          <el-input v-model="queryParams.contractNo" placeholder="请输入合约编号" clearable style="width: 170px" @keyup.enter.native="handleQuery" />
+        </el-form-item>
+        <el-form-item label="合约名称" prop="contractName">
+          <el-input v-model="queryParams.contractName" placeholder="请输入合约名称" clearable style="width: 170px" @keyup.enter.native="handleQuery" />
+        </el-form-item>
+        <el-form-item label="状态" prop="contractStatus">
+          <el-select v-model="queryParams.contractStatus" placeholder="请选择合约状态" clearable style="width: 140px">
+            <el-option v-for="dict in dict.type.agri_contract_status" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="风控等级" prop="riskLevel">
+          <el-select v-model="queryParams.riskLevel" placeholder="请选择风控等级" clearable style="width: 140px">
+            <el-option v-for="dict in dict.type.agri_risk_level" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+          <el-button type="success" icon="el-icon-edit" size="mini" :disabled="single" @click="handleBatchAssess" v-hasPermi="['agri:supplyContract:edit']">评估选中</el-button>
+          <el-button type="danger" icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['agri:supplyContract:remove']">删除选中</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-table v-loading="loading" :data="supplyContractList" @selection-change="handleSelectionChange" stripe>
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="合约编号" align="center" prop="contractNo" min-width="130" show-overflow-tooltip />
+        <el-table-column label="合约名称" align="center" prop="contractName" min-width="150" show-overflow-tooltip />
+        <el-table-column label="融资主体" align="center" prop="financeSubject" min-width="140" show-overflow-tooltip />
+        <el-table-column label="融资金额" align="center" prop="financeAmount" width="110" />
+        <el-table-column label="利率(%)" align="center" prop="interestRate" width="90" />
+        <el-table-column label="状态" align="center" prop="contractStatus" width="100">
+          <template slot-scope="scope">
+            <dict-tag :options="dict.type.agri_contract_status" :value="scope.row.contractStatus" />
+          </template>
+        </el-table-column>
+        <el-table-column label="风控等级" align="center" prop="riskLevel" width="90">
+          <template slot-scope="scope">
+            <el-tag size="mini" :type="riskTagType(scope.row.riskLevel)">{{ levelText(scope.row.riskLevel) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="到期日期" align="center" prop="endDate" width="110" />
+        <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220" fixed="right">
+          <template slot-scope="scope">
+            <el-button size="mini" type="text" @click="handleAssess(scope.row)">智能评估</el-button>
+            <el-button size="mini" type="text" @click="handleUpdate(scope.row)" v-hasPermi="['agri:supplyContract:edit']">复核</el-button>
+            <el-button size="mini" type="text" @click="handleDelete(scope.row)" v-hasPermi="['agri:supplyContract:remove']">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="handleQuery" />
+    </el-card>
+
+    <el-dialog title="合约智能评估" :visible.sync="assessOpen" width="700px" append-to-body>
+      <div v-loading="assessLoading" class="analysis-body" v-if="assessData">
+        <el-row :gutter="12">
+          <el-col :span="8"><div class="analysis-kpi"><span>压力指数</span><b>{{ assessData.pressureIndex }}</b></div></el-col>
+          <el-col :span="8"><div class="analysis-kpi"><span>剩余天数</span><b>{{ assessData.remainDays }}</b></div></el-col>
+          <el-col :span="8"><div class="analysis-kpi"><span>风险带</span><b>{{ assessData.riskBand }}</b></div></el-col>
+        </el-row>
+        <el-alert :title="assessData.summary" type="warning" :closable="false" style="margin: 12px 0" />
+        <el-tag v-for="(item, index) in assessData.actions" :key="index" type="danger" size="mini" style="margin-right: 8px">{{ item }}</el-tag>
+      </div>
+    </el-dialog>
 
     <el-dialog :title="title" :visible.sync="open" width="720px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
@@ -116,28 +219,26 @@
 </template>
 
 <script>
-import {
-  listSupplyContract,
-  getSupplyContract,
-  delSupplyContract,
-  addSupplyContract,
-  updateSupplyContract
-} from '@/api/agri/supplyContract'
+import { listSupplyContract, getSupplyContract, delSupplyContract, addSupplyContract, updateSupplyContract, getSupplyContractOpsDashboard, smartAssessSupplyContract } from '@/api/agri/supplyContract'
 
 export default {
   name: 'SupplyContract',
   dicts: ['agri_contract_status', 'agri_risk_level'],
   data() {
     return {
-      loading: true,
+      loading: false,
+      opsLoading: false,
+      assessLoading: false,
       ids: [],
       single: true,
       multiple: true,
-      showSearch: true,
+      showSearch: false,
       total: 0,
       supplyContractList: [],
       title: '',
       open: false,
+      assessOpen: false,
+      assessData: null,
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -153,44 +254,78 @@ export default {
         financeSubject: [{ required: true, message: '融资主体不能为空', trigger: 'blur' }],
         financeAmount: [{ required: true, message: '融资金额不能为空', trigger: 'blur' }],
         contractStatus: [{ required: true, message: '合约状态不能为空', trigger: 'change' }]
+      },
+      opsData: {
+        kpi: {},
+        statusBucket: {},
+        pressureQueue: [],
+        alerts: [],
+        suggestions: []
       }
     }
   },
+  computed: {
+    kpiCards() {
+      const kpi = this.opsData.kpi || {}
+      return [
+        { label: '合约总数', value: kpi.total || 0 },
+        { label: '生效中', value: kpi.activeCount || 0 },
+        { label: '临期压力', value: kpi.maturityCount || 0 },
+        { label: '高风险', value: kpi.highRiskCount || 0 },
+        { label: '融资总额', value: this.formatCurrency(kpi.amountSum) }
+      ]
+    },
+    statusCards() {
+      const bucket = this.opsData.statusBucket || {}
+      const total = Number((this.opsData.kpi && this.opsData.kpi.total) || 0)
+      const list = [
+        { key: '0', label: '签约中', color: '#f57c00' },
+        { key: '1', label: '生效中', color: '#2e7d32' },
+        { key: '2', label: '待结清', color: '#1565c0' },
+        { key: '3', label: '已关闭', color: '#546e7a' }
+      ]
+      return list.map(item => {
+        const value = Number(bucket[item.key] || 0)
+        return {
+          ...item,
+          value,
+          percent: total ? Number(((value * 100) / total).toFixed(1)) : 0
+        }
+      })
+    }
+  },
   created() {
-    this.getList()
+    this.refreshAll()
   },
   methods: {
-    getList() {
+    refreshAll() {
+      this.loadList()
+      this.loadOpsData()
+    },
+    loadList() {
       this.loading = true
-      listSupplyContract(this.queryParams).then(response => {
-        this.supplyContractList = response.rows
-        this.total = response.total
-        this.loading = false
-      })
+      listSupplyContract(this.queryParams)
+        .then(response => {
+          this.supplyContractList = response.rows || []
+          this.total = response.total || 0
+        })
+        .finally(() => {
+          this.loading = false
+        })
     },
-    cancel() {
-      this.open = false
-      this.reset()
-    },
-    reset() {
-      this.form = {
-        contractId: null,
-        contractNo: null,
-        contractName: null,
-        financeSubject: null,
-        financeAmount: 0,
-        interestRate: 0,
-        startDate: null,
-        endDate: null,
-        contractStatus: '0',
-        riskLevel: 'L',
-        remark: null
-      }
-      this.resetForm('form')
+    loadOpsData() {
+      this.opsLoading = true
+      getSupplyContractOpsDashboard()
+        .then(response => {
+          this.opsData = response.data || this.opsData
+        })
+        .finally(() => {
+          this.opsLoading = false
+        })
     },
     handleQuery() {
       this.queryParams.pageNum = 1
-      this.getList()
+      this.loadList()
     },
     resetQuery() {
       this.resetForm('queryForm')
@@ -208,46 +343,330 @@ export default {
     },
     handleUpdate(row) {
       this.reset()
-      const contractId = row.contractId || this.ids[0]
+      const contractId = row && row.contractId ? row.contractId : this.ids[0]
+      if (!contractId) {
+        this.$modal.msgWarning('请先选择要复核的合约')
+        return
+      }
       getSupplyContract(contractId).then(response => {
         this.form = response.data
         this.open = true
         this.title = '修改供应链金融合约'
       })
     },
+    handleBatchAssess() {
+      if (this.ids.length !== 1) {
+        this.$modal.msgWarning('请在台账中选择一条记录进行评估')
+        return
+      }
+      this.handleAssess({ contractId: this.ids[0] })
+    },
+    handleAssess(row) {
+      const contractId = row && row.contractId ? row.contractId : this.ids[0]
+      if (!contractId) {
+        this.$modal.msgWarning('请先选择一条合约进行智能评估')
+        return
+      }
+      this.assessLoading = true
+      smartAssessSupplyContract(contractId)
+        .then(response => {
+          this.assessData = response.data
+          this.assessOpen = true
+        })
+        .finally(() => {
+          this.assessLoading = false
+        })
+    },
     submitForm() {
       this.$refs.form.validate(valid => {
-        if (valid) {
-          if (this.form.contractId != null) {
-            updateSupplyContract(this.form).then(() => {
-              this.$modal.msgSuccess('修改成功')
-              this.open = false
-              this.getList()
-            })
-          } else {
-            addSupplyContract(this.form).then(() => {
-              this.$modal.msgSuccess('新增成功')
-              this.open = false
-              this.getList()
-            })
-          }
+        if (!valid) {
+          return
+        }
+        if (this.form.contractId != null) {
+          updateSupplyContract(this.form).then(() => {
+            this.$modal.msgSuccess('修改成功')
+            this.open = false
+            this.refreshAll()
+          })
+        } else {
+          addSupplyContract(this.form).then(() => {
+            this.$modal.msgSuccess('新增成功')
+            this.open = false
+            this.refreshAll()
+          })
         }
       })
     },
     handleDelete(row) {
-      const contractIds = row.contractId || this.ids
-      this.$modal.confirm('是否确认删除供应链金融合约编号为"' + contractIds + '"的数据项？').then(() => {
-        return delSupplyContract(contractIds)
-      }).then(() => {
-        this.getList()
-        this.$modal.msgSuccess('删除成功')
-      }).catch(() => {})
+      const contractIds = row && row.contractId ? row.contractId : this.ids
+      if (!contractIds || contractIds.length === 0) {
+        this.$modal.msgWarning('请先选择要删除的记录')
+        return
+      }
+      this.$modal.confirm('是否确认删除供应链金融合约编号为"' + contractIds + '"的数据项？')
+        .then(() => delSupplyContract(contractIds))
+        .then(() => {
+          this.$modal.msgSuccess('删除成功')
+          this.refreshAll()
+        })
+        .catch(() => {})
     },
     handleExport() {
       this.download('agri/supplyContract/export', {
         ...this.queryParams
       }, `supply_contract_${new Date().getTime()}.xlsx`)
+    },
+    reset() {
+      this.form = {
+        contractId: null,
+        contractNo: null,
+        contractName: null,
+        financeSubject: null,
+        financeAmount: 0,
+        interestRate: 0,
+        startDate: null,
+        endDate: null,
+        contractStatus: '0',
+        riskLevel: 'L',
+        remark: null
+      }
+      this.resetForm('form')
+    },
+    formatCurrency(value) {
+      const number = Number(value || 0)
+      return number.toFixed(2)
+    },
+    levelText(level) {
+      if (level === 'C') {
+        return '极高'
+      }
+      if (level === 'H') {
+        return '高'
+      }
+      if (level === 'M') {
+        return '中'
+      }
+      return '低'
+    },
+    riskTagType(level) {
+      if (level === 'C') {
+        return 'danger'
+      }
+      if (level === 'H') {
+        return 'warning'
+      }
+      if (level === 'M') {
+        return 'info'
+      }
+      return 'success'
+    },
+    formatRemainDays(days) {
+      if (days === null || days === undefined || days === Number.MIN_SAFE_INTEGER) {
+        return '未知'
+      }
+      if (days < 0) {
+        return `${Math.abs(days)}天逾期`
+      }
+      return `${days}天`
+    },
+    remainTagType(days) {
+      if (days === null || days === undefined || days === Number.MIN_SAFE_INTEGER) {
+        return 'info'
+      }
+      if (days < 0) {
+        return 'danger'
+      }
+      if (days <= 30) {
+        return 'warning'
+      }
+      return 'success'
     }
   }
 }
 </script>
+
+<style scoped>
+.supply-contract-ops {
+  background: linear-gradient(170deg, #f6f3ff 0%, #fffdf9 58%, #f3fbff 100%);
+}
+
+.hero-panel {
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  background: linear-gradient(120deg, #2d224f 0%, #4e2f74 56%, #7a4b85 100%);
+  color: #fff8ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hero-panel h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.hero-tag {
+  margin: 0;
+  color: #e3c8ff;
+  letter-spacing: 1px;
+}
+
+.hero-actions .el-button + .el-button {
+  margin-left: 8px;
+}
+
+.kpi-row {
+  margin-bottom: 14px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 14px;
+  min-height: 88px;
+  box-shadow: 0 6px 14px rgba(68, 47, 97, 0.08);
+}
+
+.kpi-label {
+  color: #746b82;
+  font-size: 13px;
+}
+
+.kpi-value {
+  margin-top: 8px;
+  color: #36245e;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.panel-card {
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.status-item {
+  border: 1px solid #e7e0f0;
+  background: #fbf9ff;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.status-item span {
+  display: block;
+  color: #756d84;
+  font-size: 12px;
+}
+
+.status-item b {
+  display: block;
+  margin: 6px 0 10px;
+  color: #37245f;
+  font-size: 20px;
+}
+
+.suggestion-list {
+  display: grid;
+  gap: 10px;
+}
+
+.suggestion-item {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #faf7ff;
+  border: 1px solid #ede5f7;
+}
+
+.suggestion-item span {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: #5a35a8;
+  color: #fff;
+  text-align: center;
+  line-height: 24px;
+  font-size: 12px;
+}
+
+.suggestion-item p {
+  margin: 0;
+  color: #5e556f;
+}
+
+.alert-list {
+  min-height: 180px;
+}
+
+.alert-item {
+  padding: 10px 0;
+  border-bottom: 1px dashed #e5dbef;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.alert-item p {
+  margin: 5px 0 0;
+  color: #6e6680;
+  font-size: 12px;
+}
+
+.alert-actions {
+  min-width: 110px;
+  text-align: right;
+}
+
+.analysis-body {
+  min-height: 120px;
+}
+
+.analysis-kpi {
+  border-radius: 8px;
+  background: #f5f0ff;
+  padding: 10px;
+  text-align: center;
+}
+
+.analysis-kpi span {
+  color: #766b89;
+  display: block;
+  font-size: 12px;
+}
+
+.analysis-kpi b {
+  display: block;
+  margin-top: 6px;
+  color: #4e2f74;
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+  .hero-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-panel h2 {
+    font-size: 18px;
+  }
+}
+</style>

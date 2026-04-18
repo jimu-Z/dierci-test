@@ -8,6 +8,21 @@ export function listMarketForecast(query) {
     })
 }
 
+export function getMarketForecastDashboard(query) {
+    return request({
+        url: '/agri/marketForecast/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getMarketForecastReview(forecastId) {
+    return request({
+        url: '/agri/marketForecast/smart/review/' + forecastId,
+        method: 'get'
+    })
+}
+
 export function getMarketForecast(forecastId) {
     return request({
         url: '/agri/marketForecast/' + forecastId,

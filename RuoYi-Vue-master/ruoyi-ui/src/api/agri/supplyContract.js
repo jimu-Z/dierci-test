@@ -37,3 +37,24 @@ export function delSupplyContract(contractId) {
         method: 'delete'
     })
 }
+
+export function getSupplyContractDashboard() {
+    return request({
+        url: '/agri/supplyContract/dashboard',
+        method: 'get'
+    })
+}
+
+export function getSupplyContractOpsDashboard() {
+    return request({
+        url: '/agri/supplyContract/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartAssessSupplyContract(contractId) {
+    return request({
+        url: '/agri/supplyContract/smart/assess/' + contractId,
+        method: 'get'
+    })
+}

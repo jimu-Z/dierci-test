@@ -45,3 +45,24 @@ export function delConsumerScan(queryId) {
         method: 'delete'
     })
 }
+
+export function getConsumerScanDashboard() {
+    return request({
+        url: '/agri/consumerScan/dashboard',
+        method: 'get'
+    })
+}
+
+export function getConsumerScanOpsDashboard() {
+    return request({
+        url: '/agri/consumerScan/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartAnalyzeConsumerScan(queryId) {
+    return request({
+        url: '/agri/consumerScan/smart/analyze/' + queryId,
+        method: 'get'
+    })
+}

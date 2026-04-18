@@ -1,5 +1,55 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="trace-hero mb16">
+      <div class="trace-hero-head">
+        <div>
+          <div class="trace-title">溯源访问洞察台</div>
+          <div class="trace-desc">聚焦查询量、独立用户数、成功率和响应时间，快速识别高负载日期与异常查询趋势。</div>
+        </div>
+        <div class="trace-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-data-analysis" @click="handleInsight">智能洞察</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="trace-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="trace-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="trace-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="trace-panel">
+            <div class="trace-panel-head"><span>高负载日期</span><small>从最近统计中找出峰值与异常</small></div>
+            <div class="trace-top-list" v-if="recentRows.length">
+              <div v-for="item in recentRows" :key="item.statsId" class="trace-top-item" @click="handleInsight(item)">
+                <div>
+                  <b>{{ item.statDate }}</b>
+                  <p>成功 {{ item.successCount }} / 失败 {{ item.failCount }}</p>
+                </div>
+                <el-tag size="mini" type="info">{{ item.peakQps }} QPS</el-tag>
+              </div>
+            </div>
+            <el-empty v-else description="暂无统计数据" />
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="trace-panel">
+            <div class="trace-panel-head"><span>智能洞察</span><small>根据负载与失败率给出优化建议</small></div>
+            <div v-if="smartResult.statsId" class="trace-insight-box">
+              <div class="trace-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+              <p>{{ smartResult.stats.statDate }}</p>
+              <ul><li v-for="item in smartResult.findings" :key="item">{{ item }}</li></ul>
+            </div>
+            <el-empty v-else description="请选择一条统计记录进行洞察" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="98px">
       <el-form-item label="开始日期" prop="beginStatDate">
         <el-date-picker clearable v-model="queryParams.beginStatDate" type="date" value-format="yyyy-MM-dd" placeholder="开始日期" />
@@ -33,6 +83,7 @@
       <el-table-column label="峰值QPS" align="center" prop="peakQps" width="90" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-data-analysis" @click="handleInsight(scope.row)" v-hasPermi="['agri:traceQueryStats:query']">洞察</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:traceQueryStats:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:traceQueryStats:remove']">删除</el-button>
         </template>
@@ -72,7 +123,9 @@ import {
   getTraceQueryStats,
   delTraceQueryStats,
   addTraceQueryStats,
-  updateTraceQueryStats
+  updateTraceQueryStats,
+  getTraceQueryStatsDashboard,
+  getTraceQueryStatsInsight
 } from '@/api/agri/traceQueryStats'
 
 export default {
@@ -86,6 +139,8 @@ export default {
       showSearch: true,
       total: 0,
       statsList: [],
+      dashboardData: {},
+      smartResult: {},
       title: '',
       open: false,
       queryParams: {
@@ -102,9 +157,31 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '查询总量', value: summary.totalQueryCount || 0, foot: '统计期内总查询次数' },
+        { key: 'user', label: '独立用户', value: summary.uniqueUserCount || 0, foot: '去重访问用户数' },
+        { key: 'success', label: '成功率', value: this.formatPercent(summary.successRate), foot: '查询成功占比' },
+        { key: 'avg', label: '平均响应', value: this.formatDuration(summary.avgDurationMs), foot: '响应耗时均值' },
+        { key: 'peak', label: '峰值QPS', value: summary.peakQps || 0, foot: '统计期内峰值' },
+        { key: 'fail', label: '失败次数', value: summary.failCount || 0, foot: '查询失败累计' }
+      ]
+    },
+    recentRows() {
+      return this.dashboardData.recentRows || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getTraceQueryStatsDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listTraceQueryStats(this.queryParams).then(response => {
@@ -112,6 +189,14 @@ export default {
         this.total = response.total
         this.loading = false
       })
+    },
+    formatPercent(value) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${number.toFixed(2)}%`
+    },
+    formatDuration(value) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${number.toFixed(0)}ms`
     },
     cancel() {
       this.open = false
@@ -133,10 +218,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -156,6 +243,17 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改溯源查询统计'
+      })
+    },
+    handleInsight(row) {
+      const target = row || this.statsList[0]
+      if (!target || !target.statsId) {
+        this.$modal.msgWarning('请先选择一条溯源统计记录')
+        return
+      }
+      getTraceQueryStatsInsight(target.statsId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('智能洞察已更新')
       })
     },
     submitForm() {
@@ -194,3 +292,90 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.trace-hero {
+  border: 1px solid #dde5ec;
+  background: linear-gradient(135deg, #f6fbfe 0%, #edf5fa 100%);
+}
+
+.trace-hero-head,
+.trace-panel-head,
+.trace-top-item,
+.trace-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trace-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #244a62;
+}
+
+.trace-desc {
+  margin-top: 6px;
+  color: #61798a;
+}
+
+.trace-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trace-kpi-row,
+.trace-overview-row {
+  margin-top: 14px;
+}
+
+.trace-kpi-card,
+.trace-panel {
+  border: 1px solid #dfe8ef;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.trace-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.trace-kpi-card span,
+.trace-panel-head small,
+.trace-kpi-card small,
+.trace-top-item p,
+.trace-insight-box p {
+  color: #627787;
+}
+
+.trace-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #244a62;
+}
+
+.trace-top-item {
+  padding: 8px 0;
+  border-top: 1px solid #eef4f8;
+  cursor: pointer;
+}
+
+.trace-top-item p {
+  margin: 4px 0 0;
+}
+
+.trace-score strong {
+  font-size: 26px;
+  color: #2d6d88;
+}
+
+.trace-insight-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #4f6271;
+}
+</style>

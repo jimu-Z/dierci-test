@@ -8,6 +8,21 @@ export function listThirdApi(query) {
     })
 }
 
+export function getThirdApiDashboard(query) {
+    return request({
+        url: '/agri/thirdApi/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getThirdApiAdvice(accessId) {
+    return request({
+        url: '/agri/thirdApi/smart/advice/' + accessId,
+        method: 'get'
+    })
+}
+
 export function getThirdApi(accessId) {
     return request({
         url: '/agri/thirdApi/' + accessId,

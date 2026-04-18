@@ -51,3 +51,24 @@ export function delBrandTrace(pageId) {
         method: 'delete'
     })
 }
+
+export function getBrandTraceDashboard() {
+    return request({
+        url: '/agri/brandTrace/dashboard',
+        method: 'get'
+    })
+}
+
+export function getBrandTraceOpsDashboard() {
+    return request({
+        url: '/agri/brandTrace/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartInspectBrandTrace(pageId) {
+    return request({
+        url: '/agri/brandTrace/smart/inspect/' + pageId,
+        method: 'get'
+    })
+}

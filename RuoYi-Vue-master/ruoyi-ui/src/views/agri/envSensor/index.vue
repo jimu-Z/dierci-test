@@ -1,5 +1,60 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="env-hero mb16">
+      <div class="env-hero-head">
+        <div>
+          <div class="env-title">环境监测指挥台</div>
+          <div class="env-desc">围绕温度、湿度、CO2 和告警点位做快速巡检，先看态势，再处理明细记录。</div>
+        </div>
+        <div class="env-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-magic-stick" @click="handleDiagnose">智能诊断</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="env-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="env-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="env-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="env-panel">
+            <div class="env-panel-head"><span>异常点位</span><small>优先处理高温、高湿、CO2 偏高记录</small></div>
+            <el-empty v-if="!dashboardAlerts.length" description="暂无告警记录" />
+            <div v-else class="env-alert-list">
+              <div v-for="item in dashboardAlerts" :key="item.recordId" class="env-alert-item" @click="handleDiagnose(item)">
+                <div>
+                  <b>{{ item.deviceCode || '未命名设备' }}</b>
+                  <p>{{ item.plotCode || '-' }} · {{ parseTime(item.collectTime) }}</p>
+                </div>
+                <el-tag size="mini" type="danger">{{ item.severity }}</el-tag>
+              </div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="env-panel">
+            <div class="env-panel-head"><span>智能诊断</span><small>基于最新记录生成可执行建议</small></div>
+            <div v-if="smartResult.recordId" class="env-smart-box">
+              <div class="env-smart-score">
+                <strong>{{ smartResult.riskScore }}</strong>
+                <span>{{ smartResult.riskLevel }}风险</span>
+              </div>
+              <p>{{ smartResult.deviceCode }} / {{ smartResult.plotCode }}</p>
+              <ul>
+                <li v-for="item in smartResult.findings" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <el-empty v-else description="请选择一条记录进行诊断" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="98px">
       <el-form-item label="设备编码" prop="deviceCode">
         <el-input
@@ -206,7 +261,9 @@ import {
   getEnvSensor,
   delEnvSensor,
   addEnvSensor,
-  updateEnvSensor
+  updateEnvSensor,
+  getEnvSensorDashboard,
+  diagnoseEnvSensor
 } from '@/api/agri/envSensor'
 
 export default {
@@ -221,6 +278,8 @@ export default {
       showSearch: true,
       total: 0,
       envSensorList: [],
+      dashboardData: {},
+      smartResult: {},
       title: '',
       open: false,
       queryParams: {
@@ -239,15 +298,54 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '监测总量', value: summary.totalCount || 0, foot: '当前筛选范围内记录数' },
+        { key: 'device', label: '设备数', value: summary.deviceCount || 0, foot: '去重设备编码数量' },
+        { key: 'plot', label: '地块数', value: summary.plotCount || 0, foot: '覆盖的地块范围' },
+        { key: 'alert', label: '告警数', value: summary.alertCount || 0, foot: '需要优先处理的异常点位' },
+        { key: 'temp', label: '平均温度', value: this.formatMetric(summary.avgTemperature, '℃'), foot: '采样均值' },
+        { key: 'hum', label: '平均湿度', value: this.formatMetric(summary.avgHumidity, '%'), foot: '采样均值' },
+        { key: 'co2', label: '平均CO2', value: this.formatMetric(summary.avgCo2, 'ppm'), foot: '采样均值' },
+        { key: 'normal', label: '正常记录', value: summary.normalCount || 0, foot: '状态平稳记录数' }
+      ]
+    },
+    dashboardAlerts() {
+      return this.dashboardData.alerts || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getEnvSensorDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listEnvSensor(this.queryParams).then(response => {
         this.envSensorList = response.rows
         this.total = response.total
         this.loading = false
+      })
+    },
+    formatMetric(value, unit) {
+      const text = value === undefined || value === null || value === '' ? '0.00' : Number(value).toFixed(2)
+      return `${text}${unit}`
+    },
+    handleDiagnose(row) {
+      const target = row || this.envSensorList[0]
+      if (!target || !target.recordId) {
+        this.$modal.msgWarning('请先选择一条环境监测记录')
+        return
+      }
+      diagnoseEnvSensor(target.recordId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('智能诊断已更新')
       })
     },
     cancel() {
@@ -271,10 +369,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -341,3 +441,104 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.env-hero {
+  border: 1px solid #dfe7dd;
+  background: linear-gradient(135deg, #f7fbf7 0%, #eef6ef 100%);
+}
+
+.env-hero-head,
+.env-panel-head,
+.env-alert-item,
+.env-smart-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.env-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #173b2d;
+}
+
+.env-desc {
+  margin-top: 6px;
+  color: #5d6f64;
+}
+
+.env-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.env-kpi-row,
+.env-overview-row {
+  margin-top: 14px;
+}
+
+.env-kpi-card,
+.env-panel {
+  border: 1px solid #e3ece4;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.env-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.env-kpi-card span,
+.env-panel-head small,
+.env-alert-item p,
+.env-smart-box p,
+.env-kpi-card small {
+  color: #6c7d72;
+}
+
+.env-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #173b2d;
+}
+
+.env-panel-head {
+  margin-bottom: 12px;
+}
+
+.env-alert-list {
+  display: grid;
+  gap: 10px;
+}
+
+.env-alert-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fafdf9;
+  cursor: pointer;
+}
+
+.env-alert-item p {
+  margin: 4px 0 0;
+}
+
+.env-smart-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #4b5f55;
+}
+
+.env-smart-score {
+  margin-bottom: 10px;
+}
+
+.env-smart-score strong {
+  font-size: 26px;
+  color: #2c6b48;
+}
+</style>

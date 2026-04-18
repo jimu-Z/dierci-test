@@ -63,6 +63,24 @@ public class AgriHttpIntegrationClient
         return result;
     }
 
+    public YieldInsightResult invokeYieldInsight(String contextJson) throws IOException, InterruptedException
+    {
+        String rawContent = callDeepSeekContent(properties.getAi().getYieldPath(), buildYieldInsightPrompt(contextJson));
+        JSONObject data = parseJsonObject(rawContent);
+
+        YieldInsightResult result = new YieldInsightResult();
+        result.setForecastYieldKg(readDecimal(data, "forecastYieldKg", "predictedYield", "yieldKg"));
+        result.setInsightSummary(readString(data, "insightSummary", "summary", "analysis", "result"));
+        result.setSuggestion(readString(data, "suggestion", "advice", "action"));
+        result.setRiskLevel(readString(data, "riskLevel", "risk"));
+        result.setModelVersion(readString(data, "modelVersion", "version", "model"));
+        result.setRawContent(trimToLength(rawContent, 600));
+        BigDecimal confidenceRate = readDecimal(data, "confidenceRate", "confidence", "score");
+        result.setConfidenceRate(confidenceRate == null ? BigDecimal.ZERO : confidenceRate);
+        result.setSuccess(true);
+        return result;
+    }
+
     public QualityResult invokeQuality(AgriQualityInspectTask task) throws IOException, InterruptedException
     {
         JSONObject data = callDeepSeek(properties.getAi().getQualityPath(), buildQualityPrompt(task));
@@ -101,6 +119,23 @@ public class AgriHttpIntegrationClient
         result.setModelVersion(readString(data, "modelVersion", "version", "model"));
         BigDecimal confidenceRate = readDecimal(data, "confidenceRate", "confidence", "score");
         result.setConfidenceRate(confidenceRate == null ? BigDecimal.ZERO : confidenceRate);
+        result.setSuccess(true);
+        return result;
+    }
+
+    public CarbonFootprintInsightResult invokeCarbonFootprintInsight(String contextJson) throws IOException, InterruptedException
+    {
+        JSONObject data = callDeepSeek(properties.getAi().getCarbonFootprintPath(), buildCarbonFootprintPrompt(contextJson));
+
+        CarbonFootprintInsightResult result = new CarbonFootprintInsightResult();
+        result.setInsightSummary(readString(data, "insightSummary", "summary", "analysis", "result"));
+        result.setRiskLevel(readString(data, "riskLevel", "risk"));
+        result.setSuggestion(readString(data, "suggestion", "advice", "action"));
+        result.setModelVersion(readString(data, "modelVersion", "version", "model"));
+        BigDecimal confidenceRate = readDecimal(data, "confidenceRate", "confidence", "score");
+        result.setConfidenceRate(confidenceRate == null ? BigDecimal.ZERO : confidenceRate);
+        BigDecimal estimatedEmission = readDecimal(data, "estimatedEmission", "carbonEmission", "emission");
+        result.setEstimatedEmission(estimatedEmission == null ? BigDecimal.ZERO : estimatedEmission);
         result.setSuccess(true);
         return result;
     }
@@ -214,6 +249,11 @@ public class AgriHttpIntegrationClient
 
     private JSONObject callDeepSeek(String path, String prompt) throws IOException, InterruptedException
     {
+        return parseJsonObject(callDeepSeekContent(path, prompt));
+    }
+
+    private String callDeepSeekContent(String path, String prompt) throws IOException, InterruptedException
+    {
         AgriIntegrationProperties.Ai ai = properties.getAi();
         if (!ai.isEnabled() && StringUtils.isBlank(ai.getBaseUrl()))
         {
@@ -257,9 +297,10 @@ public class AgriHttpIntegrationClient
             .header("Content-Type", "application/json")
             .header("Accept", "application/json");
 
-        if (StringUtils.isNotBlank(ai.getApiKey()))
+        String apiKey = resolveAiApiKey(ai);
+        if (StringUtils.isNotBlank(apiKey))
         {
-            requestBuilder.header("Authorization", "Bearer " + ai.getApiKey());
+            requestBuilder.header("Authorization", "Bearer " + apiKey);
         }
         else
         {
@@ -284,8 +325,31 @@ public class AgriHttpIntegrationClient
             throw new IllegalStateException("DeepSeek服务返回空响应");
         }
         JSONObject responseJson = JSON.parseObject(response.body());
-        String content = extractMessageContent(responseJson);
-        return parseJsonObject(content);
+        return extractMessageContent(responseJson);
+    }
+
+    private String resolveAiApiKey(AgriIntegrationProperties.Ai ai)
+    {
+        if (StringUtils.isNotBlank(ai.getApiKey()))
+        {
+            return ai.getApiKey().trim();
+        }
+        String envApiKey = System.getenv("AGRI_AI_API_KEY");
+        if (StringUtils.isNotBlank(envApiKey))
+        {
+            return envApiKey.trim();
+        }
+        String sysPropApiKey = System.getProperty("AGRI_AI_API_KEY");
+        if (StringUtils.isNotBlank(sysPropApiKey))
+        {
+            return sysPropApiKey.trim();
+        }
+        String springPropApiKey = System.getProperty("agri.integration.ai.api-key");
+        if (StringUtils.isNotBlank(springPropApiKey))
+        {
+            return springPropApiKey.trim();
+        }
+        return null;
     }
 
     private Map<String, String> buildMessage(String role, String content)
@@ -299,6 +363,29 @@ public class AgriHttpIntegrationClient
     private String buildSystemPrompt()
     {
         return "你是农产品AI接入服务，请严格按用户要求返回JSON对象，不要输出markdown、解释性文字或代码块。";
+    }
+
+    private String buildModelFieldGuide()
+    {
+        return "可用字段字典（供趋势洞察、碳足迹与综合分析复用）："
+            + "环境传感器 agri_env_sensor_record[deviceCode, plotCode, temperature, humidity, co2Value, status, dataSource, collectTime]；"
+            + "农事记录 agri_farm_operation_record[plotCode, operationType, operationContent, operatorName, inputName, inputAmount, inputUnit, operationTime, status]；"
+            + "病虫害识别 agri_pest_identify_task[plotCode, cropName, imageUrl, identifyStatus, identifyResult, confidence, identifyTime, modelVersion, status]；"
+            + "产量预测 agri_yield_forecast_task[plotCode, cropName, season, sowDate, areaMu, forecastYieldKg, modelVersion, forecastStatus, forecastTime, status]；"
+            + "市场预测 agri_market_forecast[marketArea, productCode, productName, periodStart, periodEnd, historicalSalesKg, forecastSalesKg, forecastPrice, confidenceRate, modelVersion, forecastStatus, forecastTime, status]；"
+            + "设备状态 agri_device_status_monitor[deviceCode, deviceName, deviceType, onlineStatus, batteryLevel, signalStrength, temperature, humidity, lastReportTime, warningLevel, status]；"
+            + "碳足迹模型 agri_carbon_footprint_model[modelCode, modelName, productType, boundaryScope, emissionFactor, carbonEmission, calcStatus, calcTime, verifier, status]；"
+            + "产销趋势 agri_output_sales_trend[statDate, outputValue, salesValue, targetOutput, targetSales, outputMomRate, salesMomRate, status]；"
+            + "质量检测 agri_quality_inspect_task[processBatchNo, sampleCode, imageUrl, inspectStatus, inspectResult, qualityGrade, defectRate, inspectTime, modelVersion, status]；"
+            + "质量报告 agri_quality_report[reportNo, inspectId, processBatchNo, qualityGrade, defectRate, reportSummary, reportStatus, reportTime, status]；"
+            + "物流轨迹 agri_logistics_track[traceCode, orderNo, productBatchNo, vehicleNo, driverName, startLocation, currentLocation, targetLocation, trackStatus, eventDesc, eventTime, temperature, humidity, longitude, latitude, status]；"
+            + "物流温湿度 agri_logistics_temp_humidity[traceCode, orderNo, deviceCode, collectLocation, temperature, humidity, tempUpperLimit, tempLowerLimit, humidityUpperLimit, humidityLowerLimit, alertFlag, alertMessage, collectTime, status]；"
+            + "物流预警 agri_logistics_warning[traceCode, orderNo, warningType, warningLevel, warningStatus, sourceRecordId, warningTitle, warningContent, warningTime, handler, handleTime, handleRemark, status]；"
+            + "风控指标 agri_finance_risk_metric[indicatorCode, indicatorName, riskDimension, riskScore, thresholdValue, riskLevel, evaluateStatus, evaluateTime, evaluator, status]；"
+            + "供应链合约 agri_supply_chain_contract[contractNo, contractName, financeSubject, financeAmount, interestRate, startDate, endDate, contractStatus, riskLevel, status]；"
+            + "存证校验 agri_data_attestation_verify[attestationNo, batchNo, dataType, originHash, chainHash, verifyStatus, verifyTime, verifyByUser, status]。"
+            + "其余 agri_* 表中的业务编号、状态、时间、路线、哈希、告警与说明类字段也可作为辅助上下文；"
+            + "系统/权限/菜单/审计/定时任务类表仅用于流程回溯，不建议作为核心特征。";
     }
 
     private String buildPestPrompt(AgriPestIdentifyTask task)
@@ -321,6 +408,17 @@ public class AgriHttpIntegrationClient
             ", areaMu=" + nullSafe(task.getAreaMu()) +
             ", sowDate=" + nullSafe(task.getSowDate()) +
             "。forecastYieldKg 为预测产量，单位千克，modelVersion 给出模型版本标识。";
+    }
+
+    private String buildYieldInsightPrompt(String contextJson)
+    {
+        String safeContext = StringUtils.defaultIfBlank(contextJson, "{}");
+        return "你将收到产量预测任务及其关联数据（地块、传感器、病虫害、农事与历史预测），请输出智能预测和建议。"
+            + "请严格返回JSON对象，格式必须为："
+            + "{\"forecastYieldKg\":0.0,\"insightSummary\":\"...\",\"suggestion\":\"...\",\"riskLevel\":\"低|中|高\",\"confidenceRate\":0.0,\"modelVersion\":\"...\"}。"
+            + "其中 insightSummary 为中文综合结论，suggestion 给出可执行建议，confidenceRate 取值0到1。"
+            + buildModelFieldGuide()
+            + "输入数据如下：" + safeContext;
     }
 
     private String buildQualityPrompt(AgriQualityInspectTask task)
@@ -353,6 +451,18 @@ public class AgriHttpIntegrationClient
             + "请严格返回JSON对象，格式必须为："
             + "{\"insightSummary\":\"...\",\"riskLevel\":\"低|中|高\",\"suggestion\":\"...\",\"confidenceRate\":0.0,\"modelVersion\":\"...\"}。"
             + "其中 insightSummary 用中文总结未来趋势与关键驱动因子，suggestion 给出2-3条可执行建议，confidenceRate 取值0到1。"
+            + buildModelFieldGuide()
+            + "输入数据如下：" + safeContext;
+    }
+
+    private String buildCarbonFootprintPrompt(String contextJson)
+    {
+        String safeContext = StringUtils.defaultIfBlank(contextJson, "{}");
+        return "你将收到农业碳足迹核算模型数据，请输出模型诊断与优化建议。"
+            + "请严格返回JSON对象，格式必须为："
+            + "{\"insightSummary\":\"...\",\"riskLevel\":\"低|中|高\",\"suggestion\":\"...\",\"estimatedEmission\":0.0,\"confidenceRate\":0.0,\"modelVersion\":\"...\"}。"
+            + "其中 insightSummary 用中文总结当前模型碳排放特征与异常点，suggestion 给出2-3条可执行的减排/复核建议，estimatedEmission 代表模型推断的碳排放估算值，confidenceRate 取值0到1。"
+            + buildModelFieldGuide()
             + "输入数据如下：" + safeContext;
     }
 
@@ -805,6 +915,105 @@ public class AgriHttpIntegrationClient
         }
     }
 
+    public static class YieldInsightResult
+    {
+        private boolean success;
+
+        private BigDecimal forecastYieldKg;
+
+        private String insightSummary;
+
+        private String suggestion;
+
+        private String riskLevel;
+
+        private BigDecimal confidenceRate;
+
+        private String modelVersion;
+
+        private String rawContent;
+
+        public boolean isSuccess()
+        {
+            return success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            this.success = success;
+        }
+
+        public BigDecimal getForecastYieldKg()
+        {
+            return forecastYieldKg;
+        }
+
+        public void setForecastYieldKg(BigDecimal forecastYieldKg)
+        {
+            this.forecastYieldKg = forecastYieldKg;
+        }
+
+        public String getInsightSummary()
+        {
+            return insightSummary;
+        }
+
+        public void setInsightSummary(String insightSummary)
+        {
+            this.insightSummary = insightSummary;
+        }
+
+        public String getSuggestion()
+        {
+            return suggestion;
+        }
+
+        public void setSuggestion(String suggestion)
+        {
+            this.suggestion = suggestion;
+        }
+
+        public String getRiskLevel()
+        {
+            return riskLevel;
+        }
+
+        public void setRiskLevel(String riskLevel)
+        {
+            this.riskLevel = riskLevel;
+        }
+
+        public BigDecimal getConfidenceRate()
+        {
+            return confidenceRate;
+        }
+
+        public void setConfidenceRate(BigDecimal confidenceRate)
+        {
+            this.confidenceRate = confidenceRate;
+        }
+
+        public String getModelVersion()
+        {
+            return modelVersion;
+        }
+
+        public void setModelVersion(String modelVersion)
+        {
+            this.modelVersion = modelVersion;
+        }
+
+        public String getRawContent()
+        {
+            return rawContent;
+        }
+
+        public void setRawContent(String rawContent)
+        {
+            this.rawContent = rawContent;
+        }
+    }
+
     public static class QualityResult
     {
         private boolean success;
@@ -1136,6 +1345,93 @@ public class AgriHttpIntegrationClient
         public void setSuggestion(String suggestion)
         {
             this.suggestion = suggestion;
+        }
+
+        public BigDecimal getConfidenceRate()
+        {
+            return confidenceRate;
+        }
+
+        public void setConfidenceRate(BigDecimal confidenceRate)
+        {
+            this.confidenceRate = confidenceRate;
+        }
+
+        public String getModelVersion()
+        {
+            return modelVersion;
+        }
+
+        public void setModelVersion(String modelVersion)
+        {
+            this.modelVersion = modelVersion;
+        }
+    }
+
+    public static class CarbonFootprintInsightResult
+    {
+        private boolean success;
+
+        private String insightSummary;
+
+        private String riskLevel;
+
+        private String suggestion;
+
+        private BigDecimal estimatedEmission;
+
+        private BigDecimal confidenceRate;
+
+        private String modelVersion;
+
+        public boolean isSuccess()
+        {
+            return success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            this.success = success;
+        }
+
+        public String getInsightSummary()
+        {
+            return insightSummary;
+        }
+
+        public void setInsightSummary(String insightSummary)
+        {
+            this.insightSummary = insightSummary;
+        }
+
+        public String getRiskLevel()
+        {
+            return riskLevel;
+        }
+
+        public void setRiskLevel(String riskLevel)
+        {
+            this.riskLevel = riskLevel;
+        }
+
+        public String getSuggestion()
+        {
+            return suggestion;
+        }
+
+        public void setSuggestion(String suggestion)
+        {
+            this.suggestion = suggestion;
+        }
+
+        public BigDecimal getEstimatedEmission()
+        {
+            return estimatedEmission;
+        }
+
+        public void setEstimatedEmission(BigDecimal estimatedEmission)
+        {
+            this.estimatedEmission = estimatedEmission;
         }
 
         public BigDecimal getConfidenceRate()

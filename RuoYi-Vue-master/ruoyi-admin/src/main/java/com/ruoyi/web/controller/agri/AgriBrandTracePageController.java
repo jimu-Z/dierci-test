@@ -10,7 +10,12 @@ import com.ruoyi.system.domain.AgriBrandTracePage;
 import com.ruoyi.system.service.IAgriBrandTracePageService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,6 +46,186 @@ public class AgriBrandTracePageController extends BaseController
         startPage();
         List<AgriBrandTracePage> list = agriBrandTracePageService.selectAgriBrandTracePageList(agriBrandTracePage);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:brandTrace:list')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard()
+    {
+        List<AgriBrandTracePage> list = agriBrandTracePageService.selectAgriBrandTracePageList(new AgriBrandTracePage());
+        int total = list.size();
+        int published = 0;
+        int hasCover = 0;
+        int hasQr = 0;
+        for (AgriBrandTracePage item : list)
+        {
+            if ("1".equals(item.getPublishStatus()))
+            {
+                published++;
+            }
+            if (notBlank(item.getCoverImageUrl()))
+            {
+                hasCover++;
+            }
+            if (notBlank(item.getQrCodeUrl()))
+            {
+                hasQr++;
+            }
+        }
+
+        List<AgriBrandTracePage> draftTop = list.stream()
+            .filter(x -> !"1".equals(x.getPublishStatus()))
+            .sorted(Comparator.comparing(AgriBrandTracePage::getUpdateTime,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(6)
+            .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("published", published);
+        kpi.put("publishRate", total == 0 ? 0 : (published * 100.0 / total));
+        kpi.put("coverReady", hasCover);
+        kpi.put("qrReady", hasQr);
+        result.put("kpi", kpi);
+        result.put("draftTop", draftTop);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:brandTrace:list')")
+    @GetMapping("/dashboard/ops")
+    public AjaxResult dashboardOps()
+    {
+        List<AgriBrandTracePage> list = agriBrandTracePageService.selectAgriBrandTracePageList(new AgriBrandTracePage());
+        int total = list.size();
+        int published = 0;
+        int draft = 0;
+        int withCover = 0;
+        int withQr = 0;
+        int excellent = 0;
+        int review = 0;
+        int poor = 0;
+
+        for (AgriBrandTracePage item : list)
+        {
+            if ("1".equals(item.getPublishStatus()))
+            {
+                published++;
+            }
+            else
+            {
+                draft++;
+            }
+            if (notBlank(item.getCoverImageUrl()))
+            {
+                withCover++;
+            }
+            if (notBlank(item.getQrCodeUrl()))
+            {
+                withQr++;
+            }
+
+            int score = calcQualityScore(item);
+            if (score >= 85)
+            {
+                excellent++;
+            }
+            else if (score >= 65)
+            {
+                review++;
+            }
+            else
+            {
+                poor++;
+            }
+        }
+
+        List<AgriBrandTracePage> pendingPages = list.stream()
+            .filter(x -> !"1".equals(x.getPublishStatus()))
+            .sorted(Comparator.comparing(this::scoreForSort).reversed()
+                .thenComparing(AgriBrandTracePage::getUpdateTime, Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(8)
+            .collect(Collectors.toList());
+
+        List<AgriBrandTracePage> latestPublished = list.stream()
+            .filter(x -> "1".equals(x.getPublishStatus()))
+            .sorted(Comparator.comparing(AgriBrandTracePage::getUpdateTime, Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(6)
+            .collect(Collectors.toList());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("published", published);
+        kpi.put("draft", draft);
+        kpi.put("publishRate", total == 0 ? 0 : (published * 100.0 / total));
+        kpi.put("coverRate", total == 0 ? 0 : (withCover * 100.0 / total));
+        kpi.put("qrRate", total == 0 ? 0 : (withQr * 100.0 / total));
+        result.put("kpi", kpi);
+
+        Map<String, Object> publishFunnel = new LinkedHashMap<>();
+        publishFunnel.put("created", total);
+        publishFunnel.put("contentReady", Math.min(withCover, withQr));
+        publishFunnel.put("published", published);
+        result.put("publishFunnel", publishFunnel);
+
+        Map<String, Object> qualityBucket = new LinkedHashMap<>();
+        qualityBucket.put("excellent", excellent);
+        qualityBucket.put("review", review);
+        qualityBucket.put("poor", poor);
+        result.put("qualityBucket", qualityBucket);
+
+        result.put("pendingPages", pendingPages);
+        result.put("latestPublished", latestPublished);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:brandTrace:edit')")
+    @GetMapping("/smart/inspect/{pageId}")
+    public AjaxResult smartInspect(@PathVariable("pageId") Long pageId)
+    {
+        AgriBrandTracePage page = agriBrandTracePageService.selectAgriBrandTracePageByPageId(pageId);
+        if (page == null)
+        {
+            return error("页面不存在");
+        }
+
+        int score = 40;
+        List<String> missing = new ArrayList<>();
+        score += scorePart(page.getBrandName(), 10, missing, "品牌名称");
+        score += scorePart(page.getProductName(), 10, missing, "产品名称");
+        score += scorePart(page.getOriginPlace(), 10, missing, "产地");
+        score += scorePart(page.getCoverImageUrl(), 8, missing, "封面图");
+        score += scorePart(page.getQrCodeUrl(), 8, missing, "二维码地址");
+        score += scorePart(page.getBrandStory(), 8, missing, "品牌故事");
+        score += "1".equals(page.getPublishStatus()) ? 6 : 0;
+
+        String readiness = score >= 85 ? "ready" : (score >= 65 ? "review" : "draft");
+        List<String> suggestions = new ArrayList<>();
+        if (!missing.isEmpty())
+        {
+            suggestions.add("请优先补齐字段: " + String.join("、", missing));
+        }
+        if (!"1".equals(page.getPublishStatus()))
+        {
+            suggestions.add("页面尚未发布，建议完成审核后执行发布操作");
+        }
+        if (suggestions.isEmpty())
+        {
+            suggestions.add("溯源信息完整，可进入渠道投放与扫码活动阶段");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("pageId", page.getPageId());
+        result.put("traceCode", page.getTraceCode());
+        result.put("algorithm", "trace-page-quality-v1");
+        result.put("contentScore", score);
+        result.put("readiness", readiness);
+        result.put("missing", missing);
+        result.put("suggestions", suggestions);
+        result.put("summary", "完成页面内容完整性与可发布性检测，当前状态为" + readiness + "。");
+        return success(result);
     }
 
     @PreAuthorize("@ss.hasPermi('agri:brandTrace:export')")
@@ -118,5 +303,38 @@ public class AgriBrandTracePageController extends BaseController
     public AjaxResult remove(@PathVariable Long[] pageIds)
     {
         return toAjax(agriBrandTracePageService.deleteAgriBrandTracePageByPageIds(pageIds));
+    }
+
+    private boolean notBlank(String value)
+    {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private int scorePart(String value, int points, List<String> missing, String fieldName)
+    {
+        if (notBlank(value))
+        {
+            return points;
+        }
+        missing.add(fieldName);
+        return 0;
+    }
+
+    private int calcQualityScore(AgriBrandTracePage page)
+    {
+        int score = 40;
+        score += notBlank(page.getBrandName()) ? 10 : 0;
+        score += notBlank(page.getProductName()) ? 10 : 0;
+        score += notBlank(page.getOriginPlace()) ? 10 : 0;
+        score += notBlank(page.getCoverImageUrl()) ? 8 : 0;
+        score += notBlank(page.getQrCodeUrl()) ? 8 : 0;
+        score += notBlank(page.getBrandStory()) ? 8 : 0;
+        score += "1".equals(page.getPublishStatus()) ? 6 : 0;
+        return score;
+    }
+
+    private Integer scoreForSort(AgriBrandTracePage page)
+    {
+        return calcQualityScore(page);
     }
 }

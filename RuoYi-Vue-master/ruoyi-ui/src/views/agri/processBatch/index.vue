@@ -1,5 +1,59 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="batch-hero mb16">
+      <div class="batch-hero-head">
+        <div>
+          <div class="batch-title">加工批次追踪台</div>
+          <div class="batch-desc">串起种植批次、加工批次、产品编码和出料重量，重点查看未完成环节与异常批次。</div>
+        </div>
+        <div class="batch-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-s-check" @click="handleCheck">批次核验</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="batch-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="batch-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="batch-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="batch-panel">
+            <div class="batch-panel-head"><span>流转台账</span><small>关注最近加工状态变化</small></div>
+            <el-steps :active="batchStepActive" finish-status="success" simple class="batch-steps">
+              <el-step title="待加工" :description="String(pendingCount) + ' 条'" />
+              <el-step title="加工中" :description="String(processingCount) + ' 条'" />
+              <el-step title="已完成" :description="String(finishedCount) + ' 条'" />
+            </el-steps>
+            <div class="batch-recent" v-if="recentRows.length">
+              <div v-for="item in recentRows" :key="item.linkId" class="batch-recent-item" @click="handleCheck(item)">
+                <div>
+                  <b>{{ item.processBatchNo }}</b>
+                  <p>{{ item.plantingBatchNo }} · {{ item.productCode || '-' }}</p>
+                </div>
+                <el-tag size="mini">{{ formatProcessStatus(item.processStatus) }}</el-tag>
+              </div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="batch-panel">
+            <div class="batch-panel-head"><span>智能核验</span><small>根据当前批次生成风险提示</small></div>
+            <div v-if="smartResult.linkId" class="batch-check-box">
+              <div class="batch-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+              <p>{{ smartResult.statusText }}</p>
+              <ul><li v-for="item in smartResult.suggestions" :key="item">{{ item }}</li></ul>
+            </div>
+            <el-empty v-else description="请选择一条批次记录进行核验" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="种植批次号" prop="plantingBatchNo">
         <el-input v-model="queryParams.plantingBatchNo" placeholder="请输入种植批次号" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
@@ -41,6 +95,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-s-check" @click="handleCheck(scope.row)" v-hasPermi="['agri:processBatch:query']">核验</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:processBatch:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:processBatch:remove']">删除</el-button>
         </template>
@@ -79,7 +134,9 @@ import {
   getProcessBatch,
   addProcessBatch,
   updateProcessBatch,
-  delProcessBatch
+  delProcessBatch,
+  getProcessBatchDashboard,
+  getProcessBatchCheck
 } from '@/api/agri/processBatch'
 
 export default {
@@ -93,6 +150,9 @@ export default {
       showSearch: true,
       total: 0,
       linkList: [],
+      dashboardData: {},
+      smartResult: {},
+      batchFocus: {},
       title: '',
       open: false,
       queryParams: {
@@ -117,9 +177,43 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '批次总数', value: summary.totalCount || 0, foot: '当前筛选范围内记录' },
+        { key: 'planting', label: '种植批次', value: summary.plantingBatchCount || 0, foot: '去重种植批次号' },
+        { key: 'process', label: '加工批次', value: summary.processBatchCount || 0, foot: '去重加工批次号' },
+        { key: 'weight', label: '累计重量', value: this.formatWeight(summary.totalWeight), foot: '加工出料重量汇总' }
+      ]
+    },
+    recentRows() {
+      return this.dashboardData.recentRows || []
+    },
+    pendingCount() {
+      return (this.dashboardData.summary && this.dashboardData.summary.pendingCount) || 0
+    },
+    processingCount() {
+      return (this.dashboardData.summary && this.dashboardData.summary.processingCount) || 0
+    },
+    finishedCount() {
+      return (this.dashboardData.summary && this.dashboardData.summary.finishedCount) || 0
+    },
+    batchStepActive() {
+      if (this.smartResult.statusText === '已完成') return 2
+      if (this.smartResult.statusText === '加工中') return 1
+      return 0
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getProcessBatchDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listProcessBatch(this.queryParams).then(response => {
@@ -127,6 +221,10 @@ export default {
         this.total = response.total
         this.loading = false
       })
+    },
+    formatWeight(value) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${number.toFixed(2)}kg`
     },
     formatProcessStatus(value) {
       const option = this.processStatusOptions.find(item => item.value === value)
@@ -152,10 +250,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -175,6 +275,18 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改加工批次关联'
+      })
+    },
+    handleCheck(row) {
+      const target = row || this.linkList[0]
+      if (!target || !target.linkId) {
+        this.$modal.msgWarning('请先选择一条加工批次')
+        return
+      }
+      this.batchFocus = target
+      getProcessBatchCheck(target.linkId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('批次核验已更新')
       })
     },
     submitForm() {
@@ -222,3 +334,94 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.batch-hero {
+  border: 1px solid #dbe6ec;
+  background: linear-gradient(135deg, #f7fbfd 0%, #eef5fa 100%);
+}
+
+.batch-hero-head,
+.batch-panel-head,
+.batch-recent-item,
+.batch-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f4461;
+}
+
+.batch-desc {
+  margin-top: 6px;
+  color: #5d7487;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.batch-kpi-row,
+.batch-overview-row {
+  margin-top: 14px;
+}
+
+.batch-kpi-card,
+.batch-panel {
+  border: 1px solid #dfeaf1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.batch-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.batch-kpi-card span,
+.batch-panel-head small,
+.batch-kpi-card small,
+.batch-recent-item p,
+.batch-check-box p {
+  color: #637b8f;
+}
+
+.batch-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #1f4461;
+}
+
+.batch-steps {
+  margin-bottom: 14px;
+}
+
+.batch-recent-item {
+  padding: 8px 0;
+  border-top: 1px solid #edf2f6;
+  cursor: pointer;
+}
+
+.batch-recent-item p {
+  margin: 4px 0 0;
+}
+
+.batch-score strong {
+  font-size: 26px;
+  color: #2c6b88;
+}
+
+.batch-check-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #4e6679;
+}
+</style>

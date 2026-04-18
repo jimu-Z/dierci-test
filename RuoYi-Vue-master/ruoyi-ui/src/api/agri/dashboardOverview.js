@@ -15,6 +15,20 @@ export function getDashboardOverview(overviewId) {
     })
 }
 
+export function getDashboardOverviewDashboard() {
+    return request({
+        url: '/agri/dashboardOverview/dashboard',
+        method: 'get'
+    })
+}
+
+export function smartInsightDashboardOverview(overviewId) {
+    return request({
+        url: '/agri/dashboardOverview/smart/insight/' + overviewId,
+        method: 'get'
+    })
+}
+
 export function addDashboardOverview(data) {
     return request({
         url: '/agri/dashboardOverview',

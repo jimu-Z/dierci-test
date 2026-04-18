@@ -41,6 +41,20 @@ public class AgriWarningSummaryController extends BaseController
         return getDataTable(agriWarningSummaryService.selectAgriWarningSummaryList(agriWarningSummary));
     }
 
+    @PreAuthorize("@ss.hasPermi('agri:warningSummary:list')")
+    @GetMapping("/dashboard/overview")
+    public AjaxResult dashboardOverview(AgriWarningSummary agriWarningSummary)
+    {
+        return success(agriWarningSummaryService.selectAgriWarningSummaryDashboard(agriWarningSummary));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:warningSummary:list')")
+    @GetMapping("/dashboard/alerts")
+    public AjaxResult dashboardAlerts(AgriWarningSummary agriWarningSummary)
+    {
+        return success(agriWarningSummaryService.selectAgriWarningSummaryAlerts(agriWarningSummary));
+    }
+
     @PreAuthorize("@ss.hasPermi('agri:warningSummary:export')")
     @Log(title = "预警信息汇总", businessType = BusinessType.EXPORT)
     @PostMapping("/export")

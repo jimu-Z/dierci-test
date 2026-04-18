@@ -44,3 +44,24 @@ export function delDeviceAccess(nodeId) {
         method: 'delete'
     })
 }
+
+export function getDeviceAccessDashboard() {
+    return request({
+        url: '/agri/deviceAccess/dashboard',
+        method: 'get'
+    })
+}
+
+export function getDeviceAccessDashboardOps() {
+    return request({
+        url: '/agri/deviceAccess/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartDiagnoseDeviceAccess(nodeId) {
+    return request({
+        url: '/agri/deviceAccess/smart/diagnose/' + nodeId,
+        method: 'get'
+    })
+}

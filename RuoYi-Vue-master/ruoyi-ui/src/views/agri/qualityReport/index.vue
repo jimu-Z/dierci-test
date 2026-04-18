@@ -1,5 +1,55 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="report-hero mb16">
+      <div class="report-hero-head">
+        <div>
+          <div class="report-title">质检报告审阅台</div>
+          <div class="report-desc">围绕报告生成、缺陷率、等级与归档状态做人工复核，优先处理高风险报告。</div>
+        </div>
+        <div class="report-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-view" @click="handleReview">智能审阅</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="report-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="report-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="report-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="report-panel">
+            <div class="report-panel-head"><span>高风险报告</span><small>缺陷率偏高或待生成项优先处理</small></div>
+            <div class="report-risk-list" v-if="highRiskRows.length">
+              <div v-for="item in highRiskRows" :key="item.reportId" class="report-risk-item" @click="handleReview(item)">
+                <div>
+                  <b>{{ item.reportNo }}</b>
+                  <p>{{ item.processBatchNo || '-' }} · {{ item.qualityGrade || '未分级' }}</p>
+                </div>
+                <el-tag size="mini" type="danger">{{ item.defectRate }}</el-tag>
+              </div>
+            </div>
+            <el-empty v-else description="暂无高风险报告" />
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="report-panel">
+            <div class="report-panel-head"><span>智能审阅</span><small>根据当前报告生成复核意见</small></div>
+            <div v-if="smartResult.reportId" class="report-review-box">
+              <div class="report-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+              <p>{{ smartResult.report.reportNo }}</p>
+              <ul><li v-for="item in smartResult.findings" :key="item">{{ item }}</li></ul>
+            </div>
+            <el-empty v-else description="请选择一条报告进行审阅" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="报告编号" prop="reportNo">
         <el-input v-model="queryParams.reportNo" placeholder="请输入报告编号" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
@@ -43,6 +93,7 @@
       <el-table-column label="摘要" prop="reportSummary" align="center" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleReview(scope.row)" v-hasPermi="['agri:qualityReport:query']">审阅</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:qualityReport:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:qualityReport:remove']">删除</el-button>
         </template>
@@ -83,7 +134,9 @@ import {
   addQualityReport,
   updateQualityReport,
   generateQualityReport,
-  delQualityReport
+  delQualityReport,
+  getQualityReportDashboard,
+  getQualityReportReview
 } from '@/api/agri/qualityReport'
 
 export default {
@@ -97,6 +150,8 @@ export default {
       showSearch: true,
       total: 0,
       reportList: [],
+      dashboardData: {},
+      smartResult: {},
       title: '',
       open: false,
       queryParams: {
@@ -119,9 +174,31 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '报告总数', value: summary.totalCount || 0, foot: '当前筛选范围内记录' },
+        { key: 'batch', label: '批次数', value: summary.batchCount || 0, foot: '去重加工批次' },
+        { key: 'generated', label: '已生成', value: summary.generatedCount || 0, foot: '状态为已生成的报告' },
+        { key: 'draft', label: '草稿数', value: summary.draftCount || 0, foot: '待确认报告' },
+        { key: 'defect', label: '平均缺陷率', value: this.formatRate(summary.avgDefectRate), foot: '均值指标' },
+        { key: 'risk', label: '高风险数', value: summary.highRiskCount || 0, foot: '缺陷率偏高项' }
+      ]
+    },
+    highRiskRows() {
+      return this.dashboardData.highRiskRows || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getQualityReportDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listQualityReport(this.queryParams).then(response => {
@@ -129,6 +206,10 @@ export default {
         this.total = response.total
         this.loading = false
       })
+    },
+    formatRate(value) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${(number * 100).toFixed(2)}%`
     },
     formatReportStatus(value) {
       const option = this.reportStatusOptions.find(item => item.value === value)
@@ -156,10 +237,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -179,6 +262,17 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改质检报告'
+      })
+    },
+    handleReview(row) {
+      const target = row || this.reportList[0]
+      if (!target || !target.reportId) {
+        this.$modal.msgWarning('请先选择一条质检报告')
+        return
+      }
+      getQualityReportReview(target.reportId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('智能审阅已更新')
       })
     },
     handleGenerate() {
@@ -241,3 +335,90 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.report-hero {
+  border: 1px solid #e9e1d7;
+  background: linear-gradient(135deg, #fffaf6 0%, #f7efea 100%);
+}
+
+.report-hero-head,
+.report-panel-head,
+.report-risk-item,
+.report-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #7b3d2a;
+}
+
+.report-desc {
+  margin-top: 6px;
+  color: #8b6c5d;
+}
+
+.report-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.report-kpi-row,
+.report-overview-row {
+  margin-top: 14px;
+}
+
+.report-kpi-card,
+.report-panel {
+  border: 1px solid #ecdcd3;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.report-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.report-kpi-card span,
+.report-panel-head small,
+.report-kpi-card small,
+.report-risk-item p,
+.report-review-box p {
+  color: #8f776b;
+}
+
+.report-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #7b3d2a;
+}
+
+.report-risk-item {
+  padding: 8px 0;
+  border-top: 1px solid #f3eae6;
+  cursor: pointer;
+}
+
+.report-risk-item p {
+  margin: 4px 0 0;
+}
+
+.report-score strong {
+  font-size: 26px;
+  color: #b04f34;
+}
+
+.report-review-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #6f5649;
+}
+</style>

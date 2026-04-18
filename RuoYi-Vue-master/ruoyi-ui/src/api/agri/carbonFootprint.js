@@ -37,3 +37,18 @@ export function delCarbonFootprint(modelId) {
         method: 'delete'
     })
 }
+
+export function getCarbonFootprintDashboard(query) {
+    return request({
+        url: '/agri/carbonFootprint/dashboard/overview',
+        method: 'get',
+        params: query
+    })
+}
+
+export function analyzeCarbonFootprint(modelId) {
+    return request({
+        url: '/agri/carbonFootprint/smart/analyze/' + modelId,
+        method: 'get'
+    })
+}

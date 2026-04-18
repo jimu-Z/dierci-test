@@ -44,3 +44,17 @@ export function delUserAccess(grantId) {
         method: 'delete'
     })
 }
+
+export function getUserAccessDashboard() {
+    return request({
+        url: '/agri/userAccess/dashboard',
+        method: 'get'
+    })
+}
+
+export function smartRecommendUserAccess(grantId) {
+    return request({
+        url: '/agri/userAccess/smart/recommend/' + grantId,
+        method: 'get'
+    })
+}

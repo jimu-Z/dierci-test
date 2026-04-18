@@ -13,7 +13,11 @@ import com.ruoyi.system.service.IAgriLogisticsTempHumidityService;
 import com.ruoyi.system.service.IAgriLogisticsWarningService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,6 +51,25 @@ public class AgriLogisticsWarningController extends BaseController
         startPage();
         List<AgriLogisticsWarning> list = agriLogisticsWarningService.selectAgriLogisticsWarningList(agriLogisticsWarning);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:logisticsWarning:query')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard(AgriLogisticsWarning agriLogisticsWarning)
+    {
+        return success(buildDashboard(agriLogisticsWarning));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:logisticsWarning:query')")
+    @GetMapping("/smart/triage/{warningId}")
+    public AjaxResult triage(@PathVariable("warningId") Long warningId)
+    {
+        AgriLogisticsWarning warning = agriLogisticsWarningService.selectAgriLogisticsWarningByWarningId(warningId);
+        if (warning == null)
+        {
+            return error("预警记录不存在");
+        }
+        return success(buildTriage(warning));
     }
 
     @PreAuthorize("@ss.hasPermi('agri:logisticsWarning:export')")
@@ -125,5 +148,114 @@ public class AgriLogisticsWarningController extends BaseController
     public AjaxResult remove(@PathVariable Long[] warningIds)
     {
         return toAjax(agriLogisticsWarningService.deleteAgriLogisticsWarningByWarningIds(warningIds));
+    }
+
+    private Map<String, Object> buildDashboard(AgriLogisticsWarning query)
+    {
+        List<AgriLogisticsWarning> warnings = agriLogisticsWarningService.selectAgriLogisticsWarningList(query);
+        int pendingCount = 0;
+        int processingCount = 0;
+        int closedCount = 0;
+        int urgentCount = 0;
+        List<AgriLogisticsWarning> sorted = new ArrayList<>(warnings);
+        sorted.sort(Comparator.comparing(AgriLogisticsWarning::getWarningTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+        List<Map<String, Object>> recentRows = new ArrayList<>();
+        for (AgriLogisticsWarning warning : warnings)
+        {
+            if (warning == null)
+            {
+                continue;
+            }
+            if ("0".equals(warning.getWarningStatus()))
+            {
+                pendingCount++;
+            }
+            else if ("1".equals(warning.getWarningStatus()))
+            {
+                processingCount++;
+            }
+            else
+            {
+                closedCount++;
+            }
+            if ("3".equals(warning.getWarningLevel()))
+            {
+                urgentCount++;
+            }
+        }
+
+        for (AgriLogisticsWarning warning : sorted)
+        {
+            if (recentRows.size() >= 8)
+            {
+                break;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("warningId", warning.getWarningId());
+            row.put("traceCode", warning.getTraceCode());
+            row.put("warningType", warning.getWarningType());
+            row.put("warningLevel", warning.getWarningLevel());
+            row.put("warningStatus", warning.getWarningStatus());
+            row.put("warningTitle", warning.getWarningTitle());
+            row.put("warningContent", warning.getWarningContent());
+            row.put("warningTime", warning.getWarningTime());
+            recentRows.add(row);
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("totalCount", warnings.size());
+        summary.put("pendingCount", pendingCount);
+        summary.put("processingCount", processingCount);
+        summary.put("closedCount", closedCount);
+        summary.put("urgentCount", urgentCount);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("summary", summary);
+        result.put("recentRows", recentRows);
+        return result;
+    }
+
+    private Map<String, Object> buildTriage(AgriLogisticsWarning warning)
+    {
+        int score = 100;
+        List<String> suggestions = new ArrayList<>();
+        if ("3".equals(warning.getWarningLevel()))
+        {
+            suggestions.add("紧急预警，建议立即电话通知承运人与调度人员");
+            score -= 35;
+        }
+        else if ("2".equals(warning.getWarningLevel()))
+        {
+            suggestions.add("严重预警，建议优先核查运单轨迹和温湿度记录");
+            score -= 20;
+        }
+        if ("0".equals(warning.getWarningStatus()))
+        {
+            suggestions.add("当前仍待处理，建议尽快分派处理人并设置时限");
+            score -= 15;
+        }
+        if (warning.getWarningContent() != null && warning.getWarningContent().contains("温湿度"))
+        {
+            suggestions.add("该预警源自温湿度异常，建议联动查看对应监控记录");
+            score -= 10;
+        }
+        if (warning.getHandler() == null || warning.getHandler().trim().isEmpty())
+        {
+            suggestions.add("尚未指定处理人，建议补齐责任人分配");
+            score -= 10;
+        }
+        if (suggestions.isEmpty())
+        {
+            suggestions.add("当前预警已进入稳定处置阶段，可继续保持常规跟踪");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("warningId", warning.getWarningId());
+        result.put("riskScore", Math.max(0, score));
+        result.put("riskLevel", score >= 85 ? "低" : score >= 70 ? "中" : "高");
+        result.put("suggestions", suggestions);
+        result.put("warning", warning);
+        return result;
     }
 }

@@ -41,6 +41,20 @@ public class AgriDeviceStatusMonitorController extends BaseController
         return getDataTable(agriDeviceStatusMonitorService.selectAgriDeviceStatusMonitorList(agriDeviceStatusMonitor));
     }
 
+    @PreAuthorize("@ss.hasPermi('agri:deviceStatusMonitor:query')")
+    @GetMapping("/dashboard/overview")
+    public AjaxResult dashboardOverview(AgriDeviceStatusMonitor agriDeviceStatusMonitor)
+    {
+        return success(agriDeviceStatusMonitorService.selectAgriDeviceStatusMonitorDashboard(agriDeviceStatusMonitor));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:deviceStatusMonitor:query')")
+    @GetMapping("/dashboard/alerts")
+    public AjaxResult dashboardAlerts(AgriDeviceStatusMonitor agriDeviceStatusMonitor)
+    {
+        return success(agriDeviceStatusMonitorService.selectAgriDeviceStatusMonitorAlerts(agriDeviceStatusMonitor));
+    }
+
     @PreAuthorize("@ss.hasPermi('agri:deviceStatusMonitor:export')")
     @Log(title = "设备状态监控", businessType = BusinessType.EXPORT)
     @PostMapping("/export")

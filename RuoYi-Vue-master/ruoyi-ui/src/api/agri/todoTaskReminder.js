@@ -15,6 +15,20 @@ export function getTodoTaskReminder(reminderId) {
     })
 }
 
+export function getTodoTaskReminderDashboard() {
+    return request({
+        url: '/agri/todoTaskReminder/dashboard',
+        method: 'get'
+    })
+}
+
+export function smartDispatchTodoTaskReminder(reminderId) {
+    return request({
+        url: '/agri/todoTaskReminder/smart/dispatch/' + reminderId,
+        method: 'get'
+    })
+}
+
 export function addTodoTaskReminder(data) {
     return request({
         url: '/agri/todoTaskReminder',

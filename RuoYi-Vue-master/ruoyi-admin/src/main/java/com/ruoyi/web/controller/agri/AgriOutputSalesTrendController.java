@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -97,7 +98,7 @@ public class AgriOutputSalesTrendController extends BaseController
 
     @PreAuthorize("@ss.hasPermi('agri:outputSalesTrend:list')")
     @GetMapping("/dashboard")
-    public AjaxResult dashboard(String beginStatDate, String endStatDate, Integer futureMonths)
+    public AjaxResult dashboard(String beginStatDate, String endStatDate, Integer futureMonths, Integer useAi)
     {
         AgriOutputSalesTrend query = new AgriOutputSalesTrend();
         query.setStatus("0");
@@ -111,7 +112,9 @@ public class AgriOutputSalesTrendController extends BaseController
         }
 
         List<AgriOutputSalesTrend> history = agriOutputSalesTrendService.selectAgriOutputSalesTrendList(query);
-        history.sort(Comparator.comparing(AgriOutputSalesTrend::getStatDate));
+        history.removeIf(item -> item == null || item.getStatDate() == null);
+        history.sort(Comparator.comparing(AgriOutputSalesTrend::getStatDate)
+            .thenComparing(AgriOutputSalesTrend::getTrendId, Comparator.nullsLast(Long::compareTo)));
         if (history.isEmpty())
         {
             return success(emptyDashboard());
@@ -125,6 +128,8 @@ public class AgriOutputSalesTrendController extends BaseController
         Map<String, Object> kpi = buildKpi(history, pestTasks, yieldTasks, farmOperations);
         List<Map<String, Object>> forecast = buildForecast(history, kpi, monthCount);
         List<Map<String, Object>> pestRisk = buildPestRisk(pestTasks);
+        List<Map<String, Object>> detailMetrics = buildDetailMetrics(history);
+        List<Map<String, Object>> warnings = buildWarnings(kpi, detailMetrics, pestRisk);
 
         String aiSummary = buildLocalSummary(kpi, forecast);
         Map<String, Object> ai = new LinkedHashMap<>();
@@ -133,26 +138,32 @@ public class AgriOutputSalesTrendController extends BaseController
         ai.put("confidenceRate", kpi.get("confidenceRate"));
         ai.put("modelVersion", "rule-v1");
 
-        try
+        // 趋势看板默认使用本地规则结果，避免外部AI调用拖慢主链路导致接口超时。
+        if (useAi != null && useAi == 1)
         {
-            Map<String, Object> context = new LinkedHashMap<>();
-            context.put("history", toChartPoints(history));
-            context.put("forecast", forecast);
-            context.put("kpi", kpi);
-            context.put("pestRisk", pestRisk);
-            OutputSalesInsightResult aiResult = agriHttpIntegrationClient.invokeOutputSalesInsight(JSON.toJSONString(context));
-            if (aiResult != null)
+            try
             {
-                ai.put("summary", emptyToDefault(aiResult.getInsightSummary(), aiSummary));
-                ai.put("riskLevel", emptyToDefault(aiResult.getRiskLevel(), String.valueOf(kpi.get("riskLevel"))));
-                ai.put("suggestion", aiResult.getSuggestion());
-                ai.put("confidenceRate", aiResult.getConfidenceRate());
-                ai.put("modelVersion", emptyToDefault(aiResult.getModelVersion(), "deepseek-chat"));
+                Map<String, Object> context = new LinkedHashMap<>();
+                context.put("history", toChartPoints(history));
+                context.put("forecast", forecast);
+                context.put("kpi", kpi);
+                context.put("pestRisk", pestRisk);
+                context.put("detailMetrics", detailMetrics);
+                context.put("warnings", warnings);
+                OutputSalesInsightResult aiResult = agriHttpIntegrationClient.invokeOutputSalesInsight(JSON.toJSONString(context));
+                if (aiResult != null)
+                {
+                    ai.put("summary", emptyToDefault(aiResult.getInsightSummary(), aiSummary));
+                    ai.put("riskLevel", emptyToDefault(aiResult.getRiskLevel(), String.valueOf(kpi.get("riskLevel"))));
+                    ai.put("suggestion", aiResult.getSuggestion());
+                    ai.put("confidenceRate", aiResult.getConfidenceRate());
+                    ai.put("modelVersion", emptyToDefault(aiResult.getModelVersion(), "deepseek-chat"));
+                }
             }
-        }
-        catch (Exception ignore)
-        {
-            // AI调用失败时回退到本地规则预测，确保图表可用。
+            catch (Exception ignore)
+            {
+                // AI调用失败时回退到本地规则预测，确保图表可用。
+            }
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -160,6 +171,8 @@ public class AgriOutputSalesTrendController extends BaseController
         result.put("forecast", forecast);
         result.put("kpi", kpi);
         result.put("pestRisk", pestRisk);
+        result.put("detailMetrics", detailMetrics);
+        result.put("warnings", warnings);
         result.put("ai", ai);
         return success(result);
     }
@@ -211,6 +224,8 @@ public class AgriOutputSalesTrendController extends BaseController
         result.put("history", new ArrayList<>());
         result.put("forecast", new ArrayList<>());
         result.put("pestRisk", new ArrayList<>());
+        result.put("detailMetrics", new ArrayList<>());
+        result.put("warnings", new ArrayList<>());
         result.put("kpi", kpi);
         result.put("ai", ai);
         return result;
@@ -388,6 +403,10 @@ public class AgriOutputSalesTrendController extends BaseController
         List<Map<String, Object>> points = new ArrayList<>();
         for (AgriOutputSalesTrend item : history)
         {
+            if (item == null || item.getStatDate() == null)
+            {
+                continue;
+            }
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("statMonth", toLocalDate(item.getStatDate()).format(MONTH_FORMATTER));
             row.put("outputValue", safeDecimal(item.getOutputValue()).setScale(2, RoundingMode.HALF_UP));
@@ -397,6 +416,114 @@ public class AgriOutputSalesTrendController extends BaseController
             points.add(row);
         }
         return points;
+    }
+
+    private List<Map<String, Object>> buildDetailMetrics(List<AgriOutputSalesTrend> history)
+    {
+        List<Map<String, Object>> metrics = new ArrayList<>();
+        for (AgriOutputSalesTrend item : history)
+        {
+            if (item == null || item.getStatDate() == null)
+            {
+                continue;
+            }
+            BigDecimal outputValue = safeDecimal(item.getOutputValue());
+            BigDecimal salesValue = safeDecimal(item.getSalesValue());
+            BigDecimal targetOutput = safeDecimal(item.getTargetOutput());
+            BigDecimal targetSales = safeDecimal(item.getTargetSales());
+            BigDecimal outputCompletionRate = targetOutput.compareTo(BigDecimal.ZERO) > 0
+                ? outputValue.divide(targetOutput, 6, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
+                : BigDecimal.ZERO;
+            BigDecimal salesCompletionRate = targetSales.compareTo(BigDecimal.ZERO) > 0
+                ? salesValue.divide(targetSales, 6, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
+                : BigDecimal.ZERO;
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("statMonth", toLocalDate(item.getStatDate()).format(MONTH_FORMATTER));
+            row.put("outputValue", outputValue.setScale(2, RoundingMode.HALF_UP));
+            row.put("salesValue", salesValue.setScale(2, RoundingMode.HALF_UP));
+            row.put("targetOutput", targetOutput.setScale(2, RoundingMode.HALF_UP));
+            row.put("targetSales", targetSales.setScale(2, RoundingMode.HALF_UP));
+            row.put("outputGap", outputValue.subtract(targetOutput).setScale(2, RoundingMode.HALF_UP));
+            row.put("salesGap", salesValue.subtract(targetSales).setScale(2, RoundingMode.HALF_UP));
+            row.put("outputCompletionRate", outputCompletionRate.setScale(2, RoundingMode.HALF_UP));
+            row.put("salesCompletionRate", salesCompletionRate.setScale(2, RoundingMode.HALF_UP));
+            row.put("outputMomRate", safeDecimal(item.getOutputMomRate()).setScale(2, RoundingMode.HALF_UP));
+            row.put("salesMomRate", safeDecimal(item.getSalesMomRate()).setScale(2, RoundingMode.HALF_UP));
+            row.put("outputSalesRatio", salesValue.compareTo(BigDecimal.ZERO) > 0
+                ? outputValue.divide(salesValue, 6, RoundingMode.HALF_UP).setScale(4, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO);
+            metrics.add(row);
+        }
+        return metrics;
+    }
+
+    private List<Map<String, Object>> buildWarnings(Map<String, Object> kpi,
+                                                    List<Map<String, Object>> detailMetrics,
+                                                    List<Map<String, Object>> pestRisk)
+    {
+        List<Map<String, Object>> warnings = new ArrayList<>();
+
+        BigDecimal outputGrowth = safeDecimal(kpi.get("outputGrowth"));
+        BigDecimal salesGrowth = safeDecimal(kpi.get("salesGrowth"));
+        String riskLevel = String.valueOf(kpi.get("riskLevel"));
+
+        if (outputGrowth.compareTo(new BigDecimal("-5")) < 0)
+        {
+            warnings.add(buildWarning("产量下滑", "high", "近周期产量累计增幅低于 -5%，建议核查投入与病虫害处置进度。"));
+        }
+        if (salesGrowth.compareTo(new BigDecimal("-3")) < 0)
+        {
+            warnings.add(buildWarning("销量走弱", "medium", "近周期销量累计增幅低于 -3%，建议联动销售侧优化出货节奏。"));
+        }
+        if ("高".equals(riskLevel))
+        {
+            warnings.add(buildWarning("病虫害风险偏高", "high", "病虫害风险等级为高，建议优先处理高风险地块并复盘防治策略。"));
+        }
+
+        for (Map<String, Object> item : detailMetrics)
+        {
+            BigDecimal outputCompletion = safeDecimal(item.get("outputCompletionRate"));
+            BigDecimal salesCompletion = safeDecimal(item.get("salesCompletionRate"));
+            if (outputCompletion.compareTo(new BigDecimal("90")) < 0)
+            {
+                warnings.add(buildWarning(
+                    "产量目标偏离",
+                    "medium",
+                    "月份 " + item.get("statMonth") + " 产量达成率仅 " + outputCompletion.setScale(2, RoundingMode.HALF_UP) + "%"
+                ));
+            }
+            if (salesCompletion.compareTo(new BigDecimal("90")) < 0)
+            {
+                warnings.add(buildWarning(
+                    "销量目标偏离",
+                    "medium",
+                    "月份 " + item.get("statMonth") + " 销量达成率仅 " + salesCompletion.setScale(2, RoundingMode.HALF_UP) + "%"
+                ));
+            }
+        }
+
+        if (!pestRisk.isEmpty())
+        {
+            Map<String, Object> top = pestRisk.get(0);
+            warnings.add(buildWarning("重点地块关注", "low", "地块 " + top.get("plotCode") + " 病虫害记录 " + top.get("count") + " 条，建议持续跟踪。"));
+        }
+
+        if (warnings.size() > 8)
+        {
+            return warnings.subList(0, 8);
+        }
+        return warnings;
+    }
+
+    private Map<String, Object> buildWarning(String title, String level, String description)
+    {
+        Map<String, Object> warning = new LinkedHashMap<>();
+        warning.put("title", title);
+        warning.put("level", level);
+        warning.put("description", description);
+        warning.put("month", YearMonth.now().format(MONTH_FORMATTER));
+        return warning;
     }
 
     private String buildLocalSummary(Map<String, Object> kpi, List<Map<String, Object>> forecast)
@@ -494,6 +621,10 @@ public class AgriOutputSalesTrendController extends BaseController
 
     private LocalDate toLocalDate(Date date)
     {
+        if (date == null)
+        {
+            return LocalDate.now().withDayOfMonth(1);
+        }
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }

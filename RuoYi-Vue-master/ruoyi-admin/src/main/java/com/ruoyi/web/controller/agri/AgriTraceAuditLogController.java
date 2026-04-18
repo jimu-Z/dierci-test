@@ -5,10 +5,16 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriTraceAuditLog;
 import com.ruoyi.system.service.IAgriTraceAuditLogService;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -39,6 +45,88 @@ public class AgriTraceAuditLogController extends BaseController
     {
         startPage();
         return getDataTable(agriTraceAuditLogService.selectAgriTraceAuditLogList(agriTraceAuditLog));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:auditLog:list')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard()
+    {
+        List<AgriTraceAuditLog> list = agriTraceAuditLogService.selectAgriTraceAuditLogList(new AgriTraceAuditLog());
+        int total = list.size();
+        int success = 0;
+        int failed = 0;
+        for (AgriTraceAuditLog item : list)
+        {
+            if ("1".equals(item.getOperateResult()))
+            {
+                success++;
+            }
+            else
+            {
+                failed++;
+            }
+        }
+
+        List<AgriTraceAuditLog> recent = list.stream()
+            .sorted(Comparator.comparing(AgriTraceAuditLog::getOperateTime,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(10)
+            .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("success", success);
+        kpi.put("failed", failed);
+        kpi.put("successRate", total == 0 ? 0 : success * 100.0 / total);
+        result.put("kpi", kpi);
+        result.put("recent", recent);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:auditLog:edit')")
+    @GetMapping("/smart/detect/{auditId}")
+    public AjaxResult smartDetect(@PathVariable("auditId") Long auditId)
+    {
+        AgriTraceAuditLog log = agriTraceAuditLogService.selectAgriTraceAuditLogByAuditId(auditId);
+        if (log == null)
+        {
+            return error("审计记录不存在");
+        }
+
+        int score = 10;
+        List<String> alerts = new ArrayList<>();
+        if (!"1".equals(log.getOperateResult()))
+        {
+            score += 45;
+            alerts.add("操作失败");
+        }
+        if (StringUtils.isBlank(log.getTxHash()))
+        {
+            score += 20;
+            alerts.add("缺少交易哈希");
+        }
+        if (StringUtils.isBlank(log.getIpAddress()))
+        {
+            score += 10;
+            alerts.add("缺少来源IP");
+        }
+        if (StringUtils.isNotBlank(log.getIpAddress()) && (log.getIpAddress().startsWith("10.") || log.getIpAddress().startsWith("192.168.")))
+        {
+            score += 15;
+            alerts.add("内网来源IP");
+        }
+        score = Math.min(score, 100);
+        String level = score >= 80 ? "高" : (score >= 45 ? "中" : "低");
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("auditId", log.getAuditId());
+        result.put("algorithm", "audit-anomaly-v1");
+        result.put("anomalyScore", score);
+        result.put("riskLevel", level);
+        result.put("alerts", alerts);
+        result.put("summary", "完成审计异常检测，风险等级为" + level + "。");
+        return success(result);
     }
 
     @PreAuthorize("@ss.hasPermi('agri:auditLog:export')")

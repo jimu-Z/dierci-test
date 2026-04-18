@@ -37,3 +37,24 @@ export function delFinanceRisk(riskId) {
         method: 'delete'
     })
 }
+
+export function getFinanceRiskDashboard() {
+    return request({
+        url: '/agri/financeRisk/dashboard',
+        method: 'get'
+    })
+}
+
+export function getFinanceRiskOpsDashboard() {
+    return request({
+        url: '/agri/financeRisk/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartAnalyzeFinanceRisk(riskId) {
+    return request({
+        url: '/agri/financeRisk/smart/analyze/' + riskId,
+        method: 'get'
+    })
+}

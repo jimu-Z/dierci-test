@@ -1,5 +1,55 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="forecast-hero mb16">
+      <div class="forecast-head">
+        <div>
+          <div class="forecast-title">市场预测决策台</div>
+          <div class="forecast-desc">围绕市场区域、品类走势和预测置信度做决策复核，优先处理低置信度或异常预测任务。</div>
+        </div>
+        <div class="forecast-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-view" @click="handleReview">智能复核</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="forecast-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="forecast-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="forecast-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="forecast-panel">
+            <div class="panel-head"><span>预测热点</span><small>优先处理低置信度或待预测任务</small></div>
+            <div class="forecast-hot-list" v-if="hotRows.length">
+              <div v-for="item in hotRows" :key="item.forecastId" class="forecast-hot-item" @click="handleReview(item)">
+                <div>
+                  <b>{{ item.productName }}</b>
+                  <p>{{ item.marketArea }} · {{ item.productCode }}</p>
+                </div>
+                <el-tag size="mini" type="warning">{{ formatConfidence(item.confidenceRate) }}</el-tag>
+              </div>
+            </div>
+            <el-empty v-else description="暂无热点任务" />
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="forecast-panel">
+            <div class="panel-head"><span>智能复核</span><small>根据预测结果给出业务建议</small></div>
+            <div v-if="smartResult.forecastId" class="forecast-box">
+              <div class="forecast-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+              <p>{{ smartResult.forecast.productName }}</p>
+              <ul><li v-for="item in smartResult.suggestions" :key="item">{{ item }}</li></ul>
+            </div>
+            <el-empty v-else description="请选择一条预测任务进行复核" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="市场区域" prop="marketArea">
         <el-input v-model="queryParams.marketArea" placeholder="请输入市场区域" clearable style="width: 180px" @keyup.enter.native="handleQuery" />
@@ -48,6 +98,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleReview(scope.row)" v-hasPermi="['agri:marketForecast:query']">复核</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:marketForecast:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:marketForecast:remove']">删除</el-button>
         </template>
@@ -106,7 +157,9 @@ import {
   updateMarketForecast,
   invokeMarketForecast,
   predictMarketForecast,
-  delMarketForecast
+  delMarketForecast,
+  getMarketForecastDashboard,
+  getMarketForecastReview
 } from '@/api/agri/marketForecast'
 
 export default {
@@ -120,6 +173,8 @@ export default {
       showSearch: true,
       total: 0,
       forecastList: [],
+      dashboardData: {},
+      smartResult: {},
       title: '',
       open: false,
       predictOpen: false,
@@ -156,9 +211,30 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '任务总数', value: summary.totalCount || 0, foot: '当前筛选范围内记录' },
+        { key: 'predicted', label: '已预测', value: summary.predictedCount || 0, foot: '已执行预测' },
+        { key: 'pending', label: '待预测', value: summary.pendingCount || 0, foot: '待执行任务' },
+        { key: 'avgSales', label: '平均销量', value: this.formatMetric(summary.avgSales, 'kg'), foot: '预测销量均值' },
+        { key: 'avgPrice', label: '平均价格', value: this.formatMetric(summary.avgPrice, '元/kg'), foot: '预测价格均值' }
+      ]
+    },
+    hotRows() {
+      return this.dashboardData.hotRows || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getMarketForecastDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listMarketForecast(this.queryParams).then(response => {
@@ -166,6 +242,14 @@ export default {
         this.total = response.total
         this.loading = false
       })
+    },
+    formatMetric(value, unit) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${number.toFixed(2)}${unit}`
+    },
+    formatConfidence(value) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${(number * 100).toFixed(1)}%`
     },
     formatStatus(value) {
       const option = this.forecastStatusOptions.find(item => item.value === value)
@@ -196,10 +280,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -235,6 +321,17 @@ export default {
           this.getList()
         })
         .catch(() => {})
+    },
+    handleReview(row) {
+      const target = row || this.forecastList[0]
+      if (!target || !target.forecastId) {
+        this.$modal.msgWarning('请先选择一条预测任务')
+        return
+      }
+      getMarketForecastReview(target.forecastId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('智能复核已更新')
+      })
     },
     handlePredict() {
       if (this.ids.length !== 1) {
@@ -315,5 +412,90 @@ export default {
   word-break: break-word;
   line-height: 20px;
   text-align: left;
+}
+
+.forecast-hero {
+  border: 1px solid #e6e0d7;
+  background: linear-gradient(135deg, #fffaf4 0%, #f6efe2 100%);
+}
+
+.forecast-head,
+.panel-head,
+.forecast-hot-item,
+.forecast-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forecast-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #7a4e12;
+}
+
+.forecast-desc {
+  margin-top: 6px;
+  color: #8a6e42;
+}
+
+.forecast-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forecast-kpi-row,
+.forecast-overview-row {
+  margin-top: 14px;
+}
+
+.forecast-kpi-card,
+.forecast-panel {
+  border: 1px solid #eadfcf;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.forecast-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.forecast-kpi-card span,
+.panel-head small,
+.forecast-kpi-card small,
+.forecast-hot-item p,
+.forecast-box p {
+  color: #8c7558;
+}
+
+.forecast-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #7a4e12;
+}
+
+.forecast-hot-item {
+  padding: 8px 0;
+  border-top: 1px solid #f2eadf;
+  cursor: pointer;
+}
+
+.forecast-hot-item p {
+  margin: 4px 0 0;
+}
+
+.forecast-score strong {
+  font-size: 26px;
+  color: #b17318;
+}
+
+.forecast-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #6f5a3f;
 }
 </style>

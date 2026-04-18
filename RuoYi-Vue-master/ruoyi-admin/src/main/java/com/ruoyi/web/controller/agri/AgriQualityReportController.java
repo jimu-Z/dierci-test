@@ -14,7 +14,13 @@ import com.ruoyi.system.service.IAgriQualityReportService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,6 +54,25 @@ public class AgriQualityReportController extends BaseController
         startPage();
         List<AgriQualityReport> list = agriQualityReportService.selectAgriQualityReportList(agriQualityReport);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:qualityReport:query')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard(AgriQualityReport agriQualityReport)
+    {
+        return success(buildDashboard(agriQualityReport));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:qualityReport:query')")
+    @GetMapping("/smart/review/{reportId}")
+    public AjaxResult review(@PathVariable("reportId") Long reportId)
+    {
+        AgriQualityReport report = agriQualityReportService.selectAgriQualityReportByReportId(reportId);
+        if (report == null)
+        {
+            return error("质检报告不存在");
+        }
+        return success(buildReview(report));
     }
 
     @PreAuthorize("@ss.hasPermi('agri:qualityReport:export')")
@@ -124,5 +149,124 @@ public class AgriQualityReportController extends BaseController
         report.setStatus("0");
         report.setCreateBy(getUsername());
         return toAjax(agriQualityReportService.insertAgriQualityReport(report));
+    }
+
+    private Map<String, Object> buildDashboard(AgriQualityReport query)
+    {
+        List<AgriQualityReport> reports = agriQualityReportService.selectAgriQualityReportList(query);
+        Set<String> batchNos = new HashSet<>();
+        int generatedCount = 0;
+        int draftCount = 0;
+        BigDecimal defectTotal = BigDecimal.ZERO;
+        int defectCount = 0;
+        List<AgriQualityReport> sorted = new ArrayList<>(reports);
+        sorted.sort(Comparator.comparing(AgriQualityReport::getReportTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+        List<Map<String, Object>> highRiskRows = new ArrayList<>();
+        List<Map<String, Object>> recentRows = new ArrayList<>();
+        for (AgriQualityReport report : reports)
+        {
+            if (report == null)
+            {
+                continue;
+            }
+            if (report.getProcessBatchNo() != null)
+            {
+                batchNos.add(report.getProcessBatchNo());
+            }
+            if ("1".equals(report.getReportStatus()))
+            {
+                generatedCount++;
+            }
+            else
+            {
+                draftCount++;
+            }
+            if (report.getDefectRate() != null)
+            {
+                defectTotal = defectTotal.add(report.getDefectRate());
+                defectCount++;
+                if (report.getDefectRate().compareTo(new BigDecimal("0.05")) >= 0 && highRiskRows.size() < 5)
+                {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("reportId", report.getReportId());
+                    row.put("reportNo", report.getReportNo());
+                    row.put("processBatchNo", report.getProcessBatchNo());
+                    row.put("qualityGrade", report.getQualityGrade());
+                    row.put("defectRate", report.getDefectRate());
+                    row.put("reportStatus", report.getReportStatus());
+                    highRiskRows.add(row);
+                }
+            }
+        }
+
+        for (AgriQualityReport report : sorted)
+        {
+            if (recentRows.size() >= 6)
+            {
+                break;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("reportId", report.getReportId());
+            row.put("reportNo", report.getReportNo());
+            row.put("processBatchNo", report.getProcessBatchNo());
+            row.put("qualityGrade", report.getQualityGrade());
+            row.put("defectRate", report.getDefectRate());
+            row.put("reportStatus", report.getReportStatus());
+            row.put("reportTime", report.getReportTime());
+            recentRows.add(row);
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("totalCount", reports.size());
+        summary.put("batchCount", batchNos.size());
+        summary.put("generatedCount", generatedCount);
+        summary.put("draftCount", draftCount);
+        summary.put("avgDefectRate", defectCount == 0 ? BigDecimal.ZERO : defectTotal.divide(BigDecimal.valueOf(defectCount), 4, BigDecimal.ROUND_HALF_UP));
+        summary.put("highRiskCount", highRiskRows.size());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("summary", summary);
+        result.put("highRiskRows", highRiskRows);
+        result.put("recentRows", recentRows);
+        return result;
+    }
+
+    private Map<String, Object> buildReview(AgriQualityReport report)
+    {
+        int riskScore = 100;
+        List<String> findings = new ArrayList<>();
+        if (report.getDefectRate() != null && report.getDefectRate().compareTo(new BigDecimal("0.05")) >= 0)
+        {
+            findings.add("缺陷率偏高，建议重点核查原料、工艺和抽检样本");
+            riskScore -= 30;
+        }
+        if (report.getQualityGrade() == null || report.getQualityGrade().trim().isEmpty())
+        {
+            findings.add("品质等级未填写，建议补齐分级结果");
+            riskScore -= 15;
+        }
+        if ("0".equals(report.getReportStatus()))
+        {
+            findings.add("报告仍处草稿状态，建议尽快确认并归档");
+            riskScore -= 10;
+        }
+        if (report.getReportSummary() == null || report.getReportSummary().trim().isEmpty())
+        {
+            findings.add("报告摘要为空，建议补充问题描述和复核意见");
+            riskScore -= 15;
+        }
+        if (findings.isEmpty())
+        {
+            findings.add("报告整体正常，可直接进入归档或对外发布");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("reportId", report.getReportId());
+        result.put("riskScore", Math.max(0, riskScore));
+        result.put("riskLevel", riskScore >= 85 ? "低" : riskScore >= 70 ? "中" : "高");
+        result.put("findings", findings);
+        result.put("report", report);
+        return result;
     }
 }

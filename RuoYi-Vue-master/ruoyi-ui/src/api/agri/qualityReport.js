@@ -8,6 +8,21 @@ export function listQualityReport(query) {
     })
 }
 
+export function getQualityReportDashboard(query) {
+    return request({
+        url: '/agri/qualityReport/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getQualityReportReview(reportId) {
+    return request({
+        url: '/agri/qualityReport/smart/review/' + reportId,
+        method: 'get'
+    })
+}
+
 export function getQualityReport(reportId) {
     return request({
         url: '/agri/qualityReport/' + reportId,

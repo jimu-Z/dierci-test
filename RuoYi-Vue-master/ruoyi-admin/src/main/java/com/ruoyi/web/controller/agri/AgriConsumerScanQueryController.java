@@ -15,7 +15,12 @@ import com.ruoyi.system.service.IAgriConsumerScanQueryService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,6 +54,222 @@ public class AgriConsumerScanQueryController extends BaseController
         startPage();
         List<AgriConsumerScanQuery> list = agriConsumerScanQueryService.selectAgriConsumerScanQueryList(agriConsumerScanQuery);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:consumerScan:list')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard()
+    {
+        List<AgriConsumerScanQuery> list = agriConsumerScanQueryService.selectAgriConsumerScanQueryList(new AgriConsumerScanQuery());
+        int total = list.size();
+        int hitCount = 0;
+        int riskyCount = 0;
+        Map<String, Integer> channelCount = new LinkedHashMap<>();
+        for (AgriConsumerScanQuery item : list)
+        {
+            if ("1".equals(item.getScanResult()))
+            {
+                hitCount++;
+            }
+            if (isRiskyScan(item))
+            {
+                riskyCount++;
+            }
+            String channel = StringUtils.defaultIfBlank(item.getScanChannel(), "UNKNOWN");
+            channelCount.put(channel, channelCount.getOrDefault(channel, 0) + 1);
+        }
+
+        List<AgriConsumerScanQuery> recent = list.stream()
+            .sorted(Comparator.comparing(AgriConsumerScanQuery::getQueryTime,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(8)
+            .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("hitCount", hitCount);
+        kpi.put("hitRate", total == 0 ? 0 : (hitCount * 100.0 / total));
+        kpi.put("riskyCount", riskyCount);
+        result.put("kpi", kpi);
+        result.put("channelDistribution", channelCount);
+        result.put("recent", recent);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:consumerScan:list')")
+    @GetMapping("/dashboard/ops")
+    public AjaxResult dashboardOps()
+    {
+        List<AgriConsumerScanQuery> list = agriConsumerScanQueryService.selectAgriConsumerScanQueryList(new AgriConsumerScanQuery());
+        int total = list.size();
+        int hitCount = 0;
+        int suspiciousCount = 0;
+        int highRiskCount = 0;
+        Map<String, Integer> channelDistribution = new LinkedHashMap<>();
+        Map<String, Integer> riskLevelDistribution = new LinkedHashMap<>();
+        riskLevelDistribution.put("低", 0);
+        riskLevelDistribution.put("中", 0);
+        riskLevelDistribution.put("高", 0);
+
+        Map<String, Integer> dayRiskCounter = new LinkedHashMap<>();
+        for (int i = 6; i >= 0; i--)
+        {
+            dayRiskCounter.put(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD, DateUtils.addDays(DateUtils.getNowDate(), -i)), 0);
+        }
+
+        Map<String, Integer> traceCounter = new LinkedHashMap<>();
+        for (AgriConsumerScanQuery item : list)
+        {
+            if ("1".equals(item.getScanResult()))
+            {
+                hitCount++;
+            }
+            if (isRiskyScan(item))
+            {
+                suspiciousCount++;
+            }
+
+            int score = calcAnomalyScore(item);
+            String riskLevel = score >= 80 ? "高" : (score >= 50 ? "中" : "低");
+            if ("高".equals(riskLevel))
+            {
+                highRiskCount++;
+            }
+            riskLevelDistribution.put(riskLevel, riskLevelDistribution.get(riskLevel) + 1);
+
+            String channel = StringUtils.defaultIfBlank(item.getScanChannel(), "UNKNOWN");
+            channelDistribution.put(channel, channelDistribution.getOrDefault(channel, 0) + 1);
+
+            String traceCode = StringUtils.defaultIfBlank(item.getTraceCode(), "UNKNOWN");
+            traceCounter.put(traceCode, traceCounter.getOrDefault(traceCode, 0) + 1);
+
+            if (item.getQueryTime() != null)
+            {
+                String day = DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD, item.getQueryTime());
+                if (dayRiskCounter.containsKey(day) && score >= 50)
+                {
+                    dayRiskCounter.put(day, dayRiskCounter.get(day) + 1);
+                }
+            }
+        }
+
+        List<Map<String, Object>> riskTrend = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : dayRiskCounter.entrySet())
+        {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("day", entry.getKey());
+            item.put("riskCount", entry.getValue());
+            riskTrend.add(item);
+        }
+
+        List<Map<String, Object>> traceHotspots = traceCounter.entrySet().stream()
+            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+            .limit(6)
+            .map(entry -> {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("traceCode", entry.getKey());
+                map.put("scanCount", entry.getValue());
+                return map;
+            })
+            .collect(Collectors.toList());
+
+        List<Map<String, Object>> alertStream = list.stream()
+            .filter(this::isRiskyScan)
+            .sorted(Comparator.comparing(AgriConsumerScanQuery::getQueryTime,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(10)
+            .map(item -> {
+                int score = calcAnomalyScore(item);
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("queryId", item.getQueryId());
+                map.put("traceCode", item.getTraceCode());
+                map.put("scanChannel", item.getScanChannel());
+                map.put("consumerName", item.getConsumerName());
+                map.put("scanIp", item.getScanIp());
+                map.put("queryTime", item.getQueryTime());
+                map.put("score", score);
+                map.put("level", score >= 80 ? "高" : (score >= 50 ? "中" : "低"));
+                return map;
+            })
+            .collect(Collectors.toList());
+
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("hitCount", hitCount);
+        kpi.put("hitRate", total == 0 ? 0 : (hitCount * 100.0 / total));
+        kpi.put("suspiciousCount", suspiciousCount);
+        kpi.put("highRiskCount", highRiskCount);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("kpi", kpi);
+        result.put("channelDistribution", channelDistribution);
+        result.put("riskLevelDistribution", riskLevelDistribution);
+        result.put("riskTrend", riskTrend);
+        result.put("traceHotspots", traceHotspots);
+        result.put("alertStream", alertStream);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:consumerScan:edit')")
+    @GetMapping("/smart/analyze/{queryId}")
+    public AjaxResult smartAnalyze(@PathVariable("queryId") Long queryId)
+    {
+        AgriConsumerScanQuery query = agriConsumerScanQueryService.selectAgriConsumerScanQueryByQueryId(queryId);
+        if (query == null)
+        {
+            return error("查询记录不存在");
+        }
+
+        int anomalyScore = 20;
+        List<String> flags = new ArrayList<>();
+        if ("0".equals(query.getScanResult()))
+        {
+            anomalyScore += 35;
+            flags.add("未命中溯源码");
+        }
+        if ("2".equals(query.getScanResult()))
+        {
+            anomalyScore += 25;
+            flags.add("命中未发布页面");
+        }
+        if (StringUtils.isBlank(query.getConsumerPhone()))
+        {
+            anomalyScore += 10;
+            flags.add("缺少手机号");
+        }
+        if (StringUtils.isNotBlank(query.getScanIp()) && (query.getScanIp().startsWith("10.") || query.getScanIp().startsWith("192.168.")))
+        {
+            anomalyScore += 10;
+            flags.add("内网IP来源");
+        }
+        anomalyScore = Math.min(anomalyScore, 100);
+
+        String level = anomalyScore >= 80 ? "高" : (anomalyScore >= 50 ? "中" : "低");
+        List<String> suggestions = new ArrayList<>();
+        if (anomalyScore >= 80)
+        {
+            suggestions.add("建议加入临时黑名单并触发人工复核");
+        }
+        else if (anomalyScore >= 50)
+        {
+            suggestions.add("建议对同溯源码短时重复扫码进行限流");
+        }
+        else
+        {
+            suggestions.add("风险可控，建议持续监控渠道与地区分布");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("queryId", query.getQueryId());
+        result.put("traceCode", query.getTraceCode());
+        result.put("algorithm", "scan-antifraud-v1");
+        result.put("anomalyScore", anomalyScore);
+        result.put("riskLevel", level);
+        result.put("flags", flags);
+        result.put("suggestions", suggestions);
+        result.put("summary", "基于扫码结果、IP与身份信息完成反欺诈评估，风险等级为" + level + "。");
+        return success(result);
     }
 
     @PreAuthorize("@ss.hasPermi('agri:consumerScan:export')")
@@ -158,5 +379,35 @@ public class AgriConsumerScanQueryController extends BaseController
             ip = request.getRemoteAddr();
         }
         return ip;
+    }
+
+    private boolean isRiskyScan(AgriConsumerScanQuery item)
+    {
+        return "0".equals(item.getScanResult())
+            || "2".equals(item.getScanResult())
+            || StringUtils.isBlank(item.getConsumerPhone());
+    }
+
+    private int calcAnomalyScore(AgriConsumerScanQuery query)
+    {
+        int anomalyScore = 20;
+        if ("0".equals(query.getScanResult()))
+        {
+            anomalyScore += 35;
+        }
+        if ("2".equals(query.getScanResult()))
+        {
+            anomalyScore += 25;
+        }
+        if (StringUtils.isBlank(query.getConsumerPhone()))
+        {
+            anomalyScore += 10;
+        }
+        if (StringUtils.isNotBlank(query.getScanIp())
+            && (query.getScanIp().startsWith("10.") || query.getScanIp().startsWith("192.168.")))
+        {
+            anomalyScore += 10;
+        }
+        return Math.min(anomalyScore, 100);
     }
 }

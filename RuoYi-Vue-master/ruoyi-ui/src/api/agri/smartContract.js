@@ -44,3 +44,24 @@ export function delSmartContract(deployId) {
         method: 'delete'
     })
 }
+
+export function getSmartContractDashboard() {
+    return request({
+        url: '/agri/smartContract/dashboard',
+        method: 'get'
+    })
+}
+
+export function getSmartContractDashboardOps() {
+    return request({
+        url: '/agri/smartContract/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartSecurityContract(deployId) {
+    return request({
+        url: '/agri/smartContract/smart/security/' + deployId,
+        method: 'get'
+    })
+}

@@ -8,6 +8,21 @@ export function listLogisticsWarning(query) {
     })
 }
 
+export function getLogisticsWarningDashboard(query) {
+    return request({
+        url: '/agri/logisticsWarning/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function triageLogisticsWarning(warningId) {
+    return request({
+        url: '/agri/logisticsWarning/smart/triage/' + warningId,
+        method: 'get'
+    })
+}
+
 export function getLogisticsWarning(warningId) {
     return request({
         url: '/agri/logisticsWarning/' + warningId,

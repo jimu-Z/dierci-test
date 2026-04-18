@@ -51,3 +51,17 @@ export function getLogisticsTrackSummary(traceCode) {
         method: 'get'
     })
 }
+
+export function getLogisticsTrackDashboardOps() {
+    return request({
+        url: '/agri/logisticsTrack/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartAnalyzeLogisticsTrack(trackId) {
+    return request({
+        url: '/agri/logisticsTrack/smart/analyze/' + trackId,
+        method: 'get'
+    })
+}

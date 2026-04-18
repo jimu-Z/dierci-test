@@ -44,3 +44,24 @@ export function delDataUplink(uplinkId) {
         method: 'delete'
     })
 }
+
+export function getDataUplinkDashboard() {
+    return request({
+        url: '/agri/dataUplink/dashboard',
+        method: 'get'
+    })
+}
+
+export function getDataUplinkDashboardOps() {
+    return request({
+        url: '/agri/dataUplink/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartVerifyDataUplink(uplinkId) {
+    return request({
+        url: '/agri/dataUplink/smart/verify/' + uplinkId,
+        method: 'get'
+    })
+}

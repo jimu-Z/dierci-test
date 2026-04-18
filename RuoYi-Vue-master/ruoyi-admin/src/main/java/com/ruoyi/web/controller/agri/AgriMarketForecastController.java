@@ -14,7 +14,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,6 +52,25 @@ public class AgriMarketForecastController extends BaseController
         startPage();
         List<AgriMarketForecast> list = agriMarketForecastService.selectAgriMarketForecastList(agriMarketForecast);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:marketForecast:query')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard(AgriMarketForecast agriMarketForecast)
+    {
+        return success(buildDashboard(agriMarketForecast));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:marketForecast:query')")
+    @GetMapping("/smart/review/{forecastId}")
+    public AjaxResult review(@PathVariable("forecastId") Long forecastId)
+    {
+        AgriMarketForecast forecast = agriMarketForecastService.selectAgriMarketForecastByForecastId(forecastId);
+        if (forecast == null)
+        {
+            return error("预测任务不存在");
+        }
+        return success(buildReview(forecast));
     }
 
     @PreAuthorize("@ss.hasPermi('agri:marketForecast:export')")
@@ -166,5 +189,133 @@ public class AgriMarketForecastController extends BaseController
             agriMarketForecastService.updateAgriMarketForecast(db);
             return error("市场预测调用失败: " + ex.getMessage());
         }
+    }
+
+    private Map<String, Object> buildDashboard(AgriMarketForecast query)
+    {
+        List<AgriMarketForecast> forecasts = agriMarketForecastService.selectAgriMarketForecastList(query);
+        int predictedCount = 0;
+        int pendingCount = 0;
+        int failedCount = 0;
+        BigDecimal salesSum = BigDecimal.ZERO;
+        BigDecimal priceSum = BigDecimal.ZERO;
+        int salesCount = 0;
+        int priceCount = 0;
+        List<AgriMarketForecast> sorted = new ArrayList<>(forecasts);
+        sorted.sort(Comparator.comparing(AgriMarketForecast::getForecastTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+        List<Map<String, Object>> recentRows = new ArrayList<>();
+        List<Map<String, Object>> hotRows = new ArrayList<>();
+        for (AgriMarketForecast forecast : forecasts)
+        {
+            if (forecast == null)
+            {
+                continue;
+            }
+            if ("1".equals(forecast.getForecastStatus()))
+            {
+                predictedCount++;
+            }
+            else if ("2".equals(forecast.getForecastStatus()))
+            {
+                failedCount++;
+            }
+            else
+            {
+                pendingCount++;
+            }
+            if (forecast.getForecastSalesKg() != null)
+            {
+                salesSum = salesSum.add(forecast.getForecastSalesKg());
+                salesCount++;
+            }
+            if (forecast.getForecastPrice() != null)
+            {
+                priceSum = priceSum.add(forecast.getForecastPrice());
+                priceCount++;
+            }
+            if (forecast.getConfidenceRate() != null && forecast.getConfidenceRate().compareTo(new BigDecimal("0.75")) < 0 && hotRows.size() < 5)
+            {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("forecastId", forecast.getForecastId());
+                row.put("marketArea", forecast.getMarketArea());
+                row.put("productCode", forecast.getProductCode());
+                row.put("productName", forecast.getProductName());
+                row.put("confidenceRate", forecast.getConfidenceRate());
+                row.put("forecastStatus", forecast.getForecastStatus());
+                hotRows.add(row);
+            }
+        }
+
+        for (AgriMarketForecast forecast : sorted)
+        {
+            if (recentRows.size() >= 6)
+            {
+                break;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("forecastId", forecast.getForecastId());
+            row.put("marketArea", forecast.getMarketArea());
+            row.put("productCode", forecast.getProductCode());
+            row.put("productName", forecast.getProductName());
+            row.put("forecastSalesKg", forecast.getForecastSalesKg());
+            row.put("forecastPrice", forecast.getForecastPrice());
+            row.put("confidenceRate", forecast.getConfidenceRate());
+            row.put("forecastStatus", forecast.getForecastStatus());
+            row.put("forecastTime", forecast.getForecastTime());
+            recentRows.add(row);
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("totalCount", forecasts.size());
+        summary.put("predictedCount", predictedCount);
+        summary.put("pendingCount", pendingCount);
+        summary.put("failedCount", failedCount);
+        summary.put("avgSales", salesCount == 0 ? BigDecimal.ZERO : salesSum.divide(BigDecimal.valueOf(salesCount), 2, RoundingMode.HALF_UP));
+        summary.put("avgPrice", priceCount == 0 ? BigDecimal.ZERO : priceSum.divide(BigDecimal.valueOf(priceCount), 2, RoundingMode.HALF_UP));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("summary", summary);
+        result.put("hotRows", hotRows);
+        result.put("recentRows", recentRows);
+        return result;
+    }
+
+    private Map<String, Object> buildReview(AgriMarketForecast forecast)
+    {
+        int score = 100;
+        List<String> suggestions = new ArrayList<>();
+        if (forecast.getConfidenceRate() != null && forecast.getConfidenceRate().compareTo(new BigDecimal("0.8")) < 0)
+        {
+            suggestions.add("置信度偏低，建议优先复核样本质量和特征输入");
+            score -= 25;
+        }
+        if (forecast.getForecastStatus() == null || forecast.getForecastStatus().equals("0"))
+        {
+            suggestions.add("当前仍是待预测状态，建议先执行模型调用再输出业务建议");
+            score -= 10;
+        }
+        if (forecast.getForecastSalesKg() != null && forecast.getHistoricalSalesKg() != null && forecast.getForecastSalesKg().compareTo(forecast.getHistoricalSalesKg().multiply(new BigDecimal("1.5"))) > 0)
+        {
+            suggestions.add("预测销量显著高于历史基线，建议结合节庆和渠道活动再复核一次");
+            score -= 20;
+        }
+        if (forecast.getForecastPrice() != null && forecast.getForecastPrice().compareTo(new BigDecimal("0")) <= 0)
+        {
+            suggestions.add("预测价格异常，建议检查单位和模型回写值");
+            score -= 20;
+        }
+        if (suggestions.isEmpty())
+        {
+            suggestions.add("当前预测结果可直接用于销售排产或渠道沟通");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("forecastId", forecast.getForecastId());
+        result.put("riskScore", Math.max(0, score));
+        result.put("riskLevel", score >= 85 ? "低" : score >= 70 ? "中" : "高");
+        result.put("suggestions", suggestions);
+        result.put("forecast", forecast);
+        return result;
     }
 }

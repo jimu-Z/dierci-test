@@ -2,6 +2,7 @@ package com.ruoyi.system.service;
 
 import com.ruoyi.system.domain.AgriWarningSummary;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 预警信息汇总Service接口
@@ -13,6 +14,10 @@ public interface IAgriWarningSummaryService
     public AgriWarningSummary selectAgriWarningSummaryBySummaryId(Long summaryId);
 
     public List<AgriWarningSummary> selectAgriWarningSummaryList(AgriWarningSummary agriWarningSummary);
+
+    public Map<String, Object> selectAgriWarningSummaryDashboard(AgriWarningSummary agriWarningSummary);
+
+    public Map<String, Object> selectAgriWarningSummaryAlerts(AgriWarningSummary agriWarningSummary);
 
     public int insertAgriWarningSummary(AgriWarningSummary agriWarningSummary);
 

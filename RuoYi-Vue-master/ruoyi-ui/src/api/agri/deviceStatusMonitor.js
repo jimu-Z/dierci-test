@@ -37,3 +37,19 @@ export function delDeviceStatusMonitor(monitorId) {
         method: 'delete'
     })
 }
+
+export function getDeviceStatusMonitorDashboard(query) {
+    return request({
+        url: '/agri/deviceStatusMonitor/dashboard/overview',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getDeviceStatusMonitorAlerts(query) {
+    return request({
+        url: '/agri/deviceStatusMonitor/dashboard/alerts',
+        method: 'get',
+        params: query
+    })
+}

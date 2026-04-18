@@ -41,6 +41,27 @@ public class AgriCarbonFootprintModelController extends BaseController
         return getDataTable(agriCarbonFootprintModelService.selectAgriCarbonFootprintModelList(agriCarbonFootprintModel));
     }
 
+    @PreAuthorize("@ss.hasPermi('agri:carbonFootprint:query')")
+    @GetMapping("/dashboard/overview")
+    public AjaxResult dashboardOverview(AgriCarbonFootprintModel agriCarbonFootprintModel)
+    {
+        return success(agriCarbonFootprintModelService.selectAgriCarbonFootprintModelDashboard(agriCarbonFootprintModel));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:carbonFootprint:query')")
+    @GetMapping("/smart/analyze/{modelId}")
+    public AjaxResult smartAnalyze(@PathVariable("modelId") Long modelId)
+    {
+        return success(agriCarbonFootprintModelService.analyzeAgriCarbonFootprintModel(modelId));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:carbonFootprint:query')")
+    @GetMapping("/ai/health")
+    public AjaxResult aiHealth()
+    {
+        return success(agriCarbonFootprintModelService.checkCarbonFootprintAiHealth());
+    }
+
     @PreAuthorize("@ss.hasPermi('agri:carbonFootprint:export')")
     @Log(title = "碳足迹核算模型", businessType = BusinessType.EXPORT)
     @PostMapping("/export")

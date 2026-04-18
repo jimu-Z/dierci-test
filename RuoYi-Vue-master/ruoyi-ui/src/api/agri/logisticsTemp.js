@@ -8,6 +8,21 @@ export function listLogisticsTemp(query) {
     })
 }
 
+export function getLogisticsTempDashboard(query) {
+    return request({
+        url: '/agri/logisticsTemp/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function diagnoseLogisticsTemp(recordId) {
+    return request({
+        url: '/agri/logisticsTemp/smart/diagnose/' + recordId,
+        method: 'get'
+    })
+}
+
 export function getLogisticsTemp(recordId) {
     return request({
         url: '/agri/logisticsTemp/' + recordId,

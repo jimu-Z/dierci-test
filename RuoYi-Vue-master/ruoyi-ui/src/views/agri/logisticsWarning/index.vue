@@ -1,5 +1,57 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="warning-hero mb16">
+      <div class="warning-head">
+        <div>
+          <div class="warning-title">在途预警处置台</div>
+          <div class="warning-desc">用于追踪告警级别、处置状态和责任人，优先处理紧急和待分派告警。</div>
+        </div>
+        <div class="warning-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-s-opportunity" @click="handleTriage">智能分诊</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="warning-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="warning-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="warning-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="warning-panel">
+            <div class="panel-head"><span>近期预警</span><small>优先看高等级未处理项</small></div>
+            <div class="warning-list" v-if="recentWarnings.length">
+              <div v-for="item in recentWarnings" :key="item.warningId" class="warning-item" @click="handleTriage(item)">
+                <div>
+                  <b>{{ item.warningTitle }}</b>
+                  <p>{{ item.traceCode }} · {{ item.warningType }}</p>
+                </div>
+                <el-tag size="mini" :type="formatLevelType(item.warningLevel)">{{ formatWarningLevel(item.warningLevel) }}</el-tag>
+              </div>
+            </div>
+            <el-empty v-else description="暂无预警记录" />
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="warning-panel">
+            <div class="panel-head"><span>智能分诊</span><small>针对当前预警生成处置建议</small></div>
+            <div v-if="smartResult.warningId" class="warning-box">
+              <div class="warning-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+              <p>{{ smartResult.warning.warningTitle }}</p>
+              <ul>
+                <li v-for="item in smartResult.suggestions" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <el-empty v-else description="请选择一条预警进行分诊" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="运单号" prop="traceCode">
         <el-input v-model="queryParams.traceCode" placeholder="请输入运单号" clearable style="width: 180px" @keyup.enter.native="handleQuery" />
@@ -48,6 +100,7 @@
       <el-table-column label="处理人" prop="handler" align="center" width="90" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-s-opportunity" @click="handleTriage(scope.row)" v-hasPermi="['agri:logisticsWarning:query']">分诊</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:logisticsWarning:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:logisticsWarning:remove']">删除</el-button>
         </template>
@@ -96,7 +149,9 @@ import {
   addLogisticsWarning,
   updateLogisticsWarning,
   generateLogisticsWarning,
-  delLogisticsWarning
+  delLogisticsWarning,
+  getLogisticsWarningDashboard,
+  triageLogisticsWarning
 } from '@/api/agri/logisticsWarning'
 
 export default {
@@ -110,6 +165,8 @@ export default {
       showSearch: true,
       total: 0,
       warningList: [],
+      dashboardData: {},
+      smartResult: {},
       title: '',
       open: false,
       queryParams: {
@@ -142,9 +199,30 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '预警总数', value: summary.totalCount || 0, foot: '当前筛选范围内记录' },
+        { key: 'pending', label: '待处理', value: summary.pendingCount || 0, foot: '待分派记录' },
+        { key: 'processing', label: '处理中', value: summary.processingCount || 0, foot: '已开始处置记录' },
+        { key: 'closed', label: '已关闭', value: summary.closedCount || 0, foot: '已闭环记录' },
+        { key: 'urgent', label: '紧急预警', value: summary.urgentCount || 0, foot: '三级及以上' }
+      ]
+    },
+    recentWarnings() {
+      return this.dashboardData.recentRows || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getLogisticsWarningDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listLogisticsWarning(this.queryParams).then(response => {
@@ -196,10 +274,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -224,6 +304,17 @@ export default {
           this.getList()
         })
       }).catch(() => {})
+    },
+    handleTriage(row) {
+      const target = row || this.warningList[0]
+      if (!target || !target.warningId) {
+        this.$modal.msgWarning('请先选择一条预警记录')
+        return
+      }
+      triageLogisticsWarning(target.warningId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('智能分诊已更新')
+      })
     },
     handleUpdate(row) {
       this.reset()
@@ -279,3 +370,90 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.warning-hero {
+  border: 1px solid #eaded6;
+  background: linear-gradient(135deg, #fff9f6 0%, #f7efea 100%);
+}
+
+.warning-head,
+.panel-head,
+.warning-item,
+.warning-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.warning-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #7c3829;
+}
+
+.warning-desc {
+  margin-top: 6px;
+  color: #8d6a5d;
+}
+
+.warning-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.warning-kpi-row,
+.warning-overview-row {
+  margin-top: 14px;
+}
+
+.warning-kpi-card,
+.warning-panel {
+  border: 1px solid #ecdcd4;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.warning-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.warning-kpi-card span,
+.panel-head small,
+.warning-kpi-card small,
+.warning-item p,
+.warning-box p {
+  color: #8b7366;
+}
+
+.warning-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #7c3829;
+}
+
+.warning-item {
+  padding: 8px 0;
+  border-top: 1px solid #f5ece7;
+  cursor: pointer;
+}
+
+.warning-item p {
+  margin: 4px 0 0;
+}
+
+.warning-score strong {
+  font-size: 26px;
+  color: #b14a35;
+}
+
+.warning-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #6e564c;
+}
+</style>

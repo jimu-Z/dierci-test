@@ -1,6 +1,6 @@
 <template>
-  <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="98px">
+  <div class="app-container output-sales-page">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="98px" class="filter-bar">
       <el-form-item label="开始日期" prop="beginStatDate">
         <el-date-picker clearable v-model="queryParams.beginStatDate" type="date" value-format="yyyy-MM-dd" placeholder="开始日期" />
       </el-form-item>
@@ -11,64 +11,134 @@
         <el-input-number v-model="futureMonths" :min="1" :max="6" :step="1" />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">刷新看板</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-        <el-button type="success" icon="el-icon-data-analysis" size="mini" @click="refreshDashboard">AI重算预测</el-button>
+        <el-button type="success" icon="el-icon-data-analysis" size="mini" @click="handleAiRefresh">AI重算预测</el-button>
       </el-form-item>
     </el-form>
 
-    <el-row :gutter="12" class="kpi-row" v-loading="dashboardLoading">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="kpi-card">
-          <div class="kpi-title">平均产量(吨)</div>
-          <div class="kpi-value">{{ kpi.avgOutput }}</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="kpi-card">
-          <div class="kpi-title">平均销量(万元)</div>
-          <div class="kpi-value">{{ kpi.avgSales }}</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="kpi-card">
-          <div class="kpi-title">产量累计增幅</div>
-          <div class="kpi-value">{{ kpi.outputGrowth }}%</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="kpi-card">
-          <div class="kpi-title">风险等级</div>
-          <div class="kpi-value">{{ ai.riskLevel || kpi.riskLevel || '中' }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <div class="overview" v-loading="dashboardLoading">
+      <div class="overview-title">产销量趋势驾驶舱</div>
+      <div class="overview-desc">覆盖历史走势、目标达成、环比波动、风险地块与预测洞察，支持运维与经营双视角判断。</div>
+      <el-row :gutter="12" class="kpi-row">
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="kpi-card">
+            <div class="kpi-title">平均产量(吨)</div>
+            <div class="kpi-value">{{ formatNumber(kpi.avgOutput) }}</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="kpi-card">
+            <div class="kpi-title">平均销量(万元)</div>
+            <div class="kpi-value">{{ formatNumber(kpi.avgSales) }}</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="kpi-card">
+            <div class="kpi-title">产量累计增幅</div>
+            <div class="kpi-value">{{ formatPercent(kpi.outputGrowth) }}</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="kpi-card">
+            <div class="kpi-title">销量累计增幅</div>
+            <div class="kpi-value">{{ formatPercent(kpi.salesGrowth) }}</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="kpi-card">
+            <div class="kpi-title">病虫害风险等级</div>
+            <div class="kpi-value">{{ ai.riskLevel || kpi.riskLevel || '中' }}</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="kpi-card">
+            <div class="kpi-title">预测置信度</div>
+            <div class="kpi-value">{{ formatRate(ai.confidenceRate || kpi.confidenceRate) }}</div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
 
     <el-row :gutter="12" class="chart-row">
       <el-col :xs="24" :lg="16">
         <el-card shadow="never" class="chart-card">
-          <div slot="header" class="chart-header">产量与销量趋势（历史 + 预测）</div>
+          <div slot="header" class="chart-header">历史+预测双轴趋势</div>
           <div ref="trendChart" class="chart-box"></div>
         </el-card>
       </el-col>
       <el-col :xs="24" :lg="8">
         <el-card shadow="never" class="chart-card">
-          <div slot="header" class="chart-header">病虫害高风险地块</div>
-          <div ref="riskChart" class="chart-box risk-box"></div>
+          <div slot="header" class="chart-header">病虫害高风险地块TOP</div>
+          <div ref="riskChart" class="chart-box"></div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-card shadow="never" class="ai-card">
-      <div slot="header" class="chart-header">AI预测洞察</div>
-      <div class="ai-meta">
-        <span>置信度：{{ ai.confidenceRate || kpi.confidenceRate || 0 }}</span>
-        <span>模型：{{ ai.modelVersion || 'rule-v1' }}</span>
-      </div>
-      <div class="ai-summary">{{ ai.summary || '暂无AI洞察' }}</div>
-      <div class="ai-suggestion" v-if="ai.suggestion">建议：{{ ai.suggestion }}</div>
+    <el-row :gutter="12" class="chart-row">
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never" class="chart-card">
+          <div slot="header" class="chart-header">目标达成率拆解</div>
+          <div ref="targetChart" class="chart-box chart-mid"></div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never" class="chart-card">
+          <div slot="header" class="chart-header">产销环比波动</div>
+          <div ref="momChart" class="chart-box chart-mid"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="12" class="chart-row">
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never" class="chart-card">
+          <div slot="header" class="chart-header">产销结构比（吨/万元）</div>
+          <div ref="ratioChart" class="chart-box chart-mid"></div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never" class="chart-card ai-card">
+          <div slot="header" class="chart-header">AI预测洞察</div>
+          <div class="ai-meta">
+            <span>模型：{{ ai.modelVersion || 'rule-v1' }}</span>
+            <span>风险：{{ ai.riskLevel || kpi.riskLevel || '中' }}</span>
+            <span>置信度：{{ formatRate(ai.confidenceRate || kpi.confidenceRate) }}</span>
+          </div>
+          <div class="ai-summary">{{ ai.summary || '暂无AI洞察' }}</div>
+          <div class="ai-suggestion" v-if="ai.suggestion">建议动作：{{ ai.suggestion }}</div>
+          <div class="warnings-box">
+            <div class="warning-title">运营预警</div>
+            <el-empty v-if="!warnings.length" description="暂无预警" :image-size="58" />
+            <div v-for="(item, index) in warnings" :key="index" class="warning-item">
+              <el-tag size="mini" :type="warningTagType(item.level)">{{ warningLevelText(item.level) }}</el-tag>
+              <span class="warning-name">{{ item.title }}</span>
+              <div class="warning-desc">{{ item.description }}</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-card shadow="never" class="detail-card">
+      <div slot="header" class="chart-header">月度明细指标</div>
+      <el-table :data="detailMetrics" size="mini" border>
+        <el-table-column prop="statMonth" label="月份" width="90" />
+        <el-table-column prop="outputValue" label="产量(吨)" width="100" />
+        <el-table-column prop="salesValue" label="销量(万元)" width="110" />
+        <el-table-column prop="targetOutput" label="目标产量" width="100" />
+        <el-table-column prop="targetSales" label="目标销量" width="100" />
+        <el-table-column prop="outputCompletionRate" label="产量达成率(%)" width="120" />
+        <el-table-column prop="salesCompletionRate" label="销量达成率(%)" width="120" />
+        <el-table-column prop="outputGap" label="产量差额" width="100" />
+        <el-table-column prop="salesGap" label="销量差额" width="100" />
+        <el-table-column prop="outputMomRate" label="产量环比(%)" width="110" />
+        <el-table-column prop="salesMomRate" label="销量环比(%)" width="110" />
+        <el-table-column prop="outputSalesRatio" label="产销结构比" width="110" />
+      </el-table>
     </el-card>
 
+    <el-divider>台账维护</el-divider>
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['agri:outputSalesTrend:add']">新增</el-button></el-col>
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['agri:outputSalesTrend:edit']">修改</el-button></el-col>
@@ -95,7 +165,7 @@
       </el-table-column>
     </el-table>
 
-    <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+    <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <el-dialog :title="title" :visible.sync="open" width="760px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="116px">
@@ -151,13 +221,20 @@ export default {
       trendList: [],
       title: '',
       open: false,
-      trendChart: null,
-      riskChart: null,
+      chartRefs: {
+        trendChart: null,
+        riskChart: null,
+        targetChart: null,
+        momChart: null,
+        ratioChart: null
+      },
       dashboard: {
         history: [],
         forecast: [],
         pestRisk: []
       },
+      detailMetrics: [],
+      warnings: [],
       kpi: {
         avgOutput: 0,
         avgSales: 0,
@@ -202,8 +279,9 @@ export default {
     getList() {
       this.loading = true
       listOutputSalesTrend(this.queryParams).then(response => {
-        this.trendList = response.rows
-        this.total = response.total
+        this.trendList = response.rows || []
+        this.total = response.total || 0
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -235,12 +313,13 @@ export default {
       this.futureMonths = 3
       this.handleQuery()
     },
-    refreshDashboard() {
+    refreshDashboard(useAi = false) {
       this.dashboardLoading = true
       getOutputSalesDashboard({
         beginStatDate: this.queryParams.beginStatDate,
         endStatDate: this.queryParams.endStatDate,
-        futureMonths: this.futureMonths
+        futureMonths: this.futureMonths,
+        useAi: useAi ? 1 : 0
       }).then(response => {
         const data = response.data || {}
         this.dashboard = {
@@ -248,87 +327,209 @@ export default {
           forecast: data.forecast || [],
           pestRisk: data.pestRisk || []
         }
+        this.detailMetrics = data.detailMetrics || this.buildDetailMetricsByHistory(this.dashboard.history)
+        this.warnings = data.warnings || []
         this.kpi = data.kpi || this.kpi
         this.ai = data.ai || this.ai
         this.$nextTick(() => {
-          this.renderTrendChart()
-          this.renderRiskChart()
+          this.renderAllCharts()
         })
+      }).catch(() => {
+        this.$message.error('趋势看板接口异常，请稍后重试')
       }).finally(() => {
         this.dashboardLoading = false
       })
     },
-    initTrendChart() {
-      if (!this.trendChart) {
-        this.trendChart = echarts.init(this.$refs.trendChart, 'macarons')
-      }
+    handleAiRefresh() {
+      this.refreshDashboard(true)
     },
-    initRiskChart() {
-      if (!this.riskChart) {
-        this.riskChart = echarts.init(this.$refs.riskChart, 'macarons')
+    buildDetailMetricsByHistory(history) {
+      return (history || []).map(item => {
+        const output = Number(item.outputValue || 0)
+        const sales = Number(item.salesValue || 0)
+        const targetOutput = Number(item.targetOutput || 0)
+        const targetSales = Number(item.targetSales || 0)
+        return {
+          statMonth: item.statMonth,
+          outputValue: this.fixed(output),
+          salesValue: this.fixed(sales),
+          targetOutput: this.fixed(targetOutput),
+          targetSales: this.fixed(targetSales),
+          outputGap: this.fixed(output - targetOutput),
+          salesGap: this.fixed(sales - targetSales),
+          outputCompletionRate: targetOutput > 0 ? this.fixed((output / targetOutput) * 100) : 0,
+          salesCompletionRate: targetSales > 0 ? this.fixed((sales / targetSales) * 100) : 0,
+          outputMomRate: this.fixed(item.outputMomRate || 0),
+          salesMomRate: this.fixed(item.salesMomRate || 0),
+          outputSalesRatio: sales > 0 ? this.fixed(output / sales, 4) : 0
+        }
+      })
+    },
+    renderAllCharts() {
+      this.renderTrendChart()
+      this.renderRiskChart()
+      this.renderTargetChart()
+      this.renderMomChart()
+      this.renderRatioChart()
+    },
+    ensureChart(refName) {
+      if (!this.chartRefs[refName] && this.$refs[refName]) {
+        this.chartRefs[refName] = echarts.init(this.$refs[refName], 'macarons')
       }
+      return this.chartRefs[refName]
     },
     renderTrendChart() {
-      this.initTrendChart()
+      const chart = this.ensureChart('trendChart')
+      if (!chart) {
+        return
+      }
       const history = this.dashboard.history || []
       const forecast = this.dashboard.forecast || []
       const months = history.map(item => item.statMonth).concat(forecast.map(item => item.statMonth))
-      const historyOutput = history.map(item => item.outputValue)
-      const historySales = history.map(item => item.salesValue)
-      const forecastOutput = new Array(history.length).fill(null).concat(forecast.map(item => item.outputValue))
-      const forecastSales = new Array(history.length).fill(null).concat(forecast.map(item => item.salesValue))
+      const historyOutput = history.map(item => Number(item.outputValue || 0))
+      const historySales = history.map(item => Number(item.salesValue || 0))
+      const targetOutput = history.map(item => Number(item.targetOutput || 0))
+      const targetSales = history.map(item => Number(item.targetSales || 0))
+      const forecastOutput = new Array(history.length).fill(null).concat(forecast.map(item => Number(item.outputValue || 0)))
+      const forecastSales = new Array(history.length).fill(null).concat(forecast.map(item => Number(item.salesValue || 0)))
 
-      this.trendChart.setOption({
+      chart.setOption({
         tooltip: { trigger: 'axis' },
-        legend: { data: ['历史产量', '历史销量', '预测产量', '预测销量'] },
-        grid: { left: '4%', right: '5%', bottom: '6%', containLabel: true },
+        legend: { data: ['历史产量', '历史销量', '预测产量', '预测销量', '目标产量', '目标销量'] },
+        grid: { left: '4%', right: '4%', bottom: '6%', containLabel: true },
         xAxis: [{ type: 'category', boundaryGap: false, data: months }],
-        yAxis: [{ type: 'value', name: '数值' }],
+        yAxis: [
+          { type: 'value', name: '产量(吨)', position: 'left' },
+          { type: 'value', name: '销量(万元)', position: 'right' }
+        ],
         series: [
-          { name: '历史产量', type: 'line', smooth: true, data: historyOutput },
-          { name: '历史销量', type: 'line', smooth: true, data: historySales },
-          { name: '预测产量', type: 'line', smooth: true, lineStyle: { type: 'dashed' }, data: forecastOutput },
-          { name: '预测销量', type: 'line', smooth: true, lineStyle: { type: 'dashed' }, data: forecastSales }
+          { name: '历史产量', type: 'line', smooth: true, yAxisIndex: 0, data: historyOutput },
+          { name: '历史销量', type: 'line', smooth: true, yAxisIndex: 1, data: historySales },
+          { name: '预测产量', type: 'line', smooth: true, yAxisIndex: 0, lineStyle: { type: 'dashed' }, data: forecastOutput },
+          { name: '预测销量', type: 'line', smooth: true, yAxisIndex: 1, lineStyle: { type: 'dashed' }, data: forecastSales },
+          { name: '目标产量', type: 'line', smooth: true, yAxisIndex: 0, symbol: 'none', data: targetOutput },
+          { name: '目标销量', type: 'line', smooth: true, yAxisIndex: 1, symbol: 'none', data: targetSales }
         ]
       })
     },
     renderRiskChart() {
-      this.initRiskChart()
+      const chart = this.ensureChart('riskChart')
+      if (!chart) {
+        return
+      }
       const pestRisk = this.dashboard.pestRisk || []
-      this.riskChart.setOption({
+      chart.setOption({
         tooltip: { trigger: 'axis' },
         grid: { left: '8%', right: '5%', bottom: '6%', containLabel: true },
-        xAxis: { type: 'value' },
-        yAxis: {
-          type: 'category',
-          data: pestRisk.map(item => item.plotCode)
-        },
+        xAxis: { type: 'value', name: '风险次数' },
+        yAxis: { type: 'category', data: pestRisk.map(item => item.plotCode) },
+        series: [{ name: '风险记录', type: 'bar', data: pestRisk.map(item => Number(item.count || 0)), itemStyle: { color: '#d35400' } }]
+      })
+    },
+    renderTargetChart() {
+      const chart = this.ensureChart('targetChart')
+      if (!chart) {
+        return
+      }
+      const detail = this.detailMetrics || []
+      chart.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['产量达成率', '销量达成率'] },
+        grid: { left: '5%', right: '4%', bottom: '6%', containLabel: true },
+        xAxis: { type: 'category', data: detail.map(item => item.statMonth) },
+        yAxis: { type: 'value', name: '%' },
+        series: [
+          { name: '产量达成率', type: 'bar', data: detail.map(item => Number(item.outputCompletionRate || 0)) },
+          { name: '销量达成率', type: 'bar', data: detail.map(item => Number(item.salesCompletionRate || 0)) }
+        ]
+      })
+    },
+    renderMomChart() {
+      const chart = this.ensureChart('momChart')
+      if (!chart) {
+        return
+      }
+      const detail = this.detailMetrics || []
+      chart.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['产量环比', '销量环比'] },
+        grid: { left: '5%', right: '4%', bottom: '6%', containLabel: true },
+        xAxis: { type: 'category', data: detail.map(item => item.statMonth) },
+        yAxis: { type: 'value', name: '%' },
+        series: [
+          { name: '产量环比', type: 'bar', data: detail.map(item => Number(item.outputMomRate || 0)) },
+          { name: '销量环比', type: 'bar', data: detail.map(item => Number(item.salesMomRate || 0)) }
+        ]
+      })
+    },
+    renderRatioChart() {
+      const chart = this.ensureChart('ratioChart')
+      if (!chart) {
+        return
+      }
+      const detail = this.detailMetrics || []
+      chart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: '5%', right: '4%', bottom: '6%', containLabel: true },
+        xAxis: { type: 'category', data: detail.map(item => item.statMonth) },
+        yAxis: { type: 'value', name: '吨/万元' },
         series: [
           {
-            type: 'bar',
-            data: pestRisk.map(item => item.count),
-            itemStyle: { color: '#e67e22' }
+            name: '产销结构比',
+            type: 'line',
+            smooth: true,
+            areaStyle: { opacity: 0.22 },
+            data: detail.map(item => Number(item.outputSalesRatio || 0))
           }
         ]
       })
     },
     handleResize() {
-      if (this.trendChart) {
-        this.trendChart.resize()
-      }
-      if (this.riskChart) {
-        this.riskChart.resize()
-      }
+      Object.keys(this.chartRefs).forEach(key => {
+        if (this.chartRefs[key]) {
+          this.chartRefs[key].resize()
+        }
+      })
     },
     disposeCharts() {
-      if (this.trendChart) {
-        this.trendChart.dispose()
-        this.trendChart = null
+      Object.keys(this.chartRefs).forEach(key => {
+        if (this.chartRefs[key]) {
+          this.chartRefs[key].dispose()
+          this.chartRefs[key] = null
+        }
+      })
+    },
+    warningTagType(level) {
+      if (level === 'high') {
+        return 'danger'
       }
-      if (this.riskChart) {
-        this.riskChart.dispose()
-        this.riskChart = null
+      if (level === 'medium') {
+        return 'warning'
       }
+      return 'info'
+    },
+    warningLevelText(level) {
+      if (level === 'high') {
+        return '高'
+      }
+      if (level === 'medium') {
+        return '中'
+      }
+      return '低'
+    },
+    formatNumber(value) {
+      return this.fixed(value)
+    },
+    formatPercent(value) {
+      return `${this.fixed(value)}%`
+    },
+    formatRate(value) {
+      const num = Number(value || 0)
+      return num <= 1 ? `${this.fixed(num * 100)}%` : `${this.fixed(num)}%`
+    },
+    fixed(value, scale = 2) {
+      const num = Number(value || 0)
+      return Number.isFinite(num) ? num.toFixed(scale) : '0.00'
     },
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.trendId)
@@ -390,23 +591,54 @@ export default {
 </script>
 
 <style scoped>
-.kpi-row {
+.output-sales-page {
+  background: linear-gradient(180deg, #f4f8ff 0%, #f9fbff 40%, #ffffff 100%);
+}
+
+.filter-bar {
+  padding: 10px 12px 2px;
+  border-radius: 8px;
+  background: #fff;
   margin-bottom: 12px;
+}
+
+.overview {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 14px 2px;
+  margin-bottom: 12px;
+}
+
+.overview-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #23395d;
+}
+
+.overview-desc {
+  margin-top: 6px;
+  color: #5a6a85;
+  font-size: 13px;
+}
+
+.kpi-row {
+  margin-top: 10px;
 }
 
 .kpi-card {
   margin-bottom: 12px;
+  border-radius: 10px;
 }
 
 .kpi-title {
-  color: #666;
-  font-size: 13px;
+  color: #567;
+  font-size: 12px;
 }
 
 .kpi-value {
   margin-top: 8px;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   color: #1f2d3d;
 }
 
@@ -416,31 +648,34 @@ export default {
 
 .chart-card {
   margin-bottom: 12px;
+  border-radius: 8px;
 }
 
 .chart-header {
   font-size: 14px;
   font-weight: 600;
+  color: #2f3f5e;
 }
 
 .chart-box {
   width: 100%;
-  height: 340px;
+  height: 320px;
 }
 
-.risk-box {
-  height: 340px;
+.chart-mid {
+  height: 290px;
 }
 
 .ai-card {
-  margin-bottom: 14px;
+  min-height: 330px;
 }
 
 .ai-meta {
   display: flex;
-  justify-content: space-between;
-  color: #666;
-  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #55657f;
+  margin-bottom: 10px;
 }
 
 .ai-summary {
@@ -450,6 +685,53 @@ export default {
 
 .ai-suggestion {
   margin-top: 8px;
-  color: #34495e;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f0f7ff;
+  color: #2d517a;
+}
+
+.warnings-box {
+  margin-top: 10px;
+  border-top: 1px dashed #d8e2f0;
+  padding-top: 10px;
+}
+
+.warning-title {
+  font-size: 13px;
+  color: #4d5f7f;
+  margin-bottom: 8px;
+}
+
+.warning-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f3f8;
+}
+
+.warning-name {
+  margin-left: 8px;
+  font-weight: 600;
+  color: #324866;
+}
+
+.warning-desc {
+  margin-top: 5px;
+  color: #6b7a95;
+  line-height: 1.5;
+}
+
+.detail-card {
+  margin-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+  .kpi-value {
+    font-size: 18px;
+  }
+
+  .chart-box,
+  .chart-mid {
+    height: 260px;
+  }
 }
 </style>

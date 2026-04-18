@@ -37,3 +37,17 @@ export function delAttestationVerify(verifyId) {
         method: 'delete'
     })
 }
+
+export function getAttestationVerifyDashboard() {
+    return request({
+        url: '/agri/attestationVerify/dashboard',
+        method: 'get'
+    })
+}
+
+export function smartVerifyAttestation(verifyId) {
+    return request({
+        url: '/agri/attestationVerify/smart/verify/' + verifyId,
+        method: 'get'
+    })
+}

@@ -10,7 +10,11 @@ import com.ruoyi.system.domain.AgriUserAccessGrant;
 import com.ruoyi.system.service.IAgriUserAccessGrantService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,6 +45,101 @@ public class AgriUserAccessGrantController extends BaseController
         startPage();
         List<AgriUserAccessGrant> list = agriUserAccessGrantService.selectAgriUserAccessGrantList(agriUserAccessGrant);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:userAccess:list')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard()
+    {
+        List<AgriUserAccessGrant> list = agriUserAccessGrantService.selectAgriUserAccessGrantList(new AgriUserAccessGrant());
+        int total = list.size();
+        int granted = 0;
+        int pending = 0;
+        int rejected = 0;
+        for (AgriUserAccessGrant item : list)
+        {
+            if ("1".equals(item.getGrantStatus()))
+            {
+                granted++;
+            }
+            else if ("2".equals(item.getGrantStatus()))
+            {
+                rejected++;
+            }
+            else
+            {
+                pending++;
+            }
+        }
+
+        List<AgriUserAccessGrant> reviewList = list.stream()
+            .filter(x -> "0".equals(x.getGrantStatus()))
+            .sorted(Comparator.comparing(AgriUserAccessGrant::getCreateTime,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(8)
+            .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("granted", granted);
+        kpi.put("pending", pending);
+        kpi.put("rejected", rejected);
+        kpi.put("grantRate", total == 0 ? 0 : granted * 100.0 / total);
+        result.put("kpi", kpi);
+        result.put("reviewList", reviewList);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:userAccess:edit')")
+    @GetMapping("/smart/recommend/{grantId}")
+    public AjaxResult smartRecommend(@PathVariable("grantId") Long grantId)
+    {
+        AgriUserAccessGrant grant = agriUserAccessGrantService.selectAgriUserAccessGrantByGrantId(grantId);
+        if (grant == null)
+        {
+            return error("授权记录不存在");
+        }
+
+        List<String> recommendedMenus = new ArrayList<>();
+        String roleKey = grant.getRoleKey() == null ? "" : grant.getRoleKey();
+        if (roleKey.contains("admin"))
+        {
+            recommendedMenus.add("agri:dashboardOverview");
+            recommendedMenus.add("agri:warningSummary");
+            recommendedMenus.add("agri:auditLog");
+        }
+        else if (roleKey.contains("operator"))
+        {
+            recommendedMenus.add("agri:envSensor");
+            recommendedMenus.add("agri:farmOp");
+            recommendedMenus.add("agri:pestIdentify");
+        }
+        else
+        {
+            recommendedMenus.add("agri:traceQueryStats");
+            recommendedMenus.add("agri:consumerScan");
+        }
+
+        String currentScope = grant.getMenuScope() == null ? "" : grant.getMenuScope();
+        int overlap = 0;
+        for (String menu : recommendedMenus)
+        {
+            if (currentScope.contains(menu))
+            {
+                overlap++;
+            }
+        }
+        double fitScore = recommendedMenus.isEmpty() ? 0 : (overlap * 100.0 / recommendedMenus.size());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("grantId", grant.getGrantId());
+        result.put("algorithm", "rbac-fit-v1");
+        result.put("roleKey", grant.getRoleKey());
+        result.put("fitScore", Math.round(fitScore * 100.0) / 100.0);
+        result.put("recommendedMenus", recommendedMenus);
+        result.put("summary", "基于角色模板完成权限拟合，建议补齐最小可用菜单集。");
+        return success(result);
     }
 
     @PreAuthorize("@ss.hasPermi('agri:userAccess:export')")

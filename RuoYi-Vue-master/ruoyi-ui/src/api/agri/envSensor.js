@@ -8,6 +8,21 @@ export function listEnvSensor(query) {
     })
 }
 
+export function getEnvSensorDashboard(query) {
+    return request({
+        url: '/agri/envSensor/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function diagnoseEnvSensor(recordId) {
+    return request({
+        url: '/agri/envSensor/smart/diagnose/' + recordId,
+        method: 'get'
+    })
+}
+
 export function getEnvSensor(recordId) {
     return request({
         url: '/agri/envSensor/' + recordId,

@@ -37,3 +37,17 @@ export function delAuditLog(auditId) {
         method: 'delete'
     })
 }
+
+export function getAuditLogDashboard() {
+    return request({
+        url: '/agri/auditLog/dashboard',
+        method: 'get'
+    })
+}
+
+export function smartDetectAuditLog(auditId) {
+    return request({
+        url: '/agri/auditLog/smart/detect/' + auditId,
+        method: 'get'
+    })
+}

@@ -1,5 +1,107 @@
 <template>
   <div class="app-container">
+    <div class="ops-shell logistics-shell" v-loading="opsLoading">
+      <div class="hero-banner logistics-hero">
+        <div class="hero-copy">
+          <div class="hero-label">物流路径追踪运营台</div>
+          <h2>把运单轨迹、温控压力和停留风险汇成处置中枢</h2>
+          <p>实时看板聚焦异常路径、在途压力、回放复盘与智能研判，底层仍保留轨迹维护与导出能力。</p>
+          <div class="hero-actions">
+            <el-button type="primary" icon="el-icon-plus" @click="handleAdd">新增轨迹</el-button>
+            <el-button icon="el-icon-view" :disabled="!focusTrack.traceCode" @click="handlePreview(focusTrack)">轨迹复盘</el-button>
+            <el-button type="warning" icon="el-icon-data-analysis" :disabled="!focusTrack.trackId" @click="handleAnalyze(focusTrack)">智能研判</el-button>
+            <el-button icon="el-icon-refresh" @click="refreshDashboard">刷新中枢</el-button>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div v-for="card in metricCards" :key="card.label" class="hero-stat-card">
+            <div class="hero-stat-label">{{ card.label }}</div>
+            <div class="hero-stat-value">{{ card.value }}</div>
+            <div class="hero-stat-desc">{{ card.desc }}</div>
+          </div>
+        </div>
+      </div>
+
+      <el-row :gutter="16" class="ops-grid">
+        <el-col :span="15">
+          <el-card shadow="never" class="ops-card">
+            <div slot="header" class="ops-card-header">
+              <span>异常压力队列</span>
+              <span class="ops-card-subtitle">优先处理高风险、无轨迹和温控异常记录</span>
+            </div>
+            <el-table :data="pressureQueue" size="mini" v-loading="opsLoading">
+              <el-table-column label="运单号" prop="traceCode" width="150" />
+              <el-table-column label="当前位置" prop="currentLocation" width="140" show-overflow-tooltip />
+              <el-table-column label="状态" width="90">
+                <template slot-scope="scope">
+                  <el-tag :type="statusTagType(scope.row.trackStatus)" size="mini">{{ scope.row.statusLabel || formatTrackStatus(scope.row.trackStatus) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="风险等级" width="90">
+                <template slot-scope="scope">
+                  <el-tag :type="riskTagType(scope.row.riskLevel)" size="mini">{{ scope.row.riskLevel }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="温度" width="90">
+                <template slot-scope="scope">{{ formatNumber(scope.row.temperature, '℃') }}</template>
+              </el-table-column>
+              <el-table-column label="湿度" width="90">
+                <template slot-scope="scope">{{ formatNumber(scope.row.humidity, '%') }}</template>
+              </el-table-column>
+              <el-table-column label="处置理由" prop="riskReason" min-width="160" show-overflow-tooltip />
+              <el-table-column label="操作" width="150" align="center">
+                <template slot-scope="scope">
+                  <el-button type="text" size="mini" icon="el-icon-map-location" @click="handlePreview(scope.row)">复盘</el-button>
+                  <el-button type="text" size="mini" icon="el-icon-data-analysis" @click="handleAnalyze(scope.row)">研判</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </el-col>
+        <el-col :span="9">
+          <el-card shadow="never" class="ops-card focus-card">
+            <div slot="header" class="ops-card-header">
+              <span>当前聚焦运单</span>
+              <span class="ops-card-subtitle">随队列自动取首条高压记录</span>
+            </div>
+            <div v-if="focusTrack.traceCode" class="focus-track">
+              <div class="focus-track-title">{{ focusTrack.traceCode }}</div>
+              <div class="focus-track-meta">
+                <span>{{ focusTrack.orderNo || '-' }}</span>
+                <span>{{ focusTrack.productBatchNo || '-' }}</span>
+              </div>
+              <div class="focus-track-row"><span>状态</span><el-tag :type="statusTagType(focusTrack.trackStatus)" size="mini">{{ focusTrack.statusLabel || formatTrackStatus(focusTrack.trackStatus) }}</el-tag></div>
+              <div class="focus-track-row"><span>风险</span><el-tag :type="riskTagType(focusTrack.riskLevel)" size="mini">{{ focusTrack.riskLevel }}</el-tag></div>
+              <div class="focus-track-row"><span>位置</span><span>{{ focusTrack.currentLocation || '-' }}</span></div>
+              <div class="focus-track-row"><span>温度</span><span>{{ formatNumber(focusTrack.temperature, '℃') }}</span></div>
+              <div class="focus-track-row"><span>湿度</span><span>{{ formatNumber(focusTrack.humidity, '%') }}</span></div>
+              <div class="focus-track-summary">{{ focusTrack.summary || focusTrack.riskReason }}</div>
+              <div class="focus-track-actions">
+                <el-button type="primary" size="mini" @click="handlePreview(focusTrack)">查看复盘</el-button>
+                <el-button size="mini" @click="handleAnalyze(focusTrack)">智能研判</el-button>
+              </div>
+            </div>
+            <el-empty v-else description="暂无聚焦运单" />
+          </el-card>
+
+          <el-card shadow="never" class="ops-card suggestions-card">
+            <div slot="header" class="ops-card-header">
+              <span>处置建议</span>
+              <span class="ops-card-subtitle">基于当前轨迹压力自动生成</span>
+            </div>
+            <div v-for="item in suggestions" :key="item.title" class="suggestion-item">
+              <div class="suggestion-top">
+                <strong>{{ item.title }}</strong>
+                <el-tag :type="priorityTagType(item.priority)" size="mini">{{ item.priority }}</el-tag>
+              </div>
+              <div class="suggestion-content">{{ item.content }}</div>
+            </div>
+            <el-empty v-if="!suggestions.length" description="暂无建议" />
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="运单号" prop="traceCode">
         <el-input v-model="queryParams.traceCode" placeholder="请输入运单号" clearable style="width: 180px" @keyup.enter.native="handleQuery" />
@@ -46,6 +148,7 @@
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:logisticsTrack:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-map-location" @click="handlePreview(scope.row)" v-hasPermi="['agri:logisticsTrack:query']">预览</el-button>
+          <el-button size="mini" type="text" icon="el-icon-data-analysis" @click="handleAnalyze(scope.row)" v-hasPermi="['agri:logisticsTrack:query']">研判</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:logisticsTrack:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -185,6 +288,46 @@
         <el-button @click="previewOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <el-dialog title="智能研判" :visible.sync="analysisOpen" width="840px" append-to-body>
+      <el-skeleton v-if="analysisLoading" :rows="6" animated />
+      <div v-else class="analysis-panel">
+        <el-row :gutter="12" class="analysis-card-row">
+          <el-col :span="8">
+            <el-card shadow="never" class="analysis-card">
+              <div class="summary-label">风险分数</div>
+              <div class="analysis-value">{{ analysisResult.riskScore || 0 }}</div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card shadow="never" class="analysis-card">
+              <div class="summary-label">风险等级</div>
+              <div class="analysis-value">{{ analysisResult.riskLevel || '-' }}</div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card shadow="never" class="analysis-card">
+              <div class="summary-label">算法</div>
+              <div class="analysis-value">{{ analysisResult.algorithm || '-' }}</div>
+            </el-card>
+          </el-col>
+        </el-row>
+        <el-card shadow="never" class="analysis-detail-card">
+          <div class="analysis-detail-title">风险因子</div>
+          <el-tag v-for="factor in analysisResult.factors || []" :key="factor" size="mini" type="warning" class="analysis-tag">{{ factor }}</el-tag>
+          <div class="analysis-detail-title">处置建议</div>
+          <div v-for="item in analysisResult.suggestions || []" :key="item.title" class="analysis-suggestion">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.content }}</span>
+          </div>
+          <div class="analysis-detail-title">摘要</div>
+          <div class="analysis-summary-text">{{ analysisResult.summary && analysisResult.summary.summaryText ? analysisResult.summary.summaryText : '暂无摘要' }}</div>
+        </el-card>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="analysisOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -196,7 +339,9 @@ import {
   updateLogisticsTrack,
   delLogisticsTrack,
   listLogisticsTimeline,
-  getLogisticsTrackSummary
+  getLogisticsTrackSummary,
+  getLogisticsTrackDashboardOps,
+  smartAnalyzeLogisticsTrack
 } from '@/api/agri/logisticsTrack'
 
 export default {
@@ -204,16 +349,22 @@ export default {
   data() {
     return {
       loading: true,
+      opsLoading: true,
       ids: [],
       single: true,
       multiple: true,
-      showSearch: true,
+      showSearch: false,
       total: 0,
       trackList: [],
+      opsData: {},
       timelineList: [],
       summaryInfo: {},
       routeSteps: [],
       previewTrack: {},
+      focusTrack: {},
+      analysisOpen: false,
+      analysisLoading: false,
+      analysisResult: {},
       title: '',
       open: false,
       timelineOpen: false,
@@ -243,9 +394,41 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    pressureQueue() {
+      return this.opsData.pressureQueue || []
+    },
+    suggestions() {
+      return this.opsData.suggestions || []
+    },
+    warningList() {
+      return this.opsData.warningList || []
+    },
+    metricCards() {
+      const kpi = this.opsData.kpi || {}
+      return [
+        { label: '轨迹总数', value: kpi.total || 0, desc: `待发车 ${kpi.pending || 0} 条` },
+        { label: '异常轨迹', value: kpi.abnormal || 0, desc: `高压告警 ${kpi.highRiskCount || 0} 条` },
+        { label: '路线覆盖率', value: `${kpi.routeCoverage || 0}%`, desc: '路线轨迹完整度' },
+        { label: '平均温度', value: this.formatNumber(kpi.avgTemperature, '℃'), desc: `平均湿度 ${this.formatNumber(kpi.avgHumidity, '%')}` }
+      ]
+    }
+  },
   methods: {
+    refreshDashboard() {
+      this.opsLoading = true
+      getLogisticsTrackDashboardOps()
+        .then(response => {
+          this.opsData = response.data || {}
+          this.focusTrack = this.pressureQueue.length ? this.pressureQueue[0] : {}
+        })
+        .finally(() => {
+          this.opsLoading = false
+        })
+    },
     getList() {
       this.loading = true
       listLogisticsTrack(this.queryParams).then(response => {
@@ -257,6 +440,36 @@ export default {
     formatTrackStatus(value) {
       const option = this.trackStatusOptions.find(item => item.value === value)
       return option ? option.label : value
+    },
+    statusTagType(value) {
+      if (value === '3') {
+        return 'danger'
+      }
+      if (value === '1') {
+        return 'success'
+      }
+      if (value === '2') {
+        return 'info'
+      }
+      return 'warning'
+    },
+    riskTagType(value) {
+      if (value === '高') {
+        return 'danger'
+      }
+      if (value === '中') {
+        return 'warning'
+      }
+      return 'success'
+    },
+    priorityTagType(value) {
+      if (value === 'P0') {
+        return 'danger'
+      }
+      if (value === 'P1') {
+        return 'warning'
+      }
+      return 'info'
     },
     cancel() {
       this.open = false
@@ -328,6 +541,22 @@ export default {
         this.timelineList = response.data || []
         this.timelineOpen = true
       })
+    },
+    handleAnalyze(row) {
+      if (!row || !row.trackId) {
+        this.$modal.msgWarning('请选择一条物流记录进行研判')
+        return
+      }
+      this.focusTrack = row
+      this.analysisLoading = true
+      smartAnalyzeLogisticsTrack(row.trackId)
+        .then(response => {
+          this.analysisResult = response.data || {}
+          this.analysisOpen = true
+        })
+        .finally(() => {
+          this.analysisLoading = false
+        })
     },
     handlePreview(row) {
       if (!row) {
@@ -423,7 +652,218 @@ export default {
 }
 </script>
 
+
 <style scoped>
+.ops-shell {
+  margin-bottom: 20px;
+}
+
+.hero-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px;
+  margin-bottom: 18px;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(135deg, #17324d 0%, #215d8b 55%, #0f7c7d 100%);
+  box-shadow: 0 20px 40px rgba(21, 61, 92, 0.16);
+}
+
+.hero-copy {
+  max-width: 560px;
+}
+
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.hero-copy h2 {
+  margin: 0 0 10px;
+  font-size: 26px;
+  line-height: 1.35;
+}
+
+.hero-copy p {
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 12px;
+  min-width: 320px;
+}
+
+.hero-stat-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.hero-stat-label,
+.hero-stat-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hero-stat-value {
+  margin: 6px 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.ops-grid {
+  margin-bottom: 18px;
+}
+
+.ops-card {
+  border: 1px solid #e8edf4;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ops-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #1f2d3d;
+}
+
+.ops-card-subtitle {
+  font-weight: 400;
+  font-size: 12px;
+  color: #8a94a6;
+}
+
+.focus-track {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.focus-track-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2d3d;
+}
+
+.focus-track-meta,
+.focus-track-row,
+.suggestion-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.focus-track-meta {
+  color: #667085;
+  font-size: 12px;
+}
+
+.focus-track-row {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f6f9fc;
+  color: #425466;
+}
+
+.focus-track-summary,
+.suggestion-content {
+  color: #52616f;
+  line-height: 1.7;
+}
+
+.focus-track-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.suggestion-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.suggestion-item:last-child {
+  border-bottom: 0;
+}
+
+.suggestions-card,
+.focus-card {
+  margin-top: 16px;
+}
+
+.analysis-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.analysis-card-row {
+  margin-bottom: 4px;
+}
+
+.analysis-card {
+  text-align: center;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.analysis-value {
+  margin-top: 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2d3d;
+}
+
+.analysis-detail-card {
+  border-radius: 12px;
+}
+
+.analysis-detail-title {
+  margin: 14px 0 8px;
+  font-weight: 600;
+  color: #1f2d3d;
+}
+
+.analysis-tag {
+  margin: 0 8px 8px 0;
+}
+
+.analysis-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f6f9fc;
+}
+
+.analysis-summary-text {
+  color: #52616f;
+  line-height: 1.8;
+}
+
 .route-map-panel {
   min-height: 320px;
   padding: 16px;

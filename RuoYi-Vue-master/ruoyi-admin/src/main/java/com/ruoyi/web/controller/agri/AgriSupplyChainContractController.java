@@ -9,6 +9,16 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriSupplyChainContract;
 import com.ruoyi.system.service.IAgriSupplyChainContractService;
 import jakarta.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -39,6 +49,199 @@ public class AgriSupplyChainContractController extends BaseController
     {
         startPage();
         return getDataTable(agriSupplyChainContractService.selectAgriSupplyChainContractList(agriSupplyChainContract));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:supplyContract:list')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard()
+    {
+        List<AgriSupplyChainContract> list = agriSupplyChainContractService.selectAgriSupplyChainContractList(new AgriSupplyChainContract());
+        int total = list.size();
+        int activeCount = 0;
+        int highRiskCount = 0;
+        int expiringSoonCount = 0;
+        BigDecimal amountSum = BigDecimal.ZERO;
+        LocalDate now = LocalDate.now();
+
+        for (AgriSupplyChainContract item : list)
+        {
+            amountSum = amountSum.add(defaultZero(item.getFinanceAmount()));
+            if ("1".equals(item.getContractStatus()))
+            {
+                activeCount++;
+            }
+            if ("H".equalsIgnoreCase(item.getRiskLevel()) || "C".equalsIgnoreCase(item.getRiskLevel()))
+            {
+                highRiskCount++;
+            }
+            if (item.getEndDate() != null)
+            {
+                long days = ChronoUnit.DAYS.between(now, item.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                if (days >= 0 && days <= 30)
+                {
+                    expiringSoonCount++;
+                }
+            }
+        }
+
+        List<AgriSupplyChainContract> topList = list.stream()
+            .sorted(Comparator.comparing((AgriSupplyChainContract c) -> defaultZero(c.getFinanceAmount())).reversed())
+            .limit(6)
+            .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("activeCount", activeCount);
+        kpi.put("highRiskCount", highRiskCount);
+        kpi.put("expiringSoonCount", expiringSoonCount);
+        kpi.put("amountSum", amountSum.setScale(2, RoundingMode.HALF_UP));
+        result.put("kpi", kpi);
+        result.put("topList", topList);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:supplyContract:list')")
+    @GetMapping("/dashboard/ops")
+    public AjaxResult dashboardOps()
+    {
+        List<AgriSupplyChainContract> list = agriSupplyChainContractService.selectAgriSupplyChainContractList(new AgriSupplyChainContract());
+        int total = list.size();
+        int activeCount = 0;
+        int signingCount = 0;
+        int maturityCount = 0;
+        int highRiskCount = 0;
+        BigDecimal amountSum = BigDecimal.ZERO;
+        Map<String, Integer> statusBucket = new LinkedHashMap<>();
+        statusBucket.put("0", 0);
+        statusBucket.put("1", 0);
+        statusBucket.put("2", 0);
+        statusBucket.put("3", 0);
+
+        LocalDate now = LocalDate.now();
+        for (AgriSupplyChainContract item : list)
+        {
+            amountSum = amountSum.add(defaultZero(item.getFinanceAmount()));
+            String status = item.getContractStatus() == null ? "0" : item.getContractStatus();
+            statusBucket.put(status, statusBucket.getOrDefault(status, 0) + 1);
+            if ("1".equals(status))
+            {
+                activeCount++;
+            }
+            if ("0".equals(status))
+            {
+                signingCount++;
+            }
+            if ("2".equals(status) || "3".equals(status))
+            {
+                maturityCount++;
+            }
+            if ("H".equalsIgnoreCase(item.getRiskLevel()) || "C".equalsIgnoreCase(item.getRiskLevel()))
+            {
+                highRiskCount++;
+            }
+        }
+
+        List<AgriSupplyChainContract> pressureQueue = list.stream()
+            .sorted(Comparator.comparing((AgriSupplyChainContract c) -> defaultZero(c.getFinanceAmount())).reversed())
+            .limit(8)
+            .toList();
+
+        List<Map<String, Object>> alerts = list.stream()
+            .sorted((left, right) -> compareUrgency(left, right, now))
+            .limit(10)
+            .map(item -> {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("contractId", item.getContractId());
+                row.put("contractNo", item.getContractNo());
+                row.put("contractName", item.getContractName());
+                row.put("financeSubject", item.getFinanceSubject());
+                row.put("financeAmount", defaultZero(item.getFinanceAmount()));
+                row.put("interestRate", defaultZero(item.getInterestRate()));
+                row.put("contractStatus", item.getContractStatus());
+                row.put("riskLevel", item.getRiskLevel());
+                row.put("endDate", item.getEndDate());
+                row.put("remainDays", remainDays(item, now));
+                return row;
+            })
+            .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("activeCount", activeCount);
+        kpi.put("signingCount", signingCount);
+        kpi.put("maturityCount", maturityCount);
+        kpi.put("highRiskCount", highRiskCount);
+        kpi.put("amountSum", amountSum.setScale(2, RoundingMode.HALF_UP));
+        result.put("kpi", kpi);
+        result.put("statusBucket", statusBucket);
+        result.put("pressureQueue", pressureQueue);
+        result.put("alerts", alerts);
+        result.put("suggestions", buildContractSuggestions(activeCount, maturityCount, highRiskCount, amountSum));
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:supplyContract:edit')")
+    @GetMapping("/smart/assess/{contractId}")
+    public AjaxResult smartAssess(@PathVariable("contractId") Long contractId)
+    {
+        AgriSupplyChainContract contract = agriSupplyChainContractService.selectAgriSupplyChainContractByContractId(contractId);
+        if (contract == null)
+        {
+            return error("合约不存在");
+        }
+
+        BigDecimal amount = defaultZero(contract.getFinanceAmount());
+        BigDecimal rate = defaultZero(contract.getInterestRate());
+        BigDecimal annualInterest = amount.multiply(rate).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+        long remainDays = -1;
+        if (contract.getEndDate() != null)
+        {
+            remainDays = ChronoUnit.DAYS.between(LocalDate.now(), contract.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        }
+
+        BigDecimal pressureIndex = rate.multiply(new BigDecimal("5"));
+        if (remainDays >= 0 && remainDays <= 30)
+        {
+            pressureIndex = pressureIndex.add(new BigDecimal("25"));
+        }
+        if ("H".equalsIgnoreCase(contract.getRiskLevel()) || "C".equalsIgnoreCase(contract.getRiskLevel()))
+        {
+            pressureIndex = pressureIndex.add(new BigDecimal("20"));
+        }
+        pressureIndex = pressureIndex.min(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+
+        String riskBand = pressureIndex.compareTo(new BigDecimal("80")) >= 0 ? "C" :
+            (pressureIndex.compareTo(new BigDecimal("60")) >= 0 ? "H" :
+                (pressureIndex.compareTo(new BigDecimal("35")) >= 0 ? "M" : "L"));
+
+        List<String> actions = new ArrayList<>();
+        if (remainDays >= 0 && remainDays <= 30)
+        {
+            actions.add("合约即将到期，建议提前完成续约或清偿安排");
+        }
+        if (rate.compareTo(new BigDecimal("12")) > 0)
+        {
+            actions.add("利率偏高，建议评估再融资与担保优化方案");
+        }
+        if (actions.isEmpty())
+        {
+            actions.add("当前现金流压力可控，建议继续按月跟踪履约进度");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("contractId", contract.getContractId());
+        result.put("contractNo", contract.getContractNo());
+        result.put("algorithm", "cashflow-pressure-v1");
+        result.put("annualInterest", annualInterest);
+        result.put("remainDays", remainDays);
+        result.put("pressureIndex", pressureIndex);
+        result.put("riskBand", riskBand);
+        result.put("actions", actions);
+        result.put("summary", "根据融资规模、利率与到期窗口完成现金流压力评估，综合风险等级为" + riskBand + "。");
+        return success(result);
     }
 
     @PreAuthorize("@ss.hasPermi('agri:supplyContract:export')")
@@ -79,5 +282,62 @@ public class AgriSupplyChainContractController extends BaseController
     public AjaxResult remove(@PathVariable Long[] contractIds)
     {
         return toAjax(agriSupplyChainContractService.deleteAgriSupplyChainContractByContractIds(contractIds));
+    }
+
+    private BigDecimal defaultZero(BigDecimal value)
+    {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private long remainDays(AgriSupplyChainContract contract, LocalDate now)
+    {
+        if (contract.getEndDate() == null)
+        {
+            return Long.MIN_VALUE;
+        }
+        return ChronoUnit.DAYS.between(now, contract.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+    }
+
+    private int compareUrgency(AgriSupplyChainContract left, AgriSupplyChainContract right, LocalDate now)
+    {
+        long leftDays = remainDays(left, now);
+        long rightDays = remainDays(right, now);
+        boolean leftHighRisk = "H".equalsIgnoreCase(left.getRiskLevel()) || "C".equalsIgnoreCase(left.getRiskLevel());
+        boolean rightHighRisk = "H".equalsIgnoreCase(right.getRiskLevel()) || "C".equalsIgnoreCase(right.getRiskLevel());
+        if (leftHighRisk != rightHighRisk)
+        {
+            return leftHighRisk ? -1 : 1;
+        }
+        if (leftDays != rightDays)
+        {
+            return Long.compare(leftDays, rightDays);
+        }
+        return defaultZero(right.getFinanceAmount()).compareTo(defaultZero(left.getFinanceAmount()));
+    }
+
+    private List<String> buildContractSuggestions(int activeCount, int maturityCount, int highRiskCount, BigDecimal amountSum)
+    {
+        List<String> suggestions = new ArrayList<>();
+        if (highRiskCount > 0)
+        {
+            suggestions.add("存在高风险合约，建议优先复核担保、回款与风控等级");
+        }
+        if (maturityCount > 0)
+        {
+            suggestions.add("存在临近到期合约，建议同步续约、展期或清偿方案");
+        }
+        if (amountSum.compareTo(new BigDecimal("1000000")) >= 0)
+        {
+            suggestions.add("当前融资规模较高，建议按主体维度拆分查看暴露敞口");
+        }
+        if (activeCount == 0)
+        {
+            suggestions.add("暂无生效中的合约，建议尽快推进签约后续执行链路");
+        }
+        if (suggestions.isEmpty())
+        {
+            suggestions.add("当前合约结构稳定，建议维持月度复盘和到期提醒机制");
+        }
+        return suggestions;
     }
 }

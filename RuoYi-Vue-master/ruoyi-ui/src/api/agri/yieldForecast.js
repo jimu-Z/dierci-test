@@ -46,6 +46,20 @@ export function invokeYieldForecast(forecastId) {
     })
 }
 
+export function getYieldForecastDashboardOps() {
+    return request({
+        url: '/agri/yieldForecast/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartAssessYieldForecast(forecastId) {
+    return request({
+        url: '/agri/yieldForecast/smart/assess/' + forecastId,
+        method: 'get'
+    })
+}
+
 export function delYieldForecast(forecastId) {
     return request({
         url: '/agri/yieldForecast/' + forecastId,

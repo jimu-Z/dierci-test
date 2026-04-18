@@ -1,5 +1,62 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="farm-hero mb16">
+      <div class="farm-hero-head">
+        <div>
+          <div class="farm-title">农事作业调度台</div>
+          <div class="farm-desc">围绕播种、施肥、灌溉、用药和采收做作业节奏管理，优先呈现待复核事项。</div>
+        </div>
+        <div class="farm-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-magic-stick" @click="handleAdvice">智能建议</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="farm-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="farm-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="farm-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="farm-panel">
+            <div class="farm-panel-head"><span>作业结构</span><small>统计当前作业类型分布</small></div>
+            <div class="farm-mix-list" v-if="operationMix.length">
+              <div v-for="item in operationMix" :key="item.type" class="farm-mix-item">
+                <span>{{ formatOperationType(item.type) }}</span>
+                <strong>{{ item.count }}</strong>
+              </div>
+            </div>
+            <el-empty v-else description="暂无作业统计" />
+            <div class="farm-recent" v-if="recentRows.length">
+              <div class="farm-panel-subhead">最近作业</div>
+              <div v-for="item in recentRows" :key="item.operationId" class="farm-recent-item">
+                <div>
+                  <b>{{ formatOperationType(item.operationType) }}</b>
+                  <p>{{ item.plotCode || '-' }} · {{ item.operatorName || '-' }}</p>
+                </div>
+                <span>{{ parseTime(item.operationTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="farm-panel">
+            <div class="farm-panel-head"><span>智能建议</span><small>根据当前作业记录给出复核提示</small></div>
+            <div v-if="smartAdvice.operationId" class="farm-advice-box">
+              <div class="farm-score"><strong>{{ smartAdvice.riskScore }}</strong><span>{{ smartAdvice.riskLevel }}风险</span></div>
+              <p>{{ smartAdvice.advice }}</p>
+              <ul><li v-for="item in smartAdvice.suggestions" :key="item">{{ item }}</li></ul>
+            </div>
+            <el-empty v-else description="点击智能建议或表格操作获取分析" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="地块编码" prop="plotCode">
         <el-input
@@ -82,6 +139,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-magic-stick" @click="handleAdvice(scope.row)" v-hasPermi="['agri:farmOp:query']">建议</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:farmOp:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:farmOp:remove']">删除</el-button>
         </template>
@@ -169,6 +227,7 @@
 
 <script>
 import { listFarmOp, getFarmOp, delFarmOp, addFarmOp, updateFarmOp } from '@/api/agri/farmOp'
+import { getFarmOpDashboard, getFarmOpAdvice } from '@/api/agri/farmOp'
 
 export default {
   name: 'FarmOperation',
@@ -182,6 +241,8 @@ export default {
       showSearch: true,
       total: 0,
       farmOpList: [],
+      dashboardData: {},
+      smartAdvice: {},
       title: '',
       open: false,
       queryParams: {
@@ -210,9 +271,32 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '作业总数', value: summary.totalCount || 0, foot: '当前筛选范围内记录数' },
+        { key: 'plot', label: '地块数', value: summary.plotCount || 0, foot: '参与作业的地块' },
+        { key: 'operator', label: '作业人', value: summary.operatorCount || 0, foot: '去重执行人数' },
+        { key: 'active', label: '正常记录', value: summary.activeCount || 0, foot: '状态正常的作业记录' }
+      ]
+    },
+    operationMix() {
+      return this.dashboardData.typeRows || []
+    },
+    recentRows() {
+      return this.dashboardData.recentRows || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getFarmOpDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listFarmOp(this.queryParams).then(response => {
@@ -247,10 +331,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -270,6 +356,17 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改农事记录'
+      })
+    },
+    handleAdvice(row) {
+      const target = row || this.farmOpList[0]
+      if (!target || !target.operationId) {
+        this.$modal.msgWarning('请先选择一条农事记录')
+        return
+      }
+      getFarmOpAdvice(target.operationId).then(response => {
+        this.smartAdvice = response.data || {}
+        this.$modal.msgSuccess('智能建议已更新')
       })
     },
     submitForm() {
@@ -317,3 +414,112 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.farm-hero {
+  border: 1px solid #e6e1d5;
+  background: linear-gradient(135deg, #fffdf6 0%, #f9f5ea 100%);
+}
+
+.farm-hero-head,
+.farm-panel-head,
+.farm-recent-item,
+.farm-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.farm-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #5a3a0a;
+}
+
+.farm-desc {
+  margin-top: 6px;
+  color: #7a684a;
+}
+
+.farm-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.farm-kpi-row,
+.farm-overview-row {
+  margin-top: 14px;
+}
+
+.farm-kpi-card,
+.farm-panel {
+  border: 1px solid #eadfc9;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.farm-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.farm-kpi-card span,
+.farm-panel-head small,
+.farm-kpi-card small,
+.farm-recent-item p,
+.farm-advice-box p {
+  color: #81745f;
+}
+
+.farm-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #5a3a0a;
+}
+
+.farm-panel-head,
+.farm-panel-subhead {
+  margin-bottom: 12px;
+}
+
+.farm-mix-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.farm-mix-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fffaf0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.farm-recent {
+  margin-top: 14px;
+}
+
+.farm-recent-item {
+  padding: 8px 0;
+  border-top: 1px solid #f1eadc;
+}
+
+.farm-recent-item p {
+  margin: 4px 0 0;
+}
+
+.farm-score strong {
+  font-size: 26px;
+  color: #a16912;
+}
+
+.farm-advice-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #5f513f;
+}
+</style>

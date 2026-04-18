@@ -8,6 +8,21 @@ export function listFarmOp(query) {
     })
 }
 
+export function getFarmOpDashboard(query) {
+    return request({
+        url: '/agri/farmOp/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getFarmOpAdvice(operationId) {
+    return request({
+        url: '/agri/farmOp/smart/advice/' + operationId,
+        method: 'get'
+    })
+}
+
 export function getFarmOp(operationId) {
     return request({
         url: '/agri/farmOp/' + operationId,

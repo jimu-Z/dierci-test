@@ -37,3 +37,19 @@ export function delWarningSummary(summaryId) {
         method: 'delete'
     })
 }
+
+export function getWarningSummaryDashboard(query) {
+    return request({
+        url: '/agri/warningSummary/dashboard/overview',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getWarningSummaryAlerts(query) {
+    return request({
+        url: '/agri/warningSummary/dashboard/alerts',
+        method: 'get',
+        params: query
+    })
+}

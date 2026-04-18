@@ -18,7 +18,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +65,25 @@ public class AgriEnvSensorRecordController extends BaseController
         startPage();
         List<AgriEnvSensorRecord> list = agriEnvSensorRecordService.selectAgriEnvSensorRecordList(agriEnvSensorRecord);
         return getDataTable(list);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:envSensor:query')")
+    @GetMapping("/dashboard")
+    public AjaxResult dashboard(AgriEnvSensorRecord agriEnvSensorRecord)
+    {
+        return success(buildDashboard(agriEnvSensorRecord));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:envSensor:query')")
+    @GetMapping("/smart/diagnose/{recordId}")
+    public AjaxResult diagnose(@PathVariable("recordId") Long recordId)
+    {
+        AgriEnvSensorRecord record = agriEnvSensorRecordService.selectAgriEnvSensorRecordByRecordId(recordId);
+        if (record == null)
+        {
+            return error("环境传感器记录不存在");
+        }
+        return success(buildDiagnosis(record));
     }
 
     /**
@@ -414,5 +438,216 @@ public class AgriEnvSensorRecordController extends BaseController
             return true;
         }
         return h != null && h.compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getHumidityAlertHigh())) > 0;
+    }
+
+    private Map<String, Object> buildDashboard(AgriEnvSensorRecord query)
+    {
+        List<AgriEnvSensorRecord> records = agriEnvSensorRecordService.selectAgriEnvSensorRecordList(query);
+        Set<String> deviceCodes = new HashSet<>();
+        Set<String> plotCodes = new HashSet<>();
+        int alertCount = 0;
+        int normalCount = 0;
+        BigDecimal tempTotal = BigDecimal.ZERO;
+        BigDecimal humidityTotal = BigDecimal.ZERO;
+        BigDecimal co2Total = BigDecimal.ZERO;
+        int tempCount = 0;
+        int humidityCount = 0;
+        int co2Count = 0;
+        List<AgriEnvSensorRecord> sorted = new ArrayList<>(records);
+        sorted.sort(Comparator.comparing(AgriEnvSensorRecord::getCollectTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+        List<Map<String, Object>> alertRows = new ArrayList<>();
+        for (AgriEnvSensorRecord record : records)
+        {
+            if (record == null)
+            {
+                continue;
+            }
+            if (StringUtils.isNotBlank(record.getDeviceCode()))
+            {
+                deviceCodes.add(record.getDeviceCode());
+            }
+            if (StringUtils.isNotBlank(record.getPlotCode()))
+            {
+                plotCodes.add(record.getPlotCode());
+            }
+
+            BigDecimal temperature = record.getTemperature();
+            if (temperature != null)
+            {
+                tempTotal = tempTotal.add(temperature);
+                tempCount++;
+            }
+            BigDecimal humidity = record.getHumidity();
+            if (humidity != null)
+            {
+                humidityTotal = humidityTotal.add(humidity);
+                humidityCount++;
+            }
+            BigDecimal co2 = record.getCo2Value();
+            if (co2 != null)
+            {
+                co2Total = co2Total.add(co2);
+                co2Count++;
+            }
+
+            boolean alert = isAlert(record);
+            if (alert)
+            {
+                alertCount++;
+                if (alertRows.size() < 5)
+                {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("recordId", record.getRecordId());
+                    row.put("deviceCode", record.getDeviceCode());
+                    row.put("plotCode", record.getPlotCode());
+                    row.put("temperature", record.getTemperature());
+                    row.put("humidity", record.getHumidity());
+                    row.put("co2Value", record.getCo2Value());
+                    row.put("collectTime", record.getCollectTime());
+                    row.put("status", record.getStatus());
+                    row.put("severity", buildSeverity(record));
+                    alertRows.add(row);
+                }
+            }
+            else
+            {
+                normalCount++;
+            }
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("totalCount", records.size());
+        summary.put("deviceCount", deviceCodes.size());
+        summary.put("plotCount", plotCodes.size());
+        summary.put("alertCount", alertCount);
+        summary.put("normalCount", normalCount);
+        summary.put("avgTemperature", scale(tempCount == 0 ? BigDecimal.ZERO : tempTotal.divide(BigDecimal.valueOf(tempCount), 2, BigDecimal.ROUND_HALF_UP)));
+        summary.put("avgHumidity", scale(humidityCount == 0 ? BigDecimal.ZERO : humidityTotal.divide(BigDecimal.valueOf(humidityCount), 2, BigDecimal.ROUND_HALF_UP)));
+        summary.put("avgCo2", scale(co2Count == 0 ? BigDecimal.ZERO : co2Total.divide(BigDecimal.valueOf(co2Count), 2, BigDecimal.ROUND_HALF_UP)));
+
+        List<Map<String, Object>> recentRows = new ArrayList<>();
+        for (AgriEnvSensorRecord record : sorted)
+        {
+            if (recentRows.size() >= 8)
+            {
+                break;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("recordId", record.getRecordId());
+            row.put("deviceCode", record.getDeviceCode());
+            row.put("plotCode", record.getPlotCode());
+            row.put("temperature", record.getTemperature());
+            row.put("humidity", record.getHumidity());
+            row.put("co2Value", record.getCo2Value());
+            row.put("status", record.getStatus());
+            row.put("collectTime", record.getCollectTime());
+            row.put("alert", isAlert(record));
+            recentRows.add(row);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("summary", summary);
+        result.put("alerts", alertRows);
+        result.put("recentRows", recentRows);
+        return result;
+    }
+
+    private Map<String, Object> buildDiagnosis(AgriEnvSensorRecord record)
+    {
+        List<String> findings = new ArrayList<>();
+        int score = 100;
+        BigDecimal temperature = record.getTemperature();
+        BigDecimal humidity = record.getHumidity();
+        BigDecimal co2 = record.getCo2Value();
+
+        if (temperature != null)
+        {
+            if (temperature.compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getTempAlertHigh())) > 0)
+            {
+                findings.add("温度高于阈值，建议检查遮阳、灌溉或通风策略");
+                score -= 25;
+            }
+            else if (temperature.compareTo(BigDecimal.valueOf(Math.min(18D, agriIntegrationProperties.getSensor().getTempAlertHigh() * 0.6D))) < 0)
+            {
+                findings.add("温度偏低，建议核对夜间保温与环境联动控制");
+                score -= 15;
+            }
+        }
+        if (humidity != null)
+        {
+            if (humidity.compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getHumidityAlertHigh())) > 0)
+            {
+                findings.add("湿度偏高，存在病害扩散或凝露风险");
+                score -= 20;
+            }
+            else if (humidity.compareTo(BigDecimal.valueOf(40D)) < 0)
+            {
+                findings.add("湿度偏低，建议补充喷雾或调整通风强度");
+                score -= 15;
+            }
+        }
+        if (co2 != null && co2.compareTo(BigDecimal.valueOf(1200)) > 0)
+        {
+            findings.add("CO2偏高，建议排查棚内通风与密闭状态");
+            score -= 10;
+        }
+        if (isAlert(record))
+        {
+            findings.add("记录已触发告警标记，建议同步复核设备状态和上报链路");
+            score -= 10;
+        }
+        if (findings.isEmpty())
+        {
+            findings.add("当前监测值整体平稳，可继续保持当前环境策略");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("recordId", record.getRecordId());
+        result.put("deviceCode", record.getDeviceCode());
+        result.put("plotCode", record.getPlotCode());
+        result.put("riskScore", Math.max(0, score));
+        result.put("riskLevel", score >= 85 ? "低" : score >= 70 ? "中" : "高");
+        result.put("findings", findings);
+        result.put("temperature", record.getTemperature());
+        result.put("humidity", record.getHumidity());
+        result.put("co2Value", record.getCo2Value());
+        result.put("collectTime", record.getCollectTime());
+        return result;
+    }
+
+    private BigDecimal scale(BigDecimal value)
+    {
+        return value == null ? BigDecimal.ZERO : value.setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    private String buildSeverity(AgriEnvSensorRecord record)
+    {
+        BigDecimal score = BigDecimal.ZERO;
+        if (record.getTemperature() != null && record.getTemperature().compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getTempAlertHigh())) > 0)
+        {
+            score = score.add(BigDecimal.valueOf(40));
+        }
+        if (record.getHumidity() != null && record.getHumidity().compareTo(BigDecimal.valueOf(agriIntegrationProperties.getSensor().getHumidityAlertHigh())) > 0)
+        {
+            score = score.add(BigDecimal.valueOf(35));
+        }
+        if (record.getCo2Value() != null && record.getCo2Value().compareTo(BigDecimal.valueOf(1200)) > 0)
+        {
+            score = score.add(BigDecimal.valueOf(25));
+        }
+        if (score.compareTo(BigDecimal.valueOf(70)) >= 0)
+        {
+            return "严重";
+        }
+        if (score.compareTo(BigDecimal.valueOf(40)) >= 0)
+        {
+            return "预警";
+        }
+        if (score.compareTo(BigDecimal.valueOf(20)) >= 0)
+        {
+            return "提示";
+        }
+        return "正常";
     }
 }

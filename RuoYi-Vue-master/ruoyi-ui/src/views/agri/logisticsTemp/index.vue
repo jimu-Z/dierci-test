@@ -1,5 +1,57 @@
 <template>
   <div class="app-container">
+    <el-card shadow="never" class="temp-hero mb16">
+      <div class="temp-head">
+        <div>
+          <div class="temp-title">冷链温湿度巡检台</div>
+          <div class="temp-desc">围绕运单、设备和阈值波动进行巡检，优先处理超温、超湿和重复告警记录。</div>
+        </div>
+        <div class="temp-actions">
+          <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
+          <el-button size="mini" icon="el-icon-data-analysis" @click="handleDiagnose">智能诊断</el-button>
+        </div>
+      </div>
+      <el-row :gutter="12" class="temp-kpi-row">
+        <el-col v-for="item in dashboardCards" :key="item.key" :xs="12" :sm="12" :md="6">
+          <div class="temp-kpi-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.foot }}</small>
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12" class="temp-overview-row">
+        <el-col :xs="24" :lg="14">
+          <div class="temp-panel">
+            <div class="panel-head"><span>异常巡检</span><small>优先看告警记录</small></div>
+            <div class="alert-list" v-if="dashboardAlerts.length">
+              <div v-for="item in dashboardAlerts" :key="item.recordId" class="alert-item" @click="handleDiagnose(item)">
+                <div>
+                  <b>{{ item.traceCode }}</b>
+                  <p>{{ item.deviceCode }} · {{ item.collectLocation || '-' }}</p>
+                </div>
+                <el-tag size="mini" type="danger">{{ formatTemp(item.temperature) }} / {{ formatHumidity(item.humidity) }}</el-tag>
+              </div>
+            </div>
+            <el-empty v-else description="暂无异常记录" />
+          </div>
+        </el-col>
+        <el-col :xs="24" :lg="10">
+          <div class="temp-panel">
+            <div class="panel-head"><span>智能诊断</span><small>根据阈值给出处置建议</small></div>
+            <div v-if="smartResult.recordId" class="smart-box">
+              <div class="smart-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+              <p>{{ smartResult.record.traceCode }}</p>
+              <ul>
+                <li v-for="item in smartResult.suggestions" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <el-empty v-else description="请选择一条记录进行诊断" />
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="运单号" prop="traceCode">
         <el-input v-model="queryParams.traceCode" placeholder="请输入运单号" clearable style="width: 180px" @keyup.enter.native="handleQuery" />
@@ -45,6 +97,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-data-analysis" @click="handleDiagnose(scope.row)" v-hasPermi="['agri:logisticsTemp:query']">诊断</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:logisticsTemp:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:logisticsTemp:remove']">删除</el-button>
         </template>
@@ -92,7 +145,9 @@ import {
   getLogisticsTemp,
   addLogisticsTemp,
   updateLogisticsTemp,
-  delLogisticsTemp
+  delLogisticsTemp,
+  getLogisticsTempDashboard,
+  diagnoseLogisticsTemp
 } from '@/api/agri/logisticsTemp'
 
 export default {
@@ -106,6 +161,8 @@ export default {
       showSearch: true,
       total: 0,
       recordList: [],
+      dashboardData: {},
+      smartResult: {},
       title: '',
       open: false,
       queryParams: {
@@ -131,15 +188,57 @@ export default {
     }
   },
   created() {
+    this.refreshDashboard()
     this.getList()
   },
+  computed: {
+    dashboardCards() {
+      const summary = this.dashboardData.summary || {}
+      return [
+        { key: 'total', label: '监控总数', value: summary.totalCount || 0, foot: '当前筛选范围内记录' },
+        { key: 'alert', label: '告警数量', value: summary.alertCount || 0, foot: '超阈值记录' },
+        { key: 'normal', label: '正常记录', value: summary.normalCount || 0, foot: '状态平稳记录' },
+        { key: 'temp', label: '平均温度', value: this.formatMetric(summary.avgTemperature, '℃'), foot: '采样均值' },
+        { key: 'hum', label: '平均湿度', value: this.formatMetric(summary.avgHumidity, '%'), foot: '采样均值' }
+      ]
+    },
+    dashboardAlerts() {
+      return this.dashboardData.alerts || []
+    }
+  },
   methods: {
+    refreshDashboard() {
+      getLogisticsTempDashboard(this.queryParams).then(response => {
+        this.dashboardData = response.data || {}
+      })
+    },
     getList() {
       this.loading = true
       listLogisticsTemp(this.queryParams).then(response => {
         this.recordList = response.rows
         this.total = response.total
         this.loading = false
+      })
+    },
+    formatMetric(value, unit) {
+      const number = value === undefined || value === null || value === '' ? 0 : Number(value)
+      return `${number.toFixed(2)}${unit}`
+    },
+    formatTemp(value) {
+      return `${value === undefined || value === null ? '--' : Number(value).toFixed(1)}℃`
+    },
+    formatHumidity(value) {
+      return `${value === undefined || value === null ? '--' : Number(value).toFixed(1)}%`
+    },
+    handleDiagnose(row) {
+      const target = row || this.recordList[0]
+      if (!target || !target.recordId) {
+        this.$modal.msgWarning('请先选择一条温湿度记录')
+        return
+      }
+      diagnoseLogisticsTemp(target.recordId).then(response => {
+        this.smartResult = response.data || {}
+        this.$modal.msgSuccess('智能诊断已更新')
       })
     },
     formatAlert(value) {
@@ -173,10 +272,12 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
+      this.refreshDashboard()
       this.handleQuery()
     },
     handleSelectionChange(selection) {
@@ -243,3 +344,90 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.temp-hero {
+  border: 1px solid #dce7f1;
+  background: linear-gradient(135deg, #f6fbff 0%, #edf5fb 100%);
+}
+
+.temp-head,
+.panel-head,
+.alert-item,
+.smart-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.temp-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #21435d;
+}
+
+.temp-desc {
+  margin-top: 6px;
+  color: #607486;
+}
+
+.temp-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.temp-kpi-row,
+.temp-overview-row {
+  margin-top: 14px;
+}
+
+.temp-kpi-card,
+.temp-panel {
+  border: 1px solid #dce7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.temp-kpi-card {
+  min-height: 88px;
+  margin-bottom: 12px;
+}
+
+.temp-kpi-card span,
+.panel-head small,
+.temp-kpi-card small,
+.alert-item p,
+.smart-box p {
+  color: #63798a;
+}
+
+.temp-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #21435d;
+}
+
+.alert-item {
+  padding: 8px 0;
+  border-top: 1px solid #eef4f9;
+  cursor: pointer;
+}
+
+.alert-item p {
+  margin: 4px 0 0;
+}
+
+.smart-score strong {
+  font-size: 26px;
+  color: #2b6688;
+}
+
+.smart-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #4e6070;
+}
+</style>

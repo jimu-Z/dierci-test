@@ -46,6 +46,20 @@ export function invokeQualityInspect(inspectId) {
     })
 }
 
+export function getQualityInspectDashboardOps() {
+    return request({
+        url: '/agri/qualityInspect/dashboard/ops',
+        method: 'get'
+    })
+}
+
+export function smartReviewQualityInspect(inspectId) {
+    return request({
+        url: '/agri/qualityInspect/smart/review/' + inspectId,
+        method: 'get'
+    })
+}
+
 export function delQualityInspect(inspectId) {
     return request({
         url: '/agri/qualityInspect/' + inspectId,

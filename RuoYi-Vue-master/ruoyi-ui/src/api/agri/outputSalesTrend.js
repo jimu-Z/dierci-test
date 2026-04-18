@@ -42,6 +42,7 @@ export function getOutputSalesDashboard(query) {
     return request({
         url: '/agri/outputSalesTrend/dashboard',
         method: 'get',
+        timeout: 20000,
         params: query
     })
 }

@@ -8,6 +8,21 @@ export function listProcessBatch(query) {
     })
 }
 
+export function getProcessBatchDashboard(query) {
+    return request({
+        url: '/agri/processBatch/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
+export function getProcessBatchCheck(linkId) {
+    return request({
+        url: '/agri/processBatch/smart/check/' + linkId,
+        method: 'get'
+    })
+}
+
 export function getProcessBatch(linkId) {
     return request({
         url: '/agri/processBatch/' + linkId,

@@ -46,6 +46,23 @@ export function invokePestIdentify(taskId) {
     })
 }
 
+export function quickInvokePestIdentify(data) {
+    return request({
+        url: '/agri/pestIdentify/quickInvoke',
+        method: 'post',
+        data: data,
+        timeout: 20000
+    })
+}
+
+export function getPestIdentifyDashboard(query) {
+    return request({
+        url: '/agri/pestIdentify/dashboard',
+        method: 'get',
+        params: query
+    })
+}
+
 export function delPestIdentify(taskId) {
     return request({
         url: '/agri/pestIdentify/' + taskId,
