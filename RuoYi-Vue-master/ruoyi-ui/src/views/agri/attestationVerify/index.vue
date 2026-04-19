@@ -184,6 +184,7 @@ import {
   smartVerifyAttestation,
   resolveAttestation
 } from '@/api/agri/attestationVerify'
+import { normalizeSmartResult } from '@/utils/agriSmartResult'
 
 export default {
   name: 'AttestationVerify',
@@ -403,14 +404,7 @@ export default {
       return Math.round(((count || 0) / max) * 100)
     },
     normalizeSmartResult(payload) {
-      const hints = Array.isArray(payload.hints)
-        ? payload.hints.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
-        : []
-      return {
-        ...payload,
-        hints,
-        aiOriginalExcerpt: payload.aiOriginalExcerpt || payload.ai_original_excerpt || ''
-      }
+      return normalizeSmartResult(payload, 'hints')
     }
   }
 }

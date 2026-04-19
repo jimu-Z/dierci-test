@@ -237,10 +237,6 @@ public class AgriTraceAuditLogController extends BaseController
             {
                 alerts.add(0, "AI建议：" + aiResult.getSuggestion());
             }
-            if (StringUtils.isNotBlank(aiOriginalExcerpt))
-            {
-                alerts.add("AI原文摘录：" + aiOriginalExcerpt);
-            }
         }
         catch (Exception ignore)
         {

@@ -160,6 +160,7 @@ import {
   smartDetectAuditLog,
   closeAuditIncident
 } from '@/api/agri/auditLog'
+import { normalizeSmartResult } from '@/utils/agriSmartResult'
 
 export default {
   name: 'AuditLog',
@@ -368,14 +369,7 @@ export default {
       return Math.round(((count || 0) / max) * 100)
     },
     normalizeSmartResult(payload) {
-      const alerts = Array.isArray(payload.alerts)
-        ? payload.alerts.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
-        : []
-      return {
-        ...payload,
-        alerts,
-        aiOriginalExcerpt: payload.aiOriginalExcerpt || payload.ai_original_excerpt || ''
-      }
+      return normalizeSmartResult(payload, 'alerts')
     }
   }
 }

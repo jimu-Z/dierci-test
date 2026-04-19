@@ -296,10 +296,6 @@ public class AgriConsumerScanQueryController extends BaseController
             {
                 suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
             }
-            if (StringUtils.isNotBlank(aiOriginalExcerpt))
-            {
-                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
-            }
         }
         catch (Exception ignore)
         {

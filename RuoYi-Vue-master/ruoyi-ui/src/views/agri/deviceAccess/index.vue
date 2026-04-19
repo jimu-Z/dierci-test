@@ -236,6 +236,7 @@ import {
   getDeviceAccessDashboardOps,
   smartDiagnoseDeviceAccess
 } from '@/api/agri/deviceAccess'
+import { normalizeSmartResult } from '@/utils/agriSmartResult'
 
 export default {
   name: 'DeviceAccess',
@@ -535,14 +536,7 @@ export default {
       return (this.pressureQueue || [])[0]
     },
     normalizeDiagnoseResult(payload) {
-      const factors = Array.isArray(payload.factors)
-        ? payload.factors.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
-        : []
-      return {
-        ...payload,
-        factors,
-        aiOriginalExcerpt: payload.aiOriginalExcerpt || payload.ai_original_excerpt || ''
-      }
+      return normalizeSmartResult(payload, 'factors')
     }
   }
 }

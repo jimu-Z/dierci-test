@@ -238,10 +238,6 @@ public class AgriDataAttestationVerifyController extends BaseController
             {
                 hints.add(0, "AI建议：" + aiResult.getSuggestion());
             }
-            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
-            {
-                hints.add("AI原文摘录：" + aiOriginalExcerpt);
-            }
         }
         catch (Exception ignore)
         {
