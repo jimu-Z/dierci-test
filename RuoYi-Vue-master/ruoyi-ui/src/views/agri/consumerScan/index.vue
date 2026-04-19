@@ -101,7 +101,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" :data="queryList" @selection-change="handleSelectionChange" stripe>
+      <el-table v-loading="loading" :data="queryList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="溯源码" prop="traceCode" min-width="170" />
         <el-table-column label="消费者" prop="consumerName" min-width="110" />
@@ -198,6 +198,7 @@ export default {
       showSearch: false,
       total: 0,
       queryList: [],
+      selectedQuery: null,
       scanResultOpen: false,
       scanResultData: null,
       scanResultMessage: '',
@@ -296,6 +297,16 @@ export default {
       this.ids = selection.map(item => item.queryId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      if (selection.length === 1) {
+        this.selectedQuery = selection[0]
+      }
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.selectedQuery = row
+      this.handleSelectionChange([row])
     },
     handleMockScan() {
       const traceCode = (this.scanForm.traceCode || '').trim()
@@ -322,11 +333,12 @@ export default {
         })
     },
     handleAnalyze(row) {
-      if (!row || !row.queryId) {
+      const target = this.resolveQueryTarget(row)
+      if (!target || !target.queryId) {
         this.$modal.msgWarning('缺少查询编号，无法分析')
         return
       }
-      this.handleAnalyzeById(row.queryId)
+      this.handleAnalyzeById(target.queryId)
     },
     handleAnalyzeById(queryId) {
       this.analyzeOpen = true
@@ -358,15 +370,19 @@ export default {
             requestTime: new Date().toLocaleString()
           }
         })
-        .catch(() => {
-          this.$modal.msgError('智能分析调用失败，请稍后重试')
+        .catch(error => {
+          const message = (error && error.message) || ''
+          if (!message.includes('timeout')) {
+            this.$modal.msgError('智能分析调用失败，请稍后重试')
+          }
         })
         .finally(() => {
           this.analyzeLoading = false
         })
     },
     handleDelete(row) {
-      const queryIds = row && row.queryId ? row.queryId : this.ids
+      const target = this.resolveQueryTarget(row)
+      const queryIds = target && target.queryId ? target.queryId : this.ids
       if (!queryIds || queryIds.length === 0) {
         this.$modal.msgWarning('请先选择要删除的记录')
         return
@@ -431,6 +447,24 @@ export default {
     toPercent(value) {
       const number = Number(value || 0)
       return `${number.toFixed(1)}%`
+    },
+    resolveQueryTarget(row) {
+      if (row && row.queryId) {
+        return row
+      }
+      if (this.selectedQuery && this.selectedQuery.queryId) {
+        return this.selectedQuery
+      }
+      if (this.ids.length) {
+        const selected = this.queryList.find(item => item.queryId === this.ids[0])
+        if (selected) {
+          return selected
+        }
+      }
+      if (this.queryList.length) {
+        return this.queryList[0]
+      }
+      return (this.opsData.alertStream || [])[0]
     }
   }
 }

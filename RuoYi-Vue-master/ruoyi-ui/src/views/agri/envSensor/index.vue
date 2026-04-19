@@ -142,7 +142,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="envSensorList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="envSensorList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" align="center" prop="recordId" width="70" />
       <el-table-column label="设备编码" align="center" prop="deviceCode" width="130" />
@@ -444,6 +444,12 @@ export default {
       this.ids = selection.map(item => item.recordId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

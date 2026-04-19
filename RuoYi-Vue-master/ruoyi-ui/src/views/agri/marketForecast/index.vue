@@ -88,7 +88,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="forecastList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="forecastList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="forecastId" align="center" width="70" />
       <el-table-column label="市场区域" prop="marketArea" align="center" width="110" />
@@ -312,6 +312,12 @@ export default {
       this.ids = selection.map(item => item.forecastId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

@@ -81,7 +81,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="warningList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="warningList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="warningId" align="center" width="70" />
       <el-table-column label="运单号" prop="traceCode" align="center" width="150" />
@@ -286,6 +286,12 @@ export default {
       this.ids = selection.map(item => item.warningId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

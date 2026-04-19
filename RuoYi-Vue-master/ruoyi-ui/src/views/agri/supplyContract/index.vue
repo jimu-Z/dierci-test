@@ -129,7 +129,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" :data="supplyContractList" @selection-change="handleSelectionChange" stripe>
+      <el-table v-loading="loading" :data="supplyContractList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="合约编号" align="center" prop="contractNo" min-width="130" show-overflow-tooltip />
         <el-table-column label="合约名称" align="center" prop="contractName" min-width="150" show-overflow-tooltip />
@@ -357,6 +357,12 @@ export default {
       this.ids = selection.map(item => item.contractId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

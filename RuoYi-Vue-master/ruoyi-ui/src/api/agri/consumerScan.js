@@ -63,6 +63,7 @@ export function getConsumerScanOpsDashboard() {
 export function smartAnalyzeConsumerScan(queryId) {
     return request({
         url: '/agri/consumerScan/smart/analyze/' + queryId,
-        method: 'get'
+        method: 'get',
+        timeout: 20000
     })
 }

@@ -78,7 +78,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="recordList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="recordList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="recordId" align="center" width="70" />
       <el-table-column label="运单号" prop="traceCode" align="center" width="150" />
@@ -161,6 +161,7 @@ export default {
       showSearch: true,
       total: 0,
       recordList: [],
+      selectedRecord: null,
       dashboardData: {},
       smartResult: {},
       title: '',
@@ -231,7 +232,7 @@ export default {
       return `${value === undefined || value === null ? '--' : Number(value).toFixed(1)}%`
     },
     handleDiagnose(row) {
-      const target = row || this.recordList[0]
+      const target = this.resolveTargetRecord(row)
       if (!target || !target.recordId) {
         this.$modal.msgWarning('请先选择一条温湿度记录')
         return
@@ -284,6 +285,14 @@ export default {
       this.ids = selection.map(item => item.recordId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      this.selectedRecord = selection.length === 1 ? selection[0] : this.selectedRecord
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.selectedRecord = row
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()
@@ -292,7 +301,11 @@ export default {
     },
     handleUpdate(row) {
       this.reset()
-      const recordId = row.recordId || this.ids
+      const recordId = (row && row.recordId) || this.ids[0]
+      if (!recordId) {
+        this.$modal.msgWarning('请选择一条记录进行修改')
+        return
+      }
       getLogisticsTemp(recordId).then(response => {
         this.form = response.data
         this.open = true
@@ -320,7 +333,11 @@ export default {
       })
     },
     handleDelete(row) {
-      const recordIds = row.recordId || this.ids
+      const recordIds = (row && row.recordId) || this.ids
+      if (!recordIds || !recordIds.length) {
+        this.$modal.msgWarning('请先选择要删除的记录')
+        return
+      }
       this.$modal
         .confirm('是否确认删除温湿度监控编号为"' + recordIds + '"的数据项？')
         .then(function () {
@@ -340,6 +357,21 @@ export default {
         },
         `logistics_temp_${new Date().getTime()}.xlsx`
       )
+    },
+    resolveTargetRecord(row) {
+      if (row && row.recordId) {
+        return row
+      }
+      if (this.selectedRecord && this.selectedRecord.recordId) {
+        return this.selectedRecord
+      }
+      if (this.ids.length) {
+        const selected = this.recordList.find(item => item.recordId === this.ids[0])
+        if (selected) {
+          return selected
+        }
+      }
+      return this.recordList[0]
     }
   }
 }

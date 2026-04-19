@@ -51,3 +51,18 @@ export function smartVerifyAttestation(verifyId) {
         method: 'get'
     })
 }
+
+export function getAttestationOpsOverview() {
+    return request({
+        url: '/agri/attestationVerify/ops/overview',
+        method: 'get'
+    })
+}
+
+export function resolveAttestation(verifyId, data) {
+    return request({
+        url: '/agri/attestationVerify/smart/resolve/' + verifyId,
+        method: 'post',
+        data: data
+    })
+}

@@ -86,7 +86,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="baseRuleList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="baseRuleList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" align="center" prop="ruleId" width="70" />
       <el-table-column label="规则名称" align="center" prop="ruleName" :show-overflow-tooltip="true" />
@@ -276,6 +276,12 @@ export default {
       this.ids = selection.map(item => item.ruleId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

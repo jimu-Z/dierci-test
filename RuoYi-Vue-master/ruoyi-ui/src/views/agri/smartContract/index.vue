@@ -141,7 +141,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="contractList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="contractList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="deployId" align="center" width="70" />
       <el-table-column label="合约名称" prop="contractName" align="center" width="140" />
@@ -384,6 +384,12 @@ export default {
       this.ids = selection.map(item => item.deployId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

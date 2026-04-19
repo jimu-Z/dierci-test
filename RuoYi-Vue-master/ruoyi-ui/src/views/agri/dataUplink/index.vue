@@ -145,7 +145,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="uplinkId" align="center" width="70" />
       <el-table-column label="批次号" prop="batchNo" align="center" width="150" />
@@ -400,6 +400,16 @@ export default {
       this.ids = selection.map(item => item.uplinkId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      if (selection.length === 1) {
+        this.focusTask = selection[0]
+      }
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.focusTask = row
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()
@@ -408,7 +418,12 @@ export default {
     },
     handleUpdate(row) {
       this.reset()
-      const uplinkId = row.uplinkId || this.ids[0]
+      const target = this.resolveTargetTask(row)
+      const uplinkId = target && target.uplinkId
+      if (!uplinkId) {
+        this.$modal.msgWarning('请选择一条任务进行修改')
+        return
+      }
       getDataUplink(uplinkId).then(response => {
         this.form = response.data
         this.open = true
@@ -416,7 +431,8 @@ export default {
       })
     },
     handleExecuteUplink(row) {
-      const uplinkId = row && row.uplinkId ? row.uplinkId : this.ids[0]
+      const target = this.resolveTargetTask(row)
+      const uplinkId = target && target.uplinkId
       if (!uplinkId) {
         this.$modal.msgWarning('请选择一条任务执行上链')
         return
@@ -428,7 +444,8 @@ export default {
       })
     },
     handleVerify(row) {
-      const uplinkId = row && row.uplinkId ? row.uplinkId : this.ids[0]
+      const target = this.resolveTargetTask(row)
+      const uplinkId = target && target.uplinkId
       if (!uplinkId) {
         this.$modal.msgWarning('请选择一条任务执行完整性核验')
         return
@@ -486,6 +503,24 @@ export default {
         },
         `data_uplink_${new Date().getTime()}.xlsx`
       )
+    },
+    resolveTargetTask(row) {
+      if (row && row.uplinkId) {
+        return row
+      }
+      if (this.focusTask && this.focusTask.uplinkId) {
+        return this.focusTask
+      }
+      if (this.ids.length) {
+        const selected = this.taskList.find(item => item.uplinkId === this.ids[0])
+        if (selected) {
+          return selected
+        }
+      }
+      if (this.taskList.length) {
+        return this.taskList[0]
+      }
+      return this.pressureQueue[0]
     }
   }
 }

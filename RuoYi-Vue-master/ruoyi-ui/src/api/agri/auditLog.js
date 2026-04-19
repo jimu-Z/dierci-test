@@ -51,3 +51,18 @@ export function smartDetectAuditLog(auditId) {
         method: 'get'
     })
 }
+
+export function getAuditOpsOverview() {
+    return request({
+        url: '/agri/auditLog/ops/overview',
+        method: 'get'
+    })
+}
+
+export function closeAuditIncident(auditId, data) {
+    return request({
+        url: '/agri/auditLog/smart/close/' + auditId,
+        method: 'post',
+        data: data
+    })
+}

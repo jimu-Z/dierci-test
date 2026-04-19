@@ -129,7 +129,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" :data="financeRiskList" @selection-change="handleSelectionChange" stripe>
+      <el-table v-loading="loading" :data="financeRiskList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="指标编码" align="center" prop="indicatorCode" min-width="120" show-overflow-tooltip />
         <el-table-column label="指标名称" align="center" prop="indicatorName" min-width="150" show-overflow-tooltip />
@@ -256,6 +256,7 @@ export default {
       showSearch: false,
       total: 0,
       financeRiskList: [],
+      selectedRisk: null,
       title: '',
       open: false,
       analysisOpen: false,
@@ -365,6 +366,16 @@ export default {
       this.ids = selection.map(item => item.riskId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      if (selection.length === 1) {
+        this.selectedRisk = selection[0]
+      }
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.selectedRisk = row
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()
@@ -373,7 +384,8 @@ export default {
     },
     handleUpdate(row) {
       this.reset()
-      const riskId = row && row.riskId ? row.riskId : this.ids[0]
+      const target = this.resolveRiskTarget(row)
+      const riskId = target && target.riskId
       if (!riskId) {
         this.$modal.msgWarning('请先选择要复核的指标')
         return
@@ -392,7 +404,8 @@ export default {
       this.handleUpdate({ riskId: this.ids[0] })
     },
     handleAnalyze(row) {
-      const riskId = row && row.riskId ? row.riskId : this.ids[0]
+      const target = this.resolveRiskTarget(row)
+      const riskId = target && target.riskId
       if (!riskId) {
         this.$modal.msgWarning('请先选择一条指标进行智能分析')
         return
@@ -452,7 +465,8 @@ export default {
       })
     },
     handleDelete(row) {
-      const riskIds = row && row.riskId ? row.riskId : this.ids
+      const target = this.resolveRiskTarget(row)
+      const riskIds = target && target.riskId ? target.riskId : this.ids
       if (!riskIds || riskIds.length === 0) {
         this.$modal.msgWarning('请先选择要删除的记录')
         return
@@ -501,6 +515,24 @@ export default {
         return '中'
       }
       return '低'
+    },
+    resolveRiskTarget(row) {
+      if (row && row.riskId) {
+        return row
+      }
+      if (this.selectedRisk && this.selectedRisk.riskId) {
+        return this.selectedRisk
+      }
+      if (this.ids.length) {
+        const selected = this.financeRiskList.find(item => item.riskId === this.ids[0])
+        if (selected) {
+          return selected
+        }
+      }
+      if (this.financeRiskList.length) {
+        return this.financeRiskList[0]
+      }
+      return (this.opsData.pressureQueue || [])[0]
     },
     riskTagType(level) {
       if (level === 'C') {

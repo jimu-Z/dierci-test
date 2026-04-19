@@ -126,7 +126,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" :data="pageList" @selection-change="handleSelectionChange" stripe>
+      <el-table v-loading="loading" :data="pageList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="溯源码" prop="traceCode" min-width="170" />
         <el-table-column label="品牌" prop="brandName" min-width="110" />
@@ -276,6 +276,12 @@ export default {
       this.ids = selection.map(item => item.pageId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleBatchPublish() {
       if (this.ids.length !== 1) {

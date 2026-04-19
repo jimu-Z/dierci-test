@@ -147,7 +147,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="trendList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="trendList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" align="center" prop="trendId" width="80" />
       <el-table-column label="统计日期" align="center" prop="statDate" width="110" />
@@ -535,6 +535,12 @@ export default {
       this.ids = selection.map(item => item.trendId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()

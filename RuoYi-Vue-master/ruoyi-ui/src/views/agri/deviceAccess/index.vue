@@ -132,7 +132,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="nodeList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="nodeList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="nodeId" align="center" width="70" />
       <el-table-column label="设备编码" prop="deviceCode" align="center" width="160" />
@@ -210,6 +210,10 @@
         <el-card shadow="never" class="analysis-detail-card">
           <div class="analysis-detail-title">风险因子</div>
           <el-tag v-for="factor in diagnoseResult.factors || []" :key="factor" size="mini" type="warning" class="analysis-tag">{{ factor }}</el-tag>
+          <div v-if="diagnoseResult.aiOriginalExcerpt" class="analysis-excerpt-wrap">
+            <div class="analysis-detail-title">AI原文摘录</div>
+            <pre class="analysis-excerpt">{{ diagnoseResult.aiOriginalExcerpt }}</pre>
+          </div>
           <div class="analysis-detail-title">摘要</div>
           <div class="analysis-summary-text">{{ diagnoseResult.summary || '暂无摘要' }}</div>
         </el-card>
@@ -393,6 +397,16 @@ export default {
       this.ids = selection.map(item => item.nodeId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      if (selection.length === 1) {
+        this.focusNode = selection[0]
+      }
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.focusNode = row
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()
@@ -401,7 +415,12 @@ export default {
     },
     handleUpdate(row) {
       this.reset()
-      const nodeId = row.nodeId || this.ids
+      const target = this.resolveNodeTarget(row)
+      const nodeId = target && target.nodeId
+      if (!nodeId) {
+        this.$modal.msgWarning('请选择一条设备记录进行修改')
+        return
+      }
       getDeviceAccess(nodeId).then(response => {
         this.form = response.data
         this.open = true
@@ -419,26 +438,28 @@ export default {
       })
     },
     handleActivateNode(row) {
-      if (!row || !row.nodeId) {
+      const target = this.resolveNodeTarget(row)
+      if (!target || !target.nodeId) {
         this.$modal.msgWarning('请选择一条设备记录进行激活')
         return
       }
-      activateDeviceAccess(row.nodeId).then(() => {
+      activateDeviceAccess(target.nodeId).then(() => {
         this.$modal.msgSuccess('设备激活成功')
         this.refreshDashboard()
         this.getList()
       })
     },
     handleDiagnose(row) {
-      if (!row || !row.nodeId) {
+      const target = this.resolveNodeTarget(row)
+      if (!target || !target.nodeId) {
         this.$modal.msgWarning('请选择一条设备记录进行诊断')
         return
       }
-      this.focusNode = row
+      this.focusNode = target
       this.diagnoseLoading = true
-      smartDiagnoseDeviceAccess(row.nodeId)
+      smartDiagnoseDeviceAccess(target.nodeId)
         .then(response => {
-          this.diagnoseResult = response.data || {}
+          this.diagnoseResult = this.normalizeDiagnoseResult(response.data || {})
           this.diagnoseOpen = true
         })
         .finally(() => {
@@ -446,12 +467,7 @@ export default {
         })
     },
     handleDiagnoseSelected() {
-      if (this.ids.length !== 1) {
-        this.$modal.msgWarning('请选择一条记录进行诊断')
-        return
-      }
-      const row = this.nodeList.find(item => item.nodeId === this.ids[0])
-      this.handleDiagnose(row)
+      this.handleDiagnose()
     },
     submitForm() {
       this.$refs.form.validate(valid => {
@@ -474,7 +490,12 @@ export default {
       })
     },
     handleDelete(row) {
-      const nodeIds = row.nodeId || this.ids
+      const target = this.resolveNodeTarget(row)
+      const nodeIds = target && target.nodeId ? target.nodeId : this.ids
+      if (!nodeIds || !nodeIds.length) {
+        this.$modal.msgWarning('请先选择要删除的记录')
+        return
+      }
       this.$modal
         .confirm('是否确认删除设备接入节点编号为"' + nodeIds + '"的数据项？')
         .then(function () {
@@ -494,6 +515,34 @@ export default {
         },
         `device_access_${new Date().getTime()}.xlsx`
       )
+    },
+    resolveNodeTarget(row) {
+      if (row && row.nodeId) {
+        return row
+      }
+      if (this.focusNode && this.focusNode.nodeId) {
+        return this.focusNode
+      }
+      if (this.ids.length) {
+        const selected = this.nodeList.find(item => item.nodeId === this.ids[0])
+        if (selected) {
+          return selected
+        }
+      }
+      if (this.nodeList.length) {
+        return this.nodeList[0]
+      }
+      return (this.pressureQueue || [])[0]
+    },
+    normalizeDiagnoseResult(payload) {
+      const factors = Array.isArray(payload.factors)
+        ? payload.factors.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
+        : []
+      return {
+        ...payload,
+        factors,
+        aiOriginalExcerpt: payload.aiOriginalExcerpt || payload.ai_original_excerpt || ''
+      }
     }
   }
 }
@@ -698,6 +747,24 @@ export default {
 .analysis-summary-text {
   color: #52616f;
   line-height: 1.8;
+}
+
+.analysis-excerpt-wrap {
+  margin-top: 8px;
+}
+
+.analysis-excerpt {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fffaf0;
+  border: 1px solid #f3e7cc;
+  color: #6b4b17;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 180px;
+  overflow: auto;
 }
 
 </style>

@@ -203,8 +203,8 @@
 
     <el-dialog title="智能分析结果" :visible.sync="analysisVisible" width="720px" append-to-body>
       <div v-loading="analysisLoading">
-        <div class="analysis-title">{{ analysisResult.modelName || '未选择模型' }}</div>
-        <div class="analysis-subtitle">{{ analysisResult.modelCode || '' }}</div>
+        <div class="analysis-title">{{ analysisModelName }}</div>
+        <div class="analysis-subtitle">{{ analysisModelCode }}</div>
         <div class="analysis-grid">
           <div><span>风险等级</span><strong>{{ analysisResult.riskLevel || '中' }}</strong></div>
           <div><span>估算排放</span><strong>{{ formatNumber(analysisResult.estimatedEmission) }} kgCO2e</strong></div>
@@ -358,6 +358,18 @@ export default {
     },
     lastRefreshLabel() {
       return this.lastRefreshTime ? this.parseTime(this.lastRefreshTime) : '暂无'
+    },
+    analysisModelName() {
+      return this.analysisResult.modelName ||
+        (this.analysisResult.model && this.analysisResult.model.modelName) ||
+        (this.selectedRow && this.selectedRow.modelName) ||
+        '未选择模型'
+    },
+    analysisModelCode() {
+      return this.analysisResult.modelCode ||
+        (this.analysisResult.model && this.analysisResult.model.modelCode) ||
+        (this.selectedRow && this.selectedRow.modelCode) ||
+        ''
     },
     selectedRowId() {
       return this.selectedRow ? this.selectedRow.modelId : null

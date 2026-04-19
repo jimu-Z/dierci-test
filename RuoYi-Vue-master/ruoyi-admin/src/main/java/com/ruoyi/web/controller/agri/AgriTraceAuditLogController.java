@@ -6,6 +6,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriTraceAuditLog;
@@ -14,6 +15,8 @@ import com.ruoyi.system.service.IAgriTraceAuditLogService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +89,85 @@ public class AgriTraceAuditLogController extends BaseController
         kpi.put("successRate", total == 0 ? 0 : success * 100.0 / total);
         result.put("kpi", kpi);
         result.put("recent", recent);
+        return success(result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:auditLog:list')")
+    @GetMapping("/ops/overview")
+    public AjaxResult opsOverview()
+    {
+        List<AgriTraceAuditLog> list = agriTraceAuditLogService.selectAgriTraceAuditLogList(new AgriTraceAuditLog());
+        int total = list.size();
+        int success = 0;
+        int failed = 0;
+        int highRisk = 0;
+
+        Map<String, Integer> moduleCounter = new LinkedHashMap<>();
+        Map<String, Integer> actionCounter = new LinkedHashMap<>();
+        Map<String, Integer> resultCounter = new LinkedHashMap<>();
+        Map<String, Integer> dayCounter = new LinkedHashMap<>();
+        for (int i = 6; i >= 0; i--)
+        {
+            dayCounter.put(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD, DateUtils.addDays(DateUtils.getNowDate(), -i)), 0);
+        }
+
+        for (AgriTraceAuditLog item : list)
+        {
+            if ("1".equals(item.getOperateResult()))
+            {
+                success++;
+            }
+            else
+            {
+                failed++;
+            }
+            if (scoreRisk(item) >= 80)
+            {
+                highRisk++;
+            }
+
+            moduleCounter.merge(defaultValue(item.getModuleName(), "未知模块"), 1, Integer::sum);
+            actionCounter.merge(defaultValue(item.getActionType(), "未知动作"), 1, Integer::sum);
+            resultCounter.merge(resultLabel(item.getOperateResult()), 1, Integer::sum);
+            if (item.getOperateTime() != null)
+            {
+                String dayKey = DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD, item.getOperateTime());
+                if (dayCounter.containsKey(dayKey))
+                {
+                    dayCounter.put(dayKey, dayCounter.get(dayKey) + 1);
+                }
+            }
+        }
+
+        List<AgriTraceAuditLog> riskQueue = list.stream()
+            .sorted((a, b) -> Integer.compare(scoreRisk(b), scoreRisk(a)))
+            .limit(10)
+            .toList();
+
+        Map<String, Object> kpi = new LinkedHashMap<>();
+        kpi.put("total", total);
+        kpi.put("success", success);
+        kpi.put("failed", failed);
+        kpi.put("highRisk", highRisk);
+        kpi.put("successRate", total == 0 ? 0 : Math.round((success * 10000.0 / total)) / 100.0);
+
+        List<Map<String, Object>> moduleStats = toCounterList(moduleCounter);
+        List<Map<String, Object>> actionStats = toCounterList(actionCounter);
+        List<Map<String, Object>> resultStats = toCounterList(resultCounter);
+        List<Map<String, Object>> timeline = dayCounter.entrySet().stream().map(entry -> {
+            Map<String, Object> node = new LinkedHashMap<>();
+            node.put("day", entry.getKey());
+            node.put("count", entry.getValue());
+            return node;
+        }).toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("kpi", kpi);
+        result.put("moduleStats", moduleStats);
+        result.put("actionStats", actionStats);
+        result.put("resultStats", resultStats);
+        result.put("timeline", timeline);
+        result.put("riskQueue", riskQueue);
         return success(result);
     }
 
@@ -176,6 +258,45 @@ public class AgriTraceAuditLogController extends BaseController
         return success(result);
     }
 
+    @PreAuthorize("@ss.hasPermi('agri:auditLog:edit')")
+    @Log(title = "溯源审计日志", businessType = BusinessType.UPDATE)
+    @PostMapping("/smart/close/{auditId}")
+    public AjaxResult smartClose(@PathVariable("auditId") Long auditId, @RequestBody(required = false) Map<String, Object> payload)
+    {
+        AgriTraceAuditLog log = agriTraceAuditLogService.selectAgriTraceAuditLogByAuditId(auditId);
+        if (log == null)
+        {
+            return error("审计记录不存在");
+        }
+
+        String action = payload == null ? "closeSuccess" : defaultValue((String) payload.get("action"), "closeSuccess");
+        String note = payload == null ? "" : defaultValue((String) payload.get("note"), "");
+        Date now = DateUtils.getNowDate();
+        log.setOperateTime(now);
+        log.setUpdateBy(getUsername());
+        log.setOperatorName(getUsername());
+
+        if ("markFailed".equalsIgnoreCase(action))
+        {
+            log.setOperateResult("0");
+            log.setRemark(mergeRemark(log.getRemark(), "升级失败事件", note));
+        }
+        else
+        {
+            log.setOperateResult("1");
+            log.setRemark(mergeRemark(log.getRemark(), "事件闭环", note));
+        }
+
+        agriTraceAuditLogService.updateAgriTraceAuditLog(log);
+        Map<String, Object> result = new HashMap<>();
+        result.put("auditId", log.getAuditId());
+        result.put("operateResult", log.getOperateResult());
+        result.put("operatorName", log.getOperatorName());
+        result.put("operateTime", DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, now));
+        result.put("message", "事件已处置");
+        return success(result);
+    }
+
     @PreAuthorize("@ss.hasPermi('agri:auditLog:export')")
     @Log(title = "溯源审计日志", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
@@ -214,5 +335,57 @@ public class AgriTraceAuditLogController extends BaseController
     public AjaxResult remove(@PathVariable Long[] auditIds)
     {
         return toAjax(agriTraceAuditLogService.deleteAgriTraceAuditLogByAuditIds(auditIds));
+    }
+
+    private int scoreRisk(AgriTraceAuditLog log)
+    {
+        int score = 10;
+        if (!"1".equals(log.getOperateResult()))
+        {
+            score += 45;
+        }
+        if (StringUtils.isBlank(log.getTxHash()))
+        {
+            score += 20;
+        }
+        if (StringUtils.isBlank(log.getIpAddress()))
+        {
+            score += 10;
+        }
+        if (StringUtils.isNotBlank(log.getIpAddress()) && (log.getIpAddress().startsWith("10.") || log.getIpAddress().startsWith("192.168.")))
+        {
+            score += 15;
+        }
+        return Math.min(score, 100);
+    }
+
+    private String defaultValue(String value, String fallback)
+    {
+        return StringUtils.isBlank(value) ? fallback : value.trim();
+    }
+
+    private String resultLabel(String result)
+    {
+        return "1".equals(result) ? "成功" : "失败";
+    }
+
+    private String mergeRemark(String oldRemark, String stage, String note)
+    {
+        String prefix = StringUtils.isBlank(oldRemark) ? "" : oldRemark.trim() + "；";
+        String extra = StringUtils.isBlank(note) ? "" : "（" + note.trim() + "）";
+        return prefix + stage + extra;
+    }
+
+    private List<Map<String, Object>> toCounterList(Map<String, Integer> counter)
+    {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : counter.entrySet())
+        {
+            Map<String, Object> node = new LinkedHashMap<>();
+            node.put("name", entry.getKey());
+            node.put("value", entry.getValue());
+            list.add(node);
+        }
+        return list;
     }
 }

@@ -28,7 +28,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="grantList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="grantList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="grantId" align="center" width="70" />
       <el-table-column label="用户账号" prop="userName" align="center" width="130" />
@@ -178,6 +178,12 @@ export default {
       this.ids = selection.map(item => item.grantId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handleAdd() {
       this.reset()
