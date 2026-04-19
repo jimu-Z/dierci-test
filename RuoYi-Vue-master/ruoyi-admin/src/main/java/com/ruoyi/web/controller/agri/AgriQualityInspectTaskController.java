@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -179,13 +180,49 @@ public class AgriQualityInspectTaskController extends BaseController
         }
         score = Math.max(score, 0);
 
+        String summary = checks.isEmpty() ? "样本检测链路完整，可直接进入批次放行审批。" : "检测链路存在待补齐项，请按建议执行复核。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "视觉品质智能复核");
+            context.put("inspectId", task.getInspectId());
+            context.put("processBatchNo", task.getProcessBatchNo());
+            context.put("sampleCode", task.getSampleCode());
+            context.put("imageUrl", task.getImageUrl());
+            context.put("inspectStatus", task.getInspectStatus());
+            context.put("qualityGrade", task.getQualityGrade());
+            context.put("defectRate", task.getDefectRate());
+            context.put("inspectResult", task.getInspectResult());
+            context.put("ruleChecks", checks);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("视觉品质智能复核", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotEmpty(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotEmpty(aiResult.getSuggestion()))
+            {
+                checks.add("AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotEmpty(aiOriginalExcerpt))
+            {
+                checks.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("inspectId", task.getInspectId());
         result.put("algorithm", "vision-quality-review-v1");
         result.put("healthScore", score);
         result.put("riskLevel", riskLevel(score));
         result.put("checks", checks);
-        result.put("summary", checks.isEmpty() ? "样本检测链路完整，可直接进入批次放行审批。" : "检测链路存在待补齐项，请按建议执行复核。" );
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 
@@ -279,7 +316,11 @@ public class AgriQualityInspectTaskController extends BaseController
             db.setInspectTime(DateUtils.getNowDate());
             db.setUpdateBy(getUsername());
             agriQualityInspectTaskService.updateAgriQualityInspectTask(db);
-            return success("质检调用成功");
+
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("message", "质检调用成功");
+            payload.put("aiOriginalExcerpt", result.getRawContent());
+            return success(payload);
         }
         catch (Exception ex)
         {

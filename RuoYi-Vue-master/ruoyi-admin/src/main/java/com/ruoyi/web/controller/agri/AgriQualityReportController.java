@@ -1,19 +1,23 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriQualityInspectTask;
 import com.ruoyi.system.domain.AgriQualityReport;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriQualityInspectTaskService;
 import com.ruoyi.system.service.IAgriQualityReportService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -46,6 +50,9 @@ public class AgriQualityReportController extends BaseController
 
     @Autowired
     private IAgriQualityInspectTaskService agriQualityInspectTaskService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:qualityReport:list')")
     @GetMapping("/list")
@@ -132,6 +139,20 @@ public class AgriQualityReportController extends BaseController
         AgriQualityReport exists = agriQualityReportService.selectAgriQualityReportByInspectId(inspectId);
         if (exists != null)
         {
+            if (!"1".equals(exists.getReportStatus()))
+            {
+                exists.setProcessBatchNo(task.getProcessBatchNo());
+                exists.setQualityGrade(task.getQualityGrade());
+                exists.setDefectRate(task.getDefectRate() == null ? BigDecimal.ZERO : task.getDefectRate());
+                exists.setReportSummary("样品" + task.getSampleCode() + "品质等级为" + (task.getQualityGrade() == null ? "未知" : task.getQualityGrade())
+                    + "，缺陷率" + (task.getDefectRate() == null ? BigDecimal.ZERO : task.getDefectRate()) + "。"
+                    + (task.getInspectResult() == null ? "" : task.getInspectResult()));
+                exists.setReportStatus("1");
+                exists.setReportTime(DateUtils.getNowDate());
+                exists.setStatus("0");
+                exists.setUpdateBy(getUsername());
+                return toAjax(agriQualityReportService.updateAgriQualityReport(exists));
+            }
             return error("该检测任务已生成报告");
         }
 
@@ -188,14 +209,7 @@ public class AgriQualityReportController extends BaseController
                 defectCount++;
                 if (report.getDefectRate().compareTo(new BigDecimal("0.05")) >= 0 && highRiskRows.size() < 5)
                 {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("reportId", report.getReportId());
-                    row.put("reportNo", report.getReportNo());
-                    row.put("processBatchNo", report.getProcessBatchNo());
-                    row.put("qualityGrade", report.getQualityGrade());
-                    row.put("defectRate", report.getDefectRate());
-                    row.put("reportStatus", report.getReportStatus());
-                    highRiskRows.add(row);
+                    highRiskRows.add(buildReportView(report));
                 }
             }
         }
@@ -206,15 +220,7 @@ public class AgriQualityReportController extends BaseController
             {
                 break;
             }
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("reportId", report.getReportId());
-            row.put("reportNo", report.getReportNo());
-            row.put("processBatchNo", report.getProcessBatchNo());
-            row.put("qualityGrade", report.getQualityGrade());
-            row.put("defectRate", report.getDefectRate());
-            row.put("reportStatus", report.getReportStatus());
-            row.put("reportTime", report.getReportTime());
-            recentRows.add(row);
+            recentRows.add(buildReportView(report));
         }
 
         Map<String, Object> summary = new LinkedHashMap<>();
@@ -222,7 +228,7 @@ public class AgriQualityReportController extends BaseController
         summary.put("batchCount", batchNos.size());
         summary.put("generatedCount", generatedCount);
         summary.put("draftCount", draftCount);
-        summary.put("avgDefectRate", defectCount == 0 ? BigDecimal.ZERO : defectTotal.divide(BigDecimal.valueOf(defectCount), 4, BigDecimal.ROUND_HALF_UP));
+        summary.put("avgDefectRate", defectCount == 0 ? BigDecimal.ZERO : defectTotal.divide(BigDecimal.valueOf(defectCount), 4, RoundingMode.HALF_UP));
         summary.put("highRiskCount", highRiskRows.size());
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -261,12 +267,89 @@ public class AgriQualityReportController extends BaseController
             findings.add("报告整体正常，可直接进入归档或对外发布");
         }
 
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("reportId", report.getReportId());
+            context.put("reportNo", report.getReportNo());
+            context.put("inspectId", report.getInspectId());
+            context.put("processBatchNo", report.getProcessBatchNo());
+            context.put("qualityGrade", report.getQualityGrade());
+            context.put("defectRate", report.getDefectRate());
+            context.put("reportStatus", report.getReportStatus());
+            context.put("reportSummary", report.getReportSummary());
+            context.put("ruleRiskScore", Math.max(0, riskScore));
+            context.put("ruleFindings", findings);
+
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult =
+                agriHttpIntegrationClient.invokeGeneralInsight("质检报告智能复核", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                findings.add(0, "AI结论：" + aiResult.getInsightSummary());
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                findings.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                findings.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ex)
+        {
+            findings.add("AI分析暂不可用，已回退本地规则：" + StringUtils.substring(ex.getMessage(), 0, 120));
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("reportId", report.getReportId());
         result.put("riskScore", Math.max(0, riskScore));
         result.put("riskLevel", riskScore >= 85 ? "低" : riskScore >= 70 ? "中" : "高");
         result.put("findings", findings);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         result.put("report", report);
+        result.put("reportView", buildReportView(report));
         return result;
+    }
+
+    private Map<String, Object> buildReportView(AgriQualityReport report)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("reportId", report.getReportId());
+        row.put("reportNo", report.getReportNo());
+        row.put("inspectId", report.getInspectId());
+        row.put("processBatchNo", report.getProcessBatchNo());
+        row.put("qualityGrade", report.getQualityGrade());
+        row.put("defectRate", report.getDefectRate());
+        row.put("defectRateText", formatDefectRateText(report.getDefectRate()));
+        row.put("reportSummary", report.getReportSummary());
+        row.put("reportStatus", report.getReportStatus());
+        row.put("reportStatusLabel", formatReportStatusLabel(report.getReportStatus()));
+        row.put("reportTime", report.getReportTime());
+        return row;
+    }
+
+    private String formatDefectRateText(BigDecimal defectRate)
+    {
+        if (defectRate == null)
+        {
+            return "-";
+        }
+        return defectRate.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP) + "%";
+    }
+
+    private String formatReportStatusLabel(String reportStatus)
+    {
+        if ("1".equals(reportStatus))
+        {
+            return "已生成";
+        }
+        if ("0".equals(reportStatus))
+        {
+            return "草稿";
+        }
+        return StringUtils.defaultString(reportStatus, "-");
     }
 }

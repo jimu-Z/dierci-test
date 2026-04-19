@@ -164,14 +164,29 @@
     </el-card>
 
     <el-dialog title="风控评估分析" :visible.sync="analysisOpen" width="700px" append-to-body>
-      <div v-loading="analysisLoading" class="analysis-body" v-if="analysisData">
+      <div v-loading="analysisLoading" class="analysis-body">
         <el-row :gutter="12">
           <el-col :span="8"><div class="analysis-kpi"><span>压力指数</span><b>{{ analysisData.stressIndex }}</b></div></el-col>
           <el-col :span="8"><div class="analysis-kpi"><span>偏差</span><b>{{ analysisData.scoreGap }}</b></div></el-col>
           <el-col :span="8"><div class="analysis-kpi"><span>等级</span><b>{{ analysisData.riskLevel }}</b></div></el-col>
         </el-row>
-        <el-alert :title="analysisData.summary" type="warning" :closable="false" style="margin: 12px 0" />
-        <el-tag v-for="(item, index) in analysisData.suggestions" :key="index" type="danger" size="mini" style="margin-right: 8px">{{ item }}</el-tag>
+        <el-alert :title="analysisData.summary || '正在生成智能分析结果...'
+          " type="warning" :closable="false" style="margin: 12px 0" />
+
+        <div class="analysis-section">
+          <div class="analysis-section-title">AI建议</div>
+          <div v-if="analysisData.suggestions && analysisData.suggestions.length" class="analysis-suggestion-list">
+            <div class="analysis-suggestion-item" v-for="(item, index) in analysisData.suggestions" :key="index">{{ item }}</div>
+          </div>
+          <div v-else class="analysis-empty">暂无建议</div>
+        </div>
+
+        <div class="analysis-section" v-if="analysisData.aiOriginalExcerpt">
+          <div class="analysis-section-title">AI原文摘录</div>
+          <pre class="analysis-excerpt">{{ analysisData.aiOriginalExcerpt }}</pre>
+        </div>
+
+        <div class="analysis-footnote" v-if="analysisData.requestTime">最近分析时间：{{ analysisData.requestTime }}</div>
       </div>
     </el-dialog>
 
@@ -244,7 +259,15 @@ export default {
       title: '',
       open: false,
       analysisOpen: false,
-      analysisData: null,
+      analysisData: {
+        stressIndex: '--',
+        scoreGap: '--',
+        riskLevel: '--',
+        summary: '',
+        suggestions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      },
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -374,11 +397,35 @@ export default {
         this.$modal.msgWarning('请先选择一条指标进行智能分析')
         return
       }
+      this.analysisOpen = true
       this.analysisLoading = true
+      this.analysisData = {
+        stressIndex: '--',
+        scoreGap: '--',
+        riskLevel: '--',
+        summary: '',
+        suggestions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      }
       smartAnalyzeFinanceRisk(riskId)
         .then(response => {
-          this.analysisData = response.data
-          this.analysisOpen = true
+          const data = response.data || {}
+          const suggestions = Array.isArray(data.suggestions)
+            ? data.suggestions.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
+            : []
+          this.analysisData = {
+            stressIndex: data.stressIndex != null ? data.stressIndex : '--',
+            scoreGap: data.scoreGap != null ? data.scoreGap : '--',
+            riskLevel: data.riskLevel || '--',
+            summary: data.summary || '',
+            suggestions,
+            aiOriginalExcerpt: data.aiOriginalExcerpt || '',
+            requestTime: new Date().toLocaleString()
+          }
+        })
+        .catch(() => {
+          this.$modal.msgError('智能分析调用失败，请稍后重试')
         })
         .finally(() => {
           this.analysisLoading = false
@@ -623,6 +670,9 @@ export default {
 
 .analysis-body {
   min-height: 120px;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .analysis-kpi {
@@ -643,6 +693,55 @@ export default {
   margin-top: 6px;
   color: #4e2f74;
   font-size: 20px;
+}
+
+.analysis-section {
+  margin-top: 12px;
+}
+
+.analysis-section-title {
+  margin-bottom: 8px;
+  color: #7a2d18;
+  font-weight: 600;
+}
+
+.analysis-suggestion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.analysis-suggestion-item {
+  border-radius: 8px;
+  border: 1px solid #f1d6d6;
+  background: #fff2f2;
+  color: #d9534f;
+  padding: 8px 10px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.analysis-excerpt {
+  border-radius: 8px;
+  border: 1px solid #f0d9d9;
+  background: #fff7f7;
+  color: #b44d4b;
+  padding: 10px;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
+
+.analysis-empty {
+  color: #9a8a80;
+}
+
+.analysis-footnote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #9a8a80;
 }
 
 @media (max-width: 768px) {

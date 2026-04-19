@@ -13,7 +13,7 @@
         </div>
         <div class="hero-actions">
           <el-button type="primary" size="mini" icon="el-icon-refresh" @click="loadDashboard">刷新看板</el-button>
-          <el-button type="warning" plain size="mini" icon="el-icon-data-analysis" :disabled="!selectedOverviewId" @click="handleSmartInsight()">智能诊断</el-button>
+          <el-button type="warning" plain size="mini" icon="el-icon-data-analysis" :disabled="!selectedOverviewId" :loading="smartInsightLoading" @click="handleSmartInsight()">智能诊断</el-button>
         </div>
       </div>
     </el-card>
@@ -44,6 +44,27 @@
             </div>
             <div class="recommendation-list" v-if="recommendations.length">
               <div v-for="(item, index) in recommendations" :key="index" class="recommendation-item">{{ item }}</div>
+            </div>
+            <div v-if="smartInsightResult.summary || smartInsightResult.aiOriginalExcerpt" class="smart-result-box">
+              <div class="smart-result-head">
+                <span>智能诊断结果</span>
+                <small>{{ smartInsightResult.statDate || '最近一次按钮触发结果' }}</small>
+              </div>
+              <div class="smart-result-meta">
+                <span>健康等级 {{ smartInsightResult.healthLevel || '-' }}</span>
+                <span>置信度 {{ smartInsightResult.confidenceRate != null ? formatRate(smartInsightResult.confidenceRate) : '-' }}</span>
+                <span>模型 {{ smartInsightResult.algorithm || 'overview-health-v1' }}</span>
+              </div>
+              <div class="smart-result-summary">{{ smartInsightResult.summary || '暂无智能诊断结果' }}</div>
+              <div class="smart-result-section" v-if="smartInsightResult.recommendations.length">
+                <div class="smart-result-title">AI建议</div>
+                <div v-for="(item, index) in smartInsightResult.recommendations" :key="index" class="smart-result-item">{{ item }}</div>
+              </div>
+              <div class="smart-result-section" v-if="smartInsightResult.aiOriginalExcerpt">
+                <div class="smart-result-title">AI原文摘录</div>
+                <pre class="smart-result-excerpt">{{ smartInsightResult.aiOriginalExcerpt }}</pre>
+              </div>
+              <div class="smart-result-footnote" v-if="smartInsightResult.requestTime">最近诊断时间：{{ smartInsightResult.requestTime }}</div>
             </div>
           </div>
         </el-card>
@@ -154,6 +175,7 @@ export default {
     return {
       loading: true,
       dashboardLoading: false,
+      smartInsightLoading: false,
       ids: [],
       single: true,
       multiple: true,
@@ -163,6 +185,17 @@ export default {
       dashboardSnapshot: null,
       selectedOverview: null,
       lastRefreshTime: null,
+      smartInsightResult: {
+        overviewId: null,
+        statDate: '',
+        algorithm: 'overview-health-v1',
+        summary: '',
+        healthLevel: '',
+        confidenceRate: null,
+        recommendations: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      },
       title: '',
       open: false,
       queryParams: {
@@ -244,15 +277,42 @@ export default {
       }
     },
     handleSmartInsight(row) {
-      const overviewId = row && row.overviewId ? row.overviewId : this.selectedOverviewId
+      const fallbackOverview = this.topList.length ? this.topList[0] : null
+      const overviewId = row && row.overviewId ? row.overviewId : (this.selectedOverviewId || (fallbackOverview && fallbackOverview.overviewId))
       if (!overviewId) {
         this.$modal.msgWarning('请先选择一条总览记录')
         return
       }
+      const target = row || this.selectedOverview || fallbackOverview
+      this.smartInsightLoading = true
       smartInsightDashboardOverview(overviewId).then(response => {
+        const data = response.data || {}
+        const recommendations = Array.isArray(data.recommendations) ? data.recommendations : []
+        this.smartInsightResult = {
+          overviewId: data.overviewId || overviewId,
+          statDate: data.statDate || (target && target.statDate) || '',
+          algorithm: data.algorithm || 'overview-health-v1',
+          summary: data.summary || '暂无智能诊断结果',
+          healthLevel: data.healthLevel || '-',
+          confidenceRate: data.confidenceRate != null ? data.confidenceRate : null,
+          recommendations,
+          aiOriginalExcerpt: data.aiOriginalExcerpt || '',
+          requestTime: new Date().toLocaleString()
+        }
         this.dashboardSnapshot = this.dashboardSnapshot || {}
-        this.dashboardSnapshot.insight = response.data || {}
+        this.$set(this.dashboardSnapshot, 'insight', Object.assign({}, this.dashboardSnapshot.insight || {}, {
+          overviewSummary: data.summary || (this.dashboardSnapshot.insight && this.dashboardSnapshot.insight.overviewSummary) || '',
+          healthLevel: data.healthLevel || (this.dashboardSnapshot.insight && this.dashboardSnapshot.insight.healthLevel) || '稳定',
+          confidenceRate: data.confidenceRate != null ? data.confidenceRate : (this.dashboardSnapshot.insight && this.dashboardSnapshot.insight.confidenceRate) || 0,
+          modelVersion: data.algorithm || 'overview-health-v1'
+        }))
+        this.$set(this.dashboardSnapshot, 'recommendations', recommendations.length ? recommendations : (this.dashboardSnapshot.recommendations || []))
         this.$modal.msgSuccess('智能诊断完成')
+      }).catch(error => {
+        const message = (error && error.msg) || '智能诊断失败，请稍后重试'
+        this.$modal.msgError(message)
+      }).finally(() => {
+        this.smartInsightLoading = false
       })
     },
     cancel() {
@@ -493,5 +553,78 @@ export default {
   background: #f6f8fb;
   border-radius: 10px;
   color: #334155;
+}
+
+.smart-result-box {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(245, 248, 255, 0.95), rgba(236, 244, 255, 0.92));
+  border: 1px solid #dbe7ff;
+}
+
+.smart-result-head,
+.smart-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.smart-result-head {
+  color: #213044;
+  font-weight: 600;
+}
+
+.smart-result-head small,
+.smart-result-meta {
+  color: #657180;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.smart-result-meta {
+  margin-top: 8px;
+}
+
+.smart-result-summary {
+  margin-top: 10px;
+  color: #2b3a4a;
+  line-height: 1.8;
+}
+
+.smart-result-section {
+  margin-top: 12px;
+}
+
+.smart-result-title {
+  margin-bottom: 8px;
+  color: #233042;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.smart-result-item {
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #334155;
+}
+
+.smart-result-excerpt {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #475569;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.smart-result-footnote {
+  margin-top: 10px;
+  color: #7a8794;
+  font-size: 12px;
 }
 </style>

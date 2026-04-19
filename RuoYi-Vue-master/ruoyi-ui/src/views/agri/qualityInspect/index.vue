@@ -7,7 +7,7 @@
         <p>首屏聚焦样本压力、缺陷率、等级分布与高风险批次，支持直接触发AI检测与智能复核。</p>
         <div class="hero-actions">
           <el-button type="primary" icon="el-icon-plus" @click="handleAdd">新增样本任务</el-button>
-          <el-button type="success" icon="el-icon-video-play" :disabled="!focusTask.inspectId" @click="handleInvoke(focusTask)">执行检测</el-button>
+          <el-button type="success" icon="el-icon-video-play" :disabled="!canInvoke" @click="handleInvoke()">执行检测</el-button>
           <el-button type="warning" icon="el-icon-data-analysis" :disabled="!focusTask.inspectId" @click="handleSmartReview(focusTask)">智能复核</el-button>
           <el-button icon="el-icon-refresh" @click="refreshOps">刷新分拨台</el-button>
         </div>
@@ -43,7 +43,7 @@
             <span>样本压力队列</span>
             <span class="panel-sub">按风险分排序，先处理最可能影响放行的样本</span>
           </div>
-          <el-table :data="pressureQueue" size="mini">
+          <el-table :data="pressureQueue" size="mini" @row-click="handlePressureRowClick">
             <el-table-column label="样本图" width="90" align="center">
               <template slot-scope="scope">
                 <el-image class="sample-thumb" :src="resolveImageUrl(scope.row.imageUrl)" fit="cover" :preview-src-list="resolvePreview(scope.row.imageUrl)">
@@ -88,10 +88,11 @@
             <div class="focus-row"><span>状态</span><el-tag :type="statusTagType(focusTask.inspectStatus)" size="mini">{{ focusTask.statusLabel || formatInspectStatus(focusTask.inspectStatus) }}</el-tag></div>
             <div class="focus-row"><span>品质等级</span><span>{{ focusTask.qualityGrade || '-' }}</span></div>
             <div class="focus-row"><span>缺陷率</span><span>{{ toPercentRate(focusTask.defectRate) }}</span></div>
+            <div class="focus-row focus-row-wrap"><span>检测结果</span><span class="focus-result">{{ focusTask.inspectResult || '暂无检测结果' }}</span></div>
             <div class="focus-row"><span>风险分</span><span>{{ focusTask.riskScore || 0 }}</span></div>
             <div class="focus-reason">{{ focusTask.riskReason || '暂无风险说明' }}</div>
             <div class="focus-actions">
-              <el-button type="primary" size="mini" @click="handleInvoke(focusTask)">执行检测</el-button>
+              <el-button type="primary" size="mini" @click="handleInvoke()">执行检测</el-button>
               <el-button size="mini" @click="handleSmartReview(focusTask)">智能复核</el-button>
             </div>
           </div>
@@ -274,6 +275,7 @@ export default {
       focusTask: {},
       suggestions: [],
       opsKpi: {},
+      selectedTask: {},
       title: '',
       open: false,
       feedbackOpen: false,
@@ -313,6 +315,11 @@ export default {
     this.getList()
     this.loadOps()
   },
+  computed: {
+    canInvoke() {
+      return Boolean(this.getPreferredTask() && this.getPreferredTask().inspectId)
+    }
+  },
   methods: {
     getList() {
       this.loading = true
@@ -342,11 +349,88 @@ export default {
     refreshOps() {
       this.loadOps()
     },
-    resolveImageUrl(value) {
+    normalizeSingleImage(value) {
       if (!value) {
         return ''
       }
-      const cleaned = String(value).trim().replace(/\\/g, '/')
+
+      if (Array.isArray(value)) {
+        return String(value[0] || '').trim()
+      }
+
+      const raw = String(value).trim()
+      if (!raw) {
+        return ''
+      }
+
+      if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
+        try {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length) {
+            return String(parsed[0] || '').trim()
+          }
+          if (parsed && typeof parsed === 'object') {
+            const candidate = parsed.url || parsed.imageUrl || parsed.path
+            return String(candidate || '').trim()
+          }
+        } catch (e) {
+          // 非JSON字符串时走后续兼容分支
+        }
+      }
+
+      const first = raw.split(',')[0]
+      const normalized = String(first || '').trim().replace(/^['"]|['"]$/g, '')
+      return this.extractImageUrlFromPageUrl(normalized)
+    },
+    extractImageUrlFromPageUrl(urlText) {
+      if (!urlText) {
+        return ''
+      }
+
+      const cleaned = String(urlText).trim()
+      if (!/^https?:\/\//i.test(cleaned)) {
+        return cleaned
+      }
+
+      try {
+        const parsed = new URL(cleaned)
+        const host = parsed.hostname.toLowerCase()
+        const pathname = parsed.pathname.toLowerCase()
+        const isSearchPage = pathname.includes('/images/search') || pathname.includes('/imgres') || pathname.includes('/s')
+
+        if (isSearchPage) {
+          const direct =
+            parsed.searchParams.get('mediaurl') ||
+            parsed.searchParams.get('imgurl') ||
+            parsed.searchParams.get('objurl') ||
+            parsed.searchParams.get('src')
+
+          if (direct) {
+            return direct
+          }
+
+          if (host.includes('bing.com') && parsed.hash) {
+            const hash = parsed.hash.startsWith('#') ? parsed.hash.substring(1) : parsed.hash
+            const hashParams = new URLSearchParams(hash)
+            const hashDirect = hashParams.get('mediaurl') || hashParams.get('imgurl')
+            if (hashDirect) {
+              return hashDirect
+            }
+          }
+        }
+      } catch (e) {
+        return cleaned
+      }
+
+      return cleaned
+    },
+    resolveImageUrl(value) {
+      const first = this.normalizeSingleImage(value)
+      if (!first) {
+        return ''
+      }
+
+      const cleaned = String(first).trim().replace(/\\/g, '/')
       if (!cleaned) {
         return ''
       }
@@ -438,8 +522,27 @@ export default {
     },
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.inspectId)
+      this.selectedTask = selection.length ? selection[0] : {}
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handlePressureRowClick(row) {
+      if (!row || !row.inspectId) {
+        return
+      }
+      this.focusTask = { ...row }
+    },
+    getPreferredTask(row) {
+      if (row && row.inspectId) {
+        return row
+      }
+      if (this.selectedTask && this.selectedTask.inspectId) {
+        return this.selectedTask
+      }
+      if (this.focusTask && this.focusTask.inspectId) {
+        return this.focusTask
+      }
+      return null
     },
     handleAdd() {
       this.reset()
@@ -471,7 +574,8 @@ export default {
       this.feedbackOpen = true
     },
     handleInvoke(row) {
-      const inspectId = row && row.inspectId ? row.inspectId : this.ids[0]
+      const target = this.getPreferredTask(row)
+      const inspectId = target && target.inspectId ? target.inspectId : this.ids[0]
       if (!inspectId) {
         this.$modal.msgWarning('请选择一条任务执行检测')
         return
@@ -705,6 +809,17 @@ export default {
   justify-content: space-between;
   padding-bottom: 6px;
   border-bottom: 1px dashed #e2e8f0;
+}
+
+.focus-row-wrap {
+  align-items: flex-start;
+}
+
+.focus-result {
+  max-width: 72%;
+  text-align: right;
+  line-height: 1.5;
+  word-break: break-all;
 }
 
 .focus-reason {

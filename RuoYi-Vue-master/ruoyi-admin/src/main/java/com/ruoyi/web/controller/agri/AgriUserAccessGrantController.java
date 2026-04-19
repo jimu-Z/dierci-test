@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -7,6 +8,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriUserAccessGrant;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriUserAccessGrantService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -37,6 +39,9 @@ public class AgriUserAccessGrantController extends BaseController
 {
     @Autowired
     private IAgriUserAccessGrantService agriUserAccessGrantService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:userAccess:list')")
     @GetMapping("/list")
@@ -131,6 +136,39 @@ public class AgriUserAccessGrantController extends BaseController
             }
         }
         double fitScore = recommendedMenus.isEmpty() ? 0 : (overlap * 100.0 / recommendedMenus.size());
+        String summary = "基于角色模板完成权限拟合，建议补齐最小可用菜单集。";
+        String aiOriginalExcerpt = null;
+
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "用户权限智能推荐");
+            context.put("grantId", grant.getGrantId());
+            context.put("userName", grant.getUserName());
+            context.put("roleKey", grant.getRoleKey());
+            context.put("grantStatus", grant.getGrantStatus());
+            context.put("menuScope", grant.getMenuScope());
+            context.put("ruleFitScore", Math.round(fitScore * 100.0) / 100.0);
+            context.put("ruleRecommendedMenus", recommendedMenus);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("用户权限智能推荐", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
+            {
+                recommendedMenus.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
+            {
+                recommendedMenus.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("grantId", grant.getGrantId());
@@ -138,7 +176,8 @@ public class AgriUserAccessGrantController extends BaseController
         result.put("roleKey", grant.getRoleKey());
         result.put("fitScore", Math.round(fitScore * 100.0) / 100.0);
         result.put("recommendedMenus", recommendedMenus);
-        result.put("summary", "基于角色模板完成权限拟合，建议补齐最小可用菜单集。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

@@ -134,6 +134,7 @@ public class AgriCarbonFootprintModelServiceImpl implements IAgriCarbonFootprint
         insight.put("analysisEngine", "rule-local");
         insight.put("deepseekStatus", "fallback");
         insight.put("deepseekMessage", "未调用DeepSeek，使用本地规则结果");
+        insight.put("aiOriginalExcerpt", null);
         insight.put("boundaryCoverage", boundaryCoverage);
         insight.put("emissionFactorReview", emissionFactorReview);
         insight.put("businessCorrelation", businessCorrelation);
@@ -156,6 +157,7 @@ public class AgriCarbonFootprintModelServiceImpl implements IAgriCarbonFootprint
                     {
                         insight.put("estimatedEmission", aiResult.getEstimatedEmission());
                     }
+                    insight.put("aiOriginalExcerpt", aiResult.getRawContent());
                     insight.put("analysisEngine", "deepseek");
                     insight.put("deepseekStatus", "success");
                     insight.put("deepseekMessage", "DeepSeek调用成功");

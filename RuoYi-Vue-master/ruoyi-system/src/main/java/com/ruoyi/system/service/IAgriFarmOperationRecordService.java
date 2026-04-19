@@ -49,4 +49,12 @@ public interface IAgriFarmOperationRecordService
      * @return 结果
      */
     public int deleteAgriFarmOperationRecordByOperationIds(Long[] operationIds);
+
+    /**
+     * 查询地块编码选项
+     *
+     * @param keyword 搜索关键字
+     * @return 地块编码集合
+     */
+    public List<String> selectPlotCodeOptions(String keyword);
 }

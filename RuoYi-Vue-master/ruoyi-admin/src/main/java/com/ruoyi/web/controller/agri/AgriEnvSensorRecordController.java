@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Anonymous;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -10,6 +11,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriDeviceAccessNode;
 import com.ruoyi.system.domain.AgriEnvSensorRecord;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.integration.AgriIntegrationProperties;
 import com.ruoyi.system.service.IAgriDeviceAccessNodeService;
 import com.ruoyi.system.service.IAgriEnvSensorRecordService;
@@ -54,6 +56,9 @@ public class AgriEnvSensorRecordController extends BaseController
 
     @Autowired
     private AgriIntegrationProperties agriIntegrationProperties;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     /**
      * 查询环境传感器数据列表
@@ -602,6 +607,40 @@ public class AgriEnvSensorRecordController extends BaseController
             findings.add("当前监测值整体平稳，可继续保持当前环境策略");
         }
 
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "环境传感智能诊断");
+            context.put("recordId", record.getRecordId());
+            context.put("deviceCode", record.getDeviceCode());
+            context.put("plotCode", record.getPlotCode());
+            context.put("temperature", temperature);
+            context.put("humidity", humidity);
+            context.put("co2Value", co2);
+            context.put("status", record.getStatus());
+            context.put("collectTime", record.getCollectTime());
+            context.put("ruleFindings", findings);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("环境传感智能诊断", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                findings.add("AI结论：" + aiResult.getInsightSummary());
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                findings.add("AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                findings.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("recordId", record.getRecordId());
         result.put("deviceCode", record.getDeviceCode());
@@ -613,6 +652,7 @@ public class AgriEnvSensorRecordController extends BaseController
         result.put("humidity", record.getHumidity());
         result.put("co2Value", record.getCo2Value());
         result.put("collectTime", record.getCollectTime());
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return result;
     }
 

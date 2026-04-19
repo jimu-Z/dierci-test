@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -8,6 +9,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriTraceAuditLog;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriTraceAuditLogService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -38,6 +40,9 @@ public class AgriTraceAuditLogController extends BaseController
 {
     @Autowired
     private IAgriTraceAuditLogService agriTraceAuditLogService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:auditLog:list')")
     @GetMapping("/list")
@@ -118,6 +123,47 @@ public class AgriTraceAuditLogController extends BaseController
         }
         score = Math.min(score, 100);
         String level = score >= 80 ? "高" : (score >= 45 ? "中" : "低");
+        String summary = "完成审计异常检测，风险等级为" + level + "。";
+        String aiOriginalExcerpt = null;
+
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "溯源审计异常智能检测");
+            context.put("auditId", log.getAuditId());
+            context.put("bizNo", log.getBizNo());
+            context.put("moduleName", log.getModuleName());
+            context.put("actionType", log.getActionType());
+            context.put("operatorName", log.getOperatorName());
+            context.put("operateResult", log.getOperateResult());
+            context.put("txHash", log.getTxHash());
+            context.put("ipAddress", log.getIpAddress());
+            context.put("ruleAnomalyScore", score);
+            context.put("ruleRiskLevel", level);
+            context.put("ruleAlerts", alerts);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("溯源审计异常智能检测", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
+            {
+                level = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                alerts.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                alerts.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("auditId", log.getAuditId());
@@ -125,7 +171,8 @@ public class AgriTraceAuditLogController extends BaseController
         result.put("anomalyScore", score);
         result.put("riskLevel", level);
         result.put("alerts", alerts);
-        result.put("summary", "完成审计异常检测，风险等级为" + level + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

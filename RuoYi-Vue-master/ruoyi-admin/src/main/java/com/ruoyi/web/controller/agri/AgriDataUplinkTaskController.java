@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -9,6 +10,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriDataUplinkTask;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriDataUplinkTaskService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -40,6 +42,9 @@ public class AgriDataUplinkTaskController extends BaseController
 {
     @Autowired
     private IAgriDataUplinkTaskService agriDataUplinkTaskService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:dataUplink:list')")
     @GetMapping("/list")
@@ -199,6 +204,47 @@ public class AgriDataUplinkTaskController extends BaseController
         }
         integrity = Math.max(integrity, 0);
         String level = integrity < 50 ? "高" : (integrity < 80 ? "中" : "低");
+        String summary = "完成上链完整性核验，当前风险等级为" + level + "。";
+        String aiOriginalExcerpt = null;
+
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "数据上链完整性智能核验");
+            context.put("uplinkId", task.getUplinkId());
+            context.put("batchNo", task.getBatchNo());
+            context.put("dataType", task.getDataType());
+            context.put("chainPlatform", task.getChainPlatform());
+            context.put("uplinkStatus", task.getUplinkStatus());
+            context.put("dataHashLength", task.getDataHash() == null ? 0 : task.getDataHash().length());
+            context.put("hasTxHash", StringUtils.isNotEmpty(task.getTxHash()));
+            context.put("hasContractAddress", StringUtils.isNotEmpty(task.getContractAddress()));
+            context.put("ruleIntegrity", integrity);
+            context.put("ruleRiskLevel", level);
+            context.put("ruleIssues", issues);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("数据上链完整性智能核验", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotEmpty(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotEmpty(aiResult.getRiskLevel()))
+            {
+                level = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotEmpty(aiResult.getSuggestion()))
+            {
+                issues.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotEmpty(aiOriginalExcerpt))
+            {
+                issues.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("uplinkId", task.getUplinkId());
@@ -206,7 +252,8 @@ public class AgriDataUplinkTaskController extends BaseController
         result.put("integrity", integrity);
         result.put("riskLevel", level);
         result.put("issues", issues);
-        result.put("summary", "完成上链完整性核验，当前风险等级为" + level + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

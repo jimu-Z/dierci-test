@@ -8,7 +8,7 @@
         </div>
         <div class="env-actions">
           <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
-          <el-button size="mini" icon="el-icon-magic-stick" @click="handleDiagnose">智能诊断</el-button>
+          <el-button size="mini" icon="el-icon-magic-stick" :loading="smartLoading" @click="handleDiagnose">智能诊断</el-button>
         </div>
       </div>
       <el-row :gutter="12" class="env-kpi-row">
@@ -45,9 +45,15 @@
                 <span>{{ smartResult.riskLevel }}风险</span>
               </div>
               <p>{{ smartResult.deviceCode }} / {{ smartResult.plotCode }}</p>
-              <ul>
+              <div class="env-smart-summary">{{ smartResult.summary || '暂无诊断摘要' }}</div>
+              <ul v-if="smartResult.findings.length">
                 <li v-for="item in smartResult.findings" :key="item">{{ item }}</li>
               </ul>
+              <div v-if="smartResult.aiOriginalExcerpt" class="env-smart-excerpt-box">
+                <div class="env-smart-excerpt-title">AI原文摘录</div>
+                <pre class="env-smart-excerpt">{{ smartResult.aiOriginalExcerpt }}</pre>
+              </div>
+              <div v-if="smartResult.requestTime" class="env-smart-footnote">最近诊断时间：{{ smartResult.requestTime }}</div>
             </div>
             <el-empty v-else description="请选择一条记录进行诊断" />
           </div>
@@ -279,7 +285,18 @@ export default {
       total: 0,
       envSensorList: [],
       dashboardData: {},
-      smartResult: {},
+      smartLoading: false,
+      smartResult: {
+        recordId: null,
+        deviceCode: '',
+        plotCode: '',
+        riskScore: '--',
+        riskLevel: '--',
+        findings: [],
+        summary: '',
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      },
       title: '',
       open: false,
       queryParams: {
@@ -317,11 +334,14 @@ export default {
     },
     dashboardAlerts() {
       return this.dashboardData.alerts || []
+    },
+    dashboardRecentRows() {
+      return this.dashboardData.recentRows || []
     }
   },
   methods: {
     refreshDashboard() {
-      getEnvSensorDashboard(this.queryParams).then(response => {
+      return getEnvSensorDashboard(this.queryParams).then(response => {
         this.dashboardData = response.data || {}
       })
     },
@@ -338,15 +358,58 @@ export default {
       return `${text}${unit}`
     },
     handleDiagnose(row) {
-      const target = row || this.envSensorList[0]
+      const target = this.resolveDiagnoseTarget(row)
       if (!target || !target.recordId) {
         this.$modal.msgWarning('请先选择一条环境监测记录')
         return
       }
+      this.smartLoading = true
+      this.smartResult = {
+        recordId: target.recordId,
+        deviceCode: target.deviceCode || '',
+        plotCode: target.plotCode || '',
+        riskScore: '--',
+        riskLevel: '--',
+        findings: ['正在获取智能诊断结果...'],
+        summary: '正在生成诊断结果，请稍候。',
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      }
       diagnoseEnvSensor(target.recordId).then(response => {
-        this.smartResult = response.data || {}
+        const data = response.data || {}
+        this.smartResult = {
+          recordId: data.recordId || target.recordId,
+          deviceCode: data.deviceCode || target.deviceCode || '',
+          plotCode: data.plotCode || target.plotCode || '',
+          riskScore: data.riskScore != null ? data.riskScore : '--',
+          riskLevel: data.riskLevel || '--',
+          findings: Array.isArray(data.findings) ? data.findings : [],
+          summary: data.summary || '诊断已完成',
+          aiOriginalExcerpt: data.aiOriginalExcerpt || '',
+          requestTime: new Date().toLocaleString()
+        }
         this.$modal.msgSuccess('智能诊断已更新')
+      }).catch(error => {
+        const message = (error && error.msg) || '智能诊断失败，请稍后重试'
+        this.$modal.msgError(message)
+      }).finally(() => {
+        this.smartLoading = false
       })
+    },
+    resolveDiagnoseTarget(row) {
+      if (row && row.recordId) {
+        return row
+      }
+      if (this.dashboardAlerts.length) {
+        return this.dashboardAlerts[0]
+      }
+      if (this.dashboardRecentRows.length) {
+        return this.dashboardRecentRows[0]
+      }
+      if (this.envSensorList.length) {
+        return this.envSensorList[0]
+      }
+      return null
     },
     cancel() {
       this.open = false
@@ -531,6 +594,40 @@ export default {
   margin: 10px 0 0;
   padding-left: 18px;
   color: #4b5f55;
+}
+
+.env-smart-summary {
+  margin-top: 10px;
+  color: #2f4136;
+  line-height: 1.8;
+}
+
+.env-smart-excerpt-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7fbf7;
+  border: 1px solid #e4efe5;
+}
+
+.env-smart-excerpt-title {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #264235;
+}
+
+.env-smart-excerpt {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #4b5f55;
+}
+
+.env-smart-footnote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #748579;
 }
 
 .env-smart-score {

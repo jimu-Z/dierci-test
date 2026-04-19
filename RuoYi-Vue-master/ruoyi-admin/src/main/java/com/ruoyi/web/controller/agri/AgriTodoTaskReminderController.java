@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -7,6 +8,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriTodoTaskReminder;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriTodoTaskReminderService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
@@ -40,6 +42,9 @@ public class AgriTodoTaskReminderController extends BaseController
 {
     @Autowired
     private IAgriTodoTaskReminderService agriTodoTaskReminderService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:todoTaskReminder:list')")
     @GetMapping("/list")
@@ -164,14 +169,69 @@ public class AgriTodoTaskReminderController extends BaseController
             actions.add("继续按当前节奏跟踪即可，无需额外升级动作。");
         }
 
+        String dispatchLevel = buildDispatchLevel(overdueDays > 0 ? 1 : 0, priorityWeight(reminder.getPriorityLevel()), "0".equals(reminder.getReminderStatus()) ? 1 : 0);
+        String summary = "根据优先级、截止时间与提醒状态生成待办处置建议，建议尽快关注该任务。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "任务待办智能派发");
+            context.put("reminderId", reminder.getReminderId());
+            context.put("taskCode", reminder.getTaskCode());
+            context.put("taskTitle", reminder.getTaskTitle());
+            context.put("priorityLevel", reminder.getPriorityLevel());
+            context.put("reminderStatus", reminder.getReminderStatus());
+            context.put("deadlineTime", reminder.getDeadlineTime());
+            context.put("overdueDays", Math.max(overdueDays, 0L));
+            context.put("ruleDispatchLevel", dispatchLevel);
+            context.put("ruleActions", actions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("任务待办智能派发", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
+            {
+                dispatchLevel = aiResult.getRiskLevel();
+            }
+            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
+            {
+                actions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
+            {
+                actions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("reminderId", reminder.getReminderId());
         result.put("taskCode", reminder.getTaskCode());
         result.put("algorithm", "todo-dispatch-v1");
-        result.put("dispatchLevel", buildDispatchLevel(overdueDays > 0 ? 1 : 0, priorityWeight(reminder.getPriorityLevel()), "0".equals(reminder.getReminderStatus()) ? 1 : 0));
+        result.put("dispatchLevel", dispatchLevel);
         result.put("overdueDays", Math.max(overdueDays, 0L));
         result.put("actions", actions);
-        result.put("summary", "根据优先级、截止时间与提醒状态生成待办处置建议，建议尽快关注该任务。 ");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
+
+        if (!"2".equals(reminder.getReminderStatus()))
+        {
+            AgriTodoTaskReminder updateReminder = new AgriTodoTaskReminder();
+            updateReminder.setReminderId(reminder.getReminderId());
+            updateReminder.setReminderStatus("1");
+            updateReminder.setUpdateBy(getUsername());
+            agriTodoTaskReminderService.updateAgriTodoTaskReminder(updateReminder);
+            result.put("reminderStatus", "1");
+        }
+        else
+        {
+            result.put("reminderStatus", reminder.getReminderStatus());
+        }
         return success(result);
     }
 

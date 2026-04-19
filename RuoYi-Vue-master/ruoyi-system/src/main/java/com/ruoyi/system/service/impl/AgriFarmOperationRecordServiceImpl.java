@@ -77,4 +77,10 @@ public class AgriFarmOperationRecordServiceImpl implements IAgriFarmOperationRec
     {
         return agriFarmOperationRecordMapper.deleteAgriFarmOperationRecordByOperationIds(operationIds);
     }
+
+    @Override
+    public List<String> selectPlotCodeOptions(String keyword)
+    {
+        return agriFarmOperationRecordMapper.selectPlotCodeOptions(keyword);
+    }
 }

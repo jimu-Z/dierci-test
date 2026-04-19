@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -9,6 +10,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriSmartContractDeploy;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriSmartContractDeployService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -40,6 +42,9 @@ public class AgriSmartContractDeployController extends BaseController
 {
     @Autowired
     private IAgriSmartContractDeployService agriSmartContractDeployService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:smartContract:list')")
     @GetMapping("/list")
@@ -203,6 +208,47 @@ public class AgriSmartContractDeployController extends BaseController
         }
         score = Math.max(score, 0);
         String level = score < 50 ? "高" : (score < 80 ? "中" : "低");
+        String summary = "完成合约部署安全体检，风险等级为" + level + "。";
+        String aiOriginalExcerpt = null;
+
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "智能合约安全体检");
+            context.put("deployId", deploy.getDeployId());
+            context.put("contractName", deploy.getContractName());
+            context.put("contractVersion", deploy.getContractVersion());
+            context.put("chainPlatform", deploy.getChainPlatform());
+            context.put("deployStatus", deploy.getDeployStatus());
+            context.put("contractAddress", deploy.getContractAddress());
+            context.put("deployTxHash", deploy.getDeployTxHash());
+            context.put("sourceHash", deploy.getSourceHash());
+            context.put("ruleSecurityScore", score);
+            context.put("ruleRiskLevel", level);
+            context.put("ruleFindings", findings);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("智能合约安全体检", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
+            {
+                level = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                findings.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                findings.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("deployId", deploy.getDeployId());
@@ -210,7 +256,8 @@ public class AgriSmartContractDeployController extends BaseController
         result.put("securityScore", score);
         result.put("riskLevel", level);
         result.put("findings", findings);
-        result.put("summary", "完成合约部署安全体检，风险等级为" + level + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

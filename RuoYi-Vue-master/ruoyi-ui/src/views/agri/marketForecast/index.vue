@@ -39,10 +39,21 @@
         <el-col :xs="24" :lg="10">
           <div class="forecast-panel">
             <div class="panel-head"><span>智能复核</span><small>根据预测结果给出业务建议</small></div>
-            <div v-if="smartResult.forecastId" class="forecast-box">
-              <div class="forecast-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
-              <p>{{ smartResult.forecast.productName }}</p>
-              <ul><li v-for="item in smartResult.suggestions" :key="item">{{ item }}</li></ul>
+            <div v-if="smartResult.forecastId" class="forecast-box" v-loading="reviewLoading">
+                <div class="forecast-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
+                <p>{{ smartResult.forecast && smartResult.forecast.productName }}</p>
+                <div class="forecast-section">
+                  <div class="forecast-section-title">AI建议</div>
+                  <ul v-if="smartResult.suggestions && smartResult.suggestions.length" class="forecast-suggestion-list">
+                    <li v-for="item in smartResult.suggestions" :key="item">{{ item }}</li>
+                  </ul>
+                  <div v-else class="forecast-empty">暂无建议</div>
+                </div>
+                <div class="forecast-section" v-if="smartResult.aiOriginalExcerpt">
+                  <div class="forecast-section-title">AI原文摘录</div>
+                  <pre class="forecast-excerpt">{{ smartResult.aiOriginalExcerpt }}</pre>
+                </div>
+                <div class="forecast-footnote" v-if="smartResult.requestTime">最近复核时间：{{ smartResult.requestTime }}</div>
             </div>
             <el-empty v-else description="请选择一条预测任务进行复核" />
           </div>
@@ -171,10 +182,19 @@ export default {
       single: true,
       multiple: true,
       showSearch: true,
+      reviewLoading: false,
       total: 0,
       forecastList: [],
       dashboardData: {},
-      smartResult: {},
+      smartResult: {
+        forecastId: null,
+        riskScore: '--',
+        riskLevel: '--',
+        forecast: null,
+        suggestions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      },
       title: '',
       open: false,
       predictOpen: false,
@@ -328,9 +348,33 @@ export default {
         this.$modal.msgWarning('请先选择一条预测任务')
         return
       }
+      this.reviewLoading = true
+      this.smartResult = {
+        forecastId: target.forecastId,
+        riskScore: '--',
+        riskLevel: '--',
+        forecast: target,
+        suggestions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      }
       getMarketForecastReview(target.forecastId).then(response => {
-        this.smartResult = response.data || {}
+        const data = response.data || {}
+        const suggestions = Array.isArray(data.suggestions)
+          ? data.suggestions.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
+          : []
+        this.smartResult = {
+          forecastId: data.forecastId || target.forecastId,
+          riskScore: data.riskScore != null ? data.riskScore : '--',
+          riskLevel: data.riskLevel || '--',
+          forecast: data.forecast || target,
+          suggestions,
+          aiOriginalExcerpt: data.aiOriginalExcerpt || '',
+          requestTime: new Date().toLocaleString()
+        }
         this.$modal.msgSuccess('智能复核已更新')
+      }).finally(() => {
+        this.reviewLoading = false
       })
     },
     handlePredict() {
@@ -472,7 +516,55 @@ export default {
 }
 
 .forecast-kpi-card strong {
+  max-height: 340px;
+  overflow-y: auto;
   display: block;
+
+.forecast-section {
+  margin-top: 12px;
+}
+
+.forecast-section-title {
+  margin-bottom: 8px;
+  color: #7a2d18;
+  font-weight: 600;
+}
+
+.forecast-suggestion-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.forecast-suggestion-list li {
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.forecast-excerpt {
+  border-radius: 8px;
+  border: 1px solid #f0d9d9;
+  background: #fff7f7;
+  color: #b44d4b;
+  padding: 10px;
+  margin: 0;
+  max-height: 140px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
+
+.forecast-empty {
+  color: #9a8a80;
+}
+
+.forecast-footnote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #9a8a80;
+}
   margin: 8px 0 4px;
   font-size: 22px;
   color: #7a4e12;

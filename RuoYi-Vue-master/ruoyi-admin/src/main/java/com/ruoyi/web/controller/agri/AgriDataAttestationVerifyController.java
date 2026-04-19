@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -7,6 +8,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriDataAttestationVerify;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriDataAttestationVerifyService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -37,6 +39,9 @@ public class AgriDataAttestationVerifyController extends BaseController
 {
     @Autowired
     private IAgriDataAttestationVerifyService agriDataAttestationVerifyService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:attestationVerify:list')")
     @GetMapping("/list")
@@ -105,6 +110,7 @@ public class AgriDataAttestationVerifyController extends BaseController
         boolean exactMatch = origin.equals(chain) && !origin.isEmpty();
         double similarity = hashSimilarity(origin, chain);
         String inferredStatus = exactMatch ? "1" : (similarity >= 0.85 ? "0" : "2");
+        String riskLevel = exactMatch ? "低" : ("0".equals(inferredStatus) ? "中" : "高");
 
         List<String> hints = new ArrayList<>();
         if (exactMatch)
@@ -120,6 +126,48 @@ public class AgriDataAttestationVerifyController extends BaseController
             hints.add("哈希差异明显，建议立即核查数据源与链上交易记录");
         }
 
+        String summary = "完成链上链下哈希一致性检测，建议状态为" + inferredStatus + "。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "数据存证一致性智能校验");
+            context.put("verifyId", record.getVerifyId());
+            context.put("attestationNo", record.getAttestationNo());
+            context.put("batchNo", record.getBatchNo());
+            context.put("dataType", record.getDataType());
+            context.put("verifyStatus", record.getVerifyStatus());
+            context.put("originHash", origin);
+            context.put("chainHash", chain);
+            context.put("exactMatch", exactMatch);
+            context.put("similarity", similarity);
+            context.put("ruleInferredStatus", inferredStatus);
+            context.put("ruleRiskLevel", riskLevel);
+            context.put("ruleHints", hints);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("数据存证一致性智能校验", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
+            {
+                riskLevel = aiResult.getRiskLevel();
+            }
+            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
+            {
+                hints.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
+            {
+                hints.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("verifyId", record.getVerifyId());
         result.put("attestationNo", record.getAttestationNo());
@@ -127,8 +175,10 @@ public class AgriDataAttestationVerifyController extends BaseController
         result.put("exactMatch", exactMatch);
         result.put("similarity", similarity);
         result.put("inferredStatus", inferredStatus);
+        result.put("riskLevel", riskLevel);
         result.put("hints", hints);
-        result.put("summary", "完成链上链下哈希一致性检测，建议状态为" + inferredStatus + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

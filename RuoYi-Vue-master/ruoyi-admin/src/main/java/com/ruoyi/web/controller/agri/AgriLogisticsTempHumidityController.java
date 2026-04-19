@@ -1,12 +1,15 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriLogisticsTempHumidity;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriLogisticsTempHumidityService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -14,7 +17,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,9 @@ public class AgriLogisticsTempHumidityController extends BaseController
 {
     @Autowired
     private IAgriLogisticsTempHumidityService agriLogisticsTempHumidityService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:logisticsTemp:list')")
     @GetMapping("/list")
@@ -232,12 +237,55 @@ public class AgriLogisticsTempHumidityController extends BaseController
             suggestions.add("当前温湿度处于合理区间，可继续按现有冷链策略运行");
         }
 
+        int safeScore = Math.max(0, score);
+        String riskLevel = safeScore >= 85 ? "低" : safeScore >= 70 ? "中" : "高";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "物流温湿度智能诊断");
+            context.put("recordId", record.getRecordId());
+            context.put("traceCode", record.getTraceCode());
+            context.put("deviceCode", record.getDeviceCode());
+            context.put("collectLocation", record.getCollectLocation());
+            context.put("temperature", record.getTemperature());
+            context.put("humidity", record.getHumidity());
+            context.put("tempUpperLimit", record.getTempUpperLimit());
+            context.put("tempLowerLimit", record.getTempLowerLimit());
+            context.put("humidityUpperLimit", record.getHumidityUpperLimit());
+            context.put("humidityLowerLimit", record.getHumidityLowerLimit());
+            context.put("alertFlag", record.getAlertFlag());
+            context.put("alertMessage", record.getAlertMessage());
+            context.put("ruleRiskScore", safeScore);
+            context.put("ruleRiskLevel", riskLevel);
+            context.put("ruleSuggestions", suggestions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("物流温湿度智能诊断", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
+            {
+                riskLevel = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("recordId", record.getRecordId());
-        result.put("riskScore", Math.max(0, score));
-        result.put("riskLevel", score >= 85 ? "低" : score >= 70 ? "中" : "高");
+        result.put("riskScore", safeScore);
+        result.put("riskLevel", riskLevel);
         result.put("suggestions", suggestions);
         result.put("record", record);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return result;
     }
 }

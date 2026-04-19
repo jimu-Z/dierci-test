@@ -121,4 +121,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <select id="selectPlotCodeOptions" resultType="String">
+        select distinct t.plot_code
+        from (
+            select plot_code from agri_farm_operation_record where plot_code is not null and plot_code != ''
+            union all
+            select plot_code from agri_env_sensor_record where plot_code is not null and plot_code != ''
+            union all
+            select plot_code from agri_pest_identify_task where plot_code is not null and plot_code != ''
+            union all
+            select plot_code from agri_yield_forecast_task where plot_code is not null and plot_code != ''
+        ) t
+        <where>
+            <if test="keyword != null and keyword != ''">
+                and t.plot_code like concat('%', #{keyword}, '%')
+            </if>
+        </where>
+        order by t.plot_code asc
+        limit 100
+    </select>
+
 </mapper>

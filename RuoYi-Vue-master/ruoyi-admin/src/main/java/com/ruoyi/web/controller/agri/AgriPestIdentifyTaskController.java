@@ -293,6 +293,7 @@ public class AgriPestIdentifyTaskController extends BaseController
             payload.put("task", toTaskCard(db));
             payload.put("process", processTrace);
             payload.put("algorithm", buildAlgorithmSummary(db));
+            payload.put("aiOriginalExcerpt", result.getRawContent());
             return success(payload);
         }
         catch (Exception ex)

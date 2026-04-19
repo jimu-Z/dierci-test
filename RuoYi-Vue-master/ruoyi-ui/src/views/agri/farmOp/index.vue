@@ -8,7 +8,7 @@
         </div>
         <div class="farm-actions">
           <el-button type="primary" size="mini" icon="el-icon-refresh" @click="refreshDashboard">刷新态势</el-button>
-          <el-button size="mini" icon="el-icon-magic-stick" @click="handleAdvice">智能建议</el-button>
+          <el-button size="mini" icon="el-icon-magic-stick" :loading="smartAdviceLoading" @click="handleAdvice">智能建议</el-button>
         </div>
       </div>
       <el-row :gutter="12" class="farm-kpi-row">
@@ -50,6 +50,11 @@
               <div class="farm-score"><strong>{{ smartAdvice.riskScore }}</strong><span>{{ smartAdvice.riskLevel }}风险</span></div>
               <p>{{ smartAdvice.advice }}</p>
               <ul><li v-for="item in smartAdvice.suggestions" :key="item">{{ item }}</li></ul>
+              <div v-if="smartAdvice.aiOriginalExcerpt" class="farm-ai-excerpt">
+                <div class="farm-panel-subhead">AI原文摘录</div>
+                <pre>{{ smartAdvice.aiOriginalExcerpt }}</pre>
+              </div>
+              <div class="farm-advice-foot" v-if="smartAdviceRequestTime">更新时间：{{ smartAdviceRequestTime }}</div>
             </div>
             <el-empty v-else description="点击智能建议或表格操作获取分析" />
           </div>
@@ -113,7 +118,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="farmOpList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="farmOpList" highlight-current-row @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" align="center" prop="operationId" width="70" />
       <el-table-column label="地块编码" align="center" prop="plotCode" width="120" />
@@ -139,7 +144,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="130">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-magic-stick" @click="handleAdvice(scope.row)" v-hasPermi="['agri:farmOp:query']">建议</el-button>
+          <el-button size="mini" type="text" icon="el-icon-magic-stick" :loading="smartAdviceLoading" @click="handleAdvice(scope.row)" v-hasPermi="['agri:farmOp:query']">建议</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['agri:farmOp:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['agri:farmOp:remove']">删除</el-button>
         </template>
@@ -153,7 +158,20 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="地块编码" prop="plotCode">
-              <el-input v-model="form.plotCode" placeholder="请输入地块编码" />
+              <el-select
+                v-model="form.plotCode"
+                filterable
+                remote
+                reserve-keyword
+                clearable
+                :remote-method="fetchPlotOptions"
+                :loading="plotOptionsLoading"
+                placeholder="请选择地块编码"
+                style="width: 100%"
+                @visible-change="handlePlotOptionsVisible"
+              >
+                <el-option v-for="item in plotOptions" :key="item" :label="item" :value="item" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -227,7 +245,7 @@
 
 <script>
 import { listFarmOp, getFarmOp, delFarmOp, addFarmOp, updateFarmOp } from '@/api/agri/farmOp'
-import { getFarmOpDashboard, getFarmOpAdvice } from '@/api/agri/farmOp'
+import { getFarmOpDashboard, getFarmOpAdvice, getFarmOpPlotOptions } from '@/api/agri/farmOp'
 
 export default {
   name: 'FarmOperation',
@@ -241,8 +259,14 @@ export default {
       showSearch: true,
       total: 0,
       farmOpList: [],
+      selectedRows: [],
+      currentRow: null,
       dashboardData: {},
       smartAdvice: {},
+      smartAdviceLoading: false,
+      smartAdviceRequestTime: '',
+      plotOptions: [],
+      plotOptionsLoading: false,
       title: '',
       open: false,
       queryParams: {
@@ -262,7 +286,7 @@ export default {
         { label: '采收', value: 'HARVEST' }
       ],
       rules: {
-        plotCode: [{ required: true, message: '地块编码不能为空', trigger: 'blur' }],
+        plotCode: [{ required: true, message: '地块编码不能为空', trigger: 'change' }],
         operationType: [{ required: true, message: '作业类型不能为空', trigger: 'change' }],
         operationContent: [{ required: true, message: '作业内容不能为空', trigger: 'blur' }],
         operatorName: [{ required: true, message: '作业人不能为空', trigger: 'blur' }],
@@ -295,15 +319,26 @@ export default {
     refreshDashboard() {
       getFarmOpDashboard(this.queryParams).then(response => {
         this.dashboardData = response.data || {}
+      }).catch(() => {
+        this.dashboardData = this.dashboardData || {}
       })
     },
     getList() {
       this.loading = true
-      listFarmOp(this.queryParams).then(response => {
-        this.farmOpList = response.rows
-        this.total = response.total
-        this.loading = false
-      })
+      listFarmOp(this.queryParams)
+        .then(response => {
+          const rows = Array.isArray(response.rows) ? response.rows : []
+          this.farmOpList = rows.map(row => this.normalizeOperationRow(row))
+          this.total = response.total
+        })
+        .catch(() => {
+          this.farmOpList = []
+          this.total = 0
+          this.$modal.msgError('农事记录加载失败，请稍后重试')
+        })
+        .finally(() => {
+          this.loading = false
+        })
     },
     formatOperationType(value) {
       const option = this.operationTypeOptions.find(item => item.value === value)
@@ -340,12 +375,74 @@ export default {
       this.handleQuery()
     },
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.operationId)
+      this.selectedRows = selection
+      this.ids = selection.map(item => this.getOperationId(item)).filter(item => item !== undefined && item !== null)
       this.single = selection.length !== 1
       this.multiple = !selection.length
     },
+    handleRowClick(row) {
+      this.currentRow = this.normalizeOperationRow(row)
+    },
+    normalizeOperationRow(row) {
+      if (!row) {
+        return row
+      }
+      const operationId = row.operationId || row.operation_id || row.operationID || row.id
+      if (!operationId) {
+        return row
+      }
+      return {
+        ...row,
+        operationId
+      }
+    },
+    normalizeAdviceResult(payload) {
+      if (!payload) {
+        return {}
+      }
+      return {
+        operationId: payload.operationId || payload.operation_id || payload.id,
+        operationType: payload.operationType || payload.operation_type,
+        riskScore: payload.riskScore !== undefined ? payload.riskScore : payload.risk_score,
+        riskLevel: payload.riskLevel || payload.risk_level,
+        advice: payload.advice || payload.summary || payload.message,
+        suggestions: Array.isArray(payload.suggestions) ? payload.suggestions : [],
+        aiOriginalExcerpt: payload.aiOriginalExcerpt || payload.ai_original_excerpt || ''
+      }
+    },
+    getOperationId(target) {
+      if (!target) {
+        return undefined
+      }
+      return target.operationId || target.operation_id || target.operationID || target.id
+    },
+    resolveAdviceTarget(row) {
+      if (row) {
+        return row
+      }
+      if (this.currentRow && this.getOperationId(this.currentRow)) {
+        return this.currentRow
+      }
+      if (this.selectedRows[0] && this.getOperationId(this.selectedRows[0])) {
+        return this.selectedRows[0]
+      }
+      if (this.ids[0]) {
+        const rowBySelectionId = this.farmOpList.find(item => String(item.operationId) === String(this.ids[0]))
+        if (rowBySelectionId) {
+          return rowBySelectionId
+        }
+      }
+      if (this.farmOpList[0] && this.getOperationId(this.farmOpList[0])) {
+        return this.farmOpList[0]
+      }
+      if (this.recentRows[0] && this.getOperationId(this.recentRows[0])) {
+        return this.recentRows[0]
+      }
+      return null
+    },
     handleAdd() {
       this.reset()
+      this.fetchPlotOptions('')
       this.open = true
       this.title = '新增农事记录'
     },
@@ -354,20 +451,54 @@ export default {
       const operationId = row.operationId || this.ids
       getFarmOp(operationId).then(response => {
         this.form = response.data
+        this.fetchPlotOptions(this.form.plotCode || '')
         this.open = true
         this.title = '修改农事记录'
       })
     },
+    handlePlotOptionsVisible(visible) {
+      if (visible) {
+        this.fetchPlotOptions('')
+      }
+    },
+    fetchPlotOptions(keyword) {
+      this.plotOptionsLoading = true
+      getFarmOpPlotOptions(keyword || '')
+        .then(response => {
+          const options = Array.isArray(response.data) ? response.data : []
+          if (this.form.plotCode && options.indexOf(this.form.plotCode) === -1) {
+            options.unshift(this.form.plotCode)
+          }
+          this.plotOptions = options
+        })
+        .catch(() => {
+          this.plotOptions = []
+          this.$modal.msgError('地块选项加载失败，请稍后重试')
+        })
+        .finally(() => {
+          this.plotOptionsLoading = false
+        })
+    },
     handleAdvice(row) {
-      const target = row || this.farmOpList[0]
-      if (!target || !target.operationId) {
+      const target = this.resolveAdviceTarget(row)
+      const operationId = this.getOperationId(target)
+      if (!target || !operationId) {
         this.$modal.msgWarning('请先选择一条农事记录')
         return
       }
-      getFarmOpAdvice(target.operationId).then(response => {
-        this.smartAdvice = response.data || {}
-        this.$modal.msgSuccess('智能建议已更新')
-      })
+      this.smartAdviceLoading = true
+      getFarmOpAdvice(operationId)
+        .then(response => {
+          this.smartAdvice = this.normalizeAdviceResult(response.data)
+          this.smartAdviceRequestTime = this.parseTime(new Date())
+          this.$modal.msgSuccess('智能建议已更新')
+        })
+        .catch(() => {
+          this.$modal.msgError('智能建议获取失败，请稍后重试')
+        })
+        .finally(() => {
+          this.smartAdviceLoading = false
+        })
     },
     submitForm() {
       this.$refs.form.validate(valid => {
@@ -521,5 +652,27 @@ export default {
   margin: 10px 0 0;
   padding-left: 18px;
   color: #5f513f;
+}
+
+.farm-ai-excerpt {
+  margin-top: 12px;
+}
+
+.farm-ai-excerpt pre {
+  max-height: 140px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #faf6ef;
+  color: #6a5b48;
+}
+
+.farm-advice-foot {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9a8d78;
 }
 </style>

@@ -41,13 +41,15 @@ public class AgriHttpIntegrationClient
 
     public PestResult invokePest(AgriPestIdentifyTask task) throws IOException, InterruptedException
     {
-        JSONObject data = callDeepSeek(properties.getAi().getPestPath(), buildPestPrompt(task));
+        String rawContent = callDeepSeekContent(properties.getAi().getPestPath(), buildPestPrompt(task));
+        JSONObject data = parseJsonObject(rawContent);
 
         PestResult result = new PestResult();
         result.setIdentifyResult(readString(data, "identifyResult", "result", "label"));
         result.setModelVersion(readString(data, "modelVersion", "version", "model"));
         BigDecimal confidence = readDecimal(data, "confidence", "score");
         result.setConfidence(confidence == null ? BigDecimal.ZERO : confidence);
+        result.setRawContent(trimToLength(rawContent, 600));
         result.setSuccess(true);
         return result;
     }
@@ -83,13 +85,43 @@ public class AgriHttpIntegrationClient
 
     public QualityResult invokeQuality(AgriQualityInspectTask task) throws IOException, InterruptedException
     {
-        JSONObject data = callDeepSeek(properties.getAi().getQualityPath(), buildQualityPrompt(task));
+        String rawContent = callDeepSeekContent(properties.getAi().getQualityPath(), buildQualityPrompt(task));
+        JSONObject data = parseJsonObject(rawContent);
 
         QualityResult result = new QualityResult();
         result.setInspectResult(readString(data, "inspectResult", "result", "conclusion"));
         result.setQualityGrade(readString(data, "qualityGrade", "grade"));
         result.setDefectRate(readDecimal(data, "defectRate", "defectRatio"));
         result.setModelVersion(readString(data, "modelVersion", "version", "model"));
+        result.setRawContent(trimToLength(rawContent, 600));
+        result.setSuccess(true);
+        return result;
+    }
+
+    public GeneralInsightResult invokeGeneralInsight(String scene, String contextJson) throws IOException, InterruptedException
+    {
+        String rawContent = callDeepSeekContent(properties.getAi().getMarketPath(), buildGeneralInsightPrompt(scene, contextJson));
+        JSONObject data;
+        try
+        {
+            data = parseJsonObject(rawContent);
+        }
+        catch (Exception ex)
+        {
+            data = new JSONObject();
+        }
+
+        GeneralInsightResult result = new GeneralInsightResult();
+        result.setInsightSummary(firstNonBlank(
+            readString(data, "insightSummary", "summary", "analysis", "result"),
+            trimToLength(rawContent, 220)
+        ));
+        result.setSuggestion(readString(data, "suggestion", "advice", "action"));
+        result.setRiskLevel(firstNonBlank(readString(data, "riskLevel", "risk"), inferRiskLevelFromText(result.getInsightSummary())));
+        BigDecimal confidenceRate = readDecimal(data, "confidenceRate", "confidence", "score");
+        result.setConfidenceRate(confidenceRate == null ? BigDecimal.ZERO : confidenceRate);
+        result.setModelVersion(firstNonBlank(readString(data, "modelVersion", "version", "model"), StringUtils.defaultIfBlank(properties.getAi().getModel(), DEFAULT_MODEL)));
+        result.setRawContent(trimToLength(rawContent, 600));
         result.setSuccess(true);
         return result;
     }
@@ -125,17 +157,30 @@ public class AgriHttpIntegrationClient
 
     public CarbonFootprintInsightResult invokeCarbonFootprintInsight(String contextJson) throws IOException, InterruptedException
     {
-        JSONObject data = callDeepSeek(properties.getAi().getCarbonFootprintPath(), buildCarbonFootprintPrompt(contextJson));
+        String rawContent = callDeepSeekContent(properties.getAi().getCarbonFootprintPath(), buildCarbonFootprintPrompt(contextJson));
+        JSONObject data;
+        try
+        {
+            data = parseJsonObject(rawContent);
+        }
+        catch (Exception ex)
+        {
+            data = new JSONObject();
+        }
 
         CarbonFootprintInsightResult result = new CarbonFootprintInsightResult();
-        result.setInsightSummary(readString(data, "insightSummary", "summary", "analysis", "result"));
+        result.setInsightSummary(firstNonBlank(
+            readString(data, "insightSummary", "summary", "analysis", "result"),
+            trimToLength(rawContent, 220)
+        ));
         result.setRiskLevel(readString(data, "riskLevel", "risk"));
         result.setSuggestion(readString(data, "suggestion", "advice", "action"));
-        result.setModelVersion(readString(data, "modelVersion", "version", "model"));
+        result.setModelVersion(firstNonBlank(readString(data, "modelVersion", "version", "model"), StringUtils.defaultIfBlank(properties.getAi().getModel(), DEFAULT_MODEL)));
         BigDecimal confidenceRate = readDecimal(data, "confidenceRate", "confidence", "score");
         result.setConfidenceRate(confidenceRate == null ? BigDecimal.ZERO : confidenceRate);
         BigDecimal estimatedEmission = readDecimal(data, "estimatedEmission", "carbonEmission", "emission");
         result.setEstimatedEmission(estimatedEmission == null ? BigDecimal.ZERO : estimatedEmission);
+        result.setRawContent(trimToLength(rawContent, 600));
         result.setSuccess(true);
         return result;
     }
@@ -464,6 +509,36 @@ public class AgriHttpIntegrationClient
             + "其中 insightSummary 用中文总结当前模型碳排放特征与异常点，suggestion 给出2-3条可执行的减排/复核建议，estimatedEmission 代表模型推断的碳排放估算值，confidenceRate 取值0到1。"
             + buildModelFieldGuide()
             + "输入数据如下：" + safeContext;
+    }
+
+    private String buildGeneralInsightPrompt(String scene, String contextJson)
+    {
+        String safeScene = StringUtils.defaultIfBlank(scene, "通用智能分析");
+        String safeContext = StringUtils.defaultIfBlank(contextJson, "{}");
+        return "你将收到农业业务场景数据，请输出" + safeScene + "结果。"
+            + "请严格返回JSON对象，格式必须为："
+            + "{\"insightSummary\":\"...\",\"riskLevel\":\"低|中|高\",\"suggestion\":\"...\",\"confidenceRate\":0.0,\"modelVersion\":\"...\"}。"
+            + "其中 insightSummary 为中文综合结论，suggestion 为可执行建议，confidenceRate 取值0到1。"
+            + buildModelFieldGuide()
+            + "输入数据如下：" + safeContext;
+    }
+
+    private String inferRiskLevelFromText(String summary)
+    {
+        if (StringUtils.isBlank(summary))
+        {
+            return "中";
+        }
+        String text = summary.toLowerCase();
+        if (text.contains("高") || text.contains("严重") || text.contains("异常") || text.contains("风险"))
+        {
+            return "高";
+        }
+        if (text.contains("低") || text.contains("平稳") || text.contains("正常"))
+        {
+            return "低";
+        }
+        return "中";
     }
 
     private JSONObject parseJsonObject(String content)
@@ -835,6 +910,8 @@ public class AgriHttpIntegrationClient
 
         private String modelVersion;
 
+        private String rawContent;
+
         public boolean isSuccess()
         {
             return success;
@@ -873,6 +950,16 @@ public class AgriHttpIntegrationClient
         public void setModelVersion(String modelVersion)
         {
             this.modelVersion = modelVersion;
+        }
+
+        public String getRawContent()
+        {
+            return rawContent;
+        }
+
+        public void setRawContent(String rawContent)
+        {
+            this.rawContent = rawContent;
         }
     }
 
@@ -1026,6 +1113,8 @@ public class AgriHttpIntegrationClient
 
         private String modelVersion;
 
+        private String rawContent;
+
         public boolean isSuccess()
         {
             return success;
@@ -1074,6 +1163,103 @@ public class AgriHttpIntegrationClient
         public void setModelVersion(String modelVersion)
         {
             this.modelVersion = modelVersion;
+        }
+
+        public String getRawContent()
+        {
+            return rawContent;
+        }
+
+        public void setRawContent(String rawContent)
+        {
+            this.rawContent = rawContent;
+        }
+    }
+
+    public static class GeneralInsightResult
+    {
+        private boolean success;
+
+        private String insightSummary;
+
+        private String riskLevel;
+
+        private String suggestion;
+
+        private BigDecimal confidenceRate;
+
+        private String modelVersion;
+
+        private String rawContent;
+
+        public boolean isSuccess()
+        {
+            return success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            this.success = success;
+        }
+
+        public String getInsightSummary()
+        {
+            return insightSummary;
+        }
+
+        public void setInsightSummary(String insightSummary)
+        {
+            this.insightSummary = insightSummary;
+        }
+
+        public String getRiskLevel()
+        {
+            return riskLevel;
+        }
+
+        public void setRiskLevel(String riskLevel)
+        {
+            this.riskLevel = riskLevel;
+        }
+
+        public String getSuggestion()
+        {
+            return suggestion;
+        }
+
+        public void setSuggestion(String suggestion)
+        {
+            this.suggestion = suggestion;
+        }
+
+        public BigDecimal getConfidenceRate()
+        {
+            return confidenceRate;
+        }
+
+        public void setConfidenceRate(BigDecimal confidenceRate)
+        {
+            this.confidenceRate = confidenceRate;
+        }
+
+        public String getModelVersion()
+        {
+            return modelVersion;
+        }
+
+        public void setModelVersion(String modelVersion)
+        {
+            this.modelVersion = modelVersion;
+        }
+
+        public String getRawContent()
+        {
+            return rawContent;
+        }
+
+        public void setRawContent(String rawContent)
+        {
+            this.rawContent = rawContent;
         }
     }
 
@@ -1384,6 +1570,8 @@ public class AgriHttpIntegrationClient
 
         private String modelVersion;
 
+        private String rawContent;
+
         public boolean isSuccess()
         {
             return success;
@@ -1452,6 +1640,16 @@ public class AgriHttpIntegrationClient
         public void setModelVersion(String modelVersion)
         {
             this.modelVersion = modelVersion;
+        }
+
+        public String getRawContent()
+        {
+            return rawContent;
+        }
+
+        public void setRawContent(String rawContent)
+        {
+            this.rawContent = rawContent;
         }
     }
 }

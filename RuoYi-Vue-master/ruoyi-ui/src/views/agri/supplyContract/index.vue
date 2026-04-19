@@ -159,15 +159,29 @@
       <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="handleQuery" />
     </el-card>
 
-    <el-dialog title="合约智能评估" :visible.sync="assessOpen" width="700px" append-to-body>
-      <div v-loading="assessLoading" class="analysis-body" v-if="assessData">
+    <el-dialog title="合约智能评估" :visible.sync="assessOpen" width="740px" append-to-body>
+      <div v-loading="assessLoading" class="analysis-body">
         <el-row :gutter="12">
           <el-col :span="8"><div class="analysis-kpi"><span>压力指数</span><b>{{ assessData.pressureIndex }}</b></div></el-col>
           <el-col :span="8"><div class="analysis-kpi"><span>剩余天数</span><b>{{ assessData.remainDays }}</b></div></el-col>
           <el-col :span="8"><div class="analysis-kpi"><span>风险带</span><b>{{ assessData.riskBand }}</b></div></el-col>
         </el-row>
-        <el-alert :title="assessData.summary" type="warning" :closable="false" style="margin: 12px 0" />
-        <el-tag v-for="(item, index) in assessData.actions" :key="index" type="danger" size="mini" style="margin-right: 8px">{{ item }}</el-tag>
+        <el-alert :title="assessData.summary || '正在生成智能评估结果...'" type="warning" :closable="false" style="margin: 12px 0" />
+
+        <div class="analysis-section">
+          <div class="analysis-section-title">AI建议</div>
+          <div v-if="assessData.actions && assessData.actions.length" class="analysis-suggestion-list">
+            <div class="analysis-suggestion-item" v-for="(item, index) in assessData.actions" :key="index">{{ item }}</div>
+          </div>
+          <div v-else class="analysis-empty">暂无建议</div>
+        </div>
+
+        <div class="analysis-section" v-if="assessData.aiOriginalExcerpt">
+          <div class="analysis-section-title">AI原文摘录</div>
+          <pre class="analysis-excerpt">{{ assessData.aiOriginalExcerpt }}</pre>
+        </div>
+
+        <div class="analysis-footnote" v-if="assessData.requestTime">最近评估时间：{{ assessData.requestTime }}</div>
       </div>
     </el-dialog>
 
@@ -238,7 +252,15 @@ export default {
       title: '',
       open: false,
       assessOpen: false,
-      assessData: null,
+      assessData: {
+        pressureIndex: '--',
+        remainDays: '--',
+        riskBand: '--',
+        summary: '',
+        actions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      },
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -367,11 +389,35 @@ export default {
         this.$modal.msgWarning('请先选择一条合约进行智能评估')
         return
       }
+      this.assessOpen = true
       this.assessLoading = true
+      this.assessData = {
+        pressureIndex: '--',
+        remainDays: '--',
+        riskBand: '--',
+        summary: '',
+        actions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      }
       smartAssessSupplyContract(contractId)
         .then(response => {
-          this.assessData = response.data
-          this.assessOpen = true
+          const data = response.data || {}
+          const actions = Array.isArray(data.actions)
+            ? data.actions.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
+            : []
+          this.assessData = {
+            pressureIndex: data.pressureIndex != null ? data.pressureIndex : '--',
+            remainDays: data.remainDays != null ? data.remainDays : '--',
+            riskBand: data.riskBand || '--',
+            summary: data.summary || '',
+            actions,
+            aiOriginalExcerpt: data.aiOriginalExcerpt || '',
+            requestTime: new Date().toLocaleString()
+          }
+        })
+        .catch(() => {
+          this.$modal.msgError('智能评估调用失败，请稍后重试')
         })
         .finally(() => {
           this.assessLoading = false
@@ -637,6 +683,9 @@ export default {
 
 .analysis-body {
   min-height: 120px;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .analysis-kpi {
@@ -657,6 +706,55 @@ export default {
   margin-top: 6px;
   color: #4e2f74;
   font-size: 20px;
+}
+
+.analysis-section {
+  margin-top: 12px;
+}
+
+.analysis-section-title {
+  margin-bottom: 8px;
+  color: #4e2f74;
+  font-weight: 600;
+}
+
+.analysis-suggestion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.analysis-suggestion-item {
+  border-radius: 8px;
+  border: 1px solid #e7dbf3;
+  background: #fbf7ff;
+  color: #6d3ca8;
+  padding: 8px 10px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.analysis-excerpt {
+  border-radius: 8px;
+  border: 1px solid #e7dbf3;
+  background: #faf7ff;
+  color: #5f4d7b;
+  padding: 10px;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
+
+.analysis-empty {
+  color: #8c839d;
+}
+
+.analysis-footnote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #8c839d;
 }
 
 @media (max-width: 768px) {

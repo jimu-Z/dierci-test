@@ -1,12 +1,15 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriTraceQueryStats;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriTraceQueryStatsService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -37,6 +40,9 @@ public class AgriTraceQueryStatsController extends BaseController
 {
     @Autowired
     private IAgriTraceQueryStatsService agriTraceQueryStatsService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:traceQueryStats:list')")
     @GetMapping("/list")
@@ -199,11 +205,48 @@ public class AgriTraceQueryStatsController extends BaseController
             findings.add("当前查询统计较平稳，可继续保持现有发布策略");
         }
 
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("statsId", stats.getStatsId());
+            context.put("statDate", stats.getStatDate());
+            context.put("totalQueryCount", stats.getTotalQueryCount());
+            context.put("uniqueUserCount", stats.getUniqueUserCount());
+            context.put("successCount", stats.getSuccessCount());
+            context.put("failCount", stats.getFailCount());
+            context.put("avgDurationMs", stats.getAvgDurationMs());
+            context.put("peakQps", stats.getPeakQps());
+            context.put("ruleRiskScore", Math.max(0, riskScore));
+            context.put("ruleFindings", findings);
+
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult =
+                agriHttpIntegrationClient.invokeGeneralInsight("溯源查询统计智能洞察", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                findings.add(0, "AI结论：" + aiResult.getInsightSummary());
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                findings.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                findings.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ex)
+        {
+            findings.add("AI分析暂不可用，已回退本地规则：" + StringUtils.substring(ex.getMessage(), 0, 120));
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("statsId", stats.getStatsId());
         result.put("riskScore", Math.max(0, riskScore));
         result.put("riskLevel", riskScore >= 85 ? "低" : riskScore >= 70 ? "中" : "高");
         result.put("findings", findings);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         result.put("stats", stats);
         return result;
     }

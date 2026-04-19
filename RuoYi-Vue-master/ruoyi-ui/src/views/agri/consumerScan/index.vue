@@ -146,18 +146,37 @@
       </el-descriptions>
     </el-dialog>
 
-    <el-dialog title="风险智能分析" :visible.sync="analyzeOpen" width="680px" append-to-body>
-      <div v-if="analyzeData" v-loading="analyzeLoading">
+    <el-dialog title="风险智能分析" :visible.sync="analyzeOpen" width="720px" append-to-body>
+      <div v-loading="analyzeLoading" class="analyze-body">
         <el-row :gutter="12">
           <el-col :span="8"><div class="analyze-kpi"><span>异常分</span><b>{{ analyzeData.anomalyScore }}</b></div></el-col>
           <el-col :span="8"><div class="analyze-kpi"><span>等级</span><b>{{ analyzeData.riskLevel }}</b></div></el-col>
           <el-col :span="8"><div class="analyze-kpi"><span>算法</span><b>{{ analyzeData.algorithm }}</b></div></el-col>
         </el-row>
-        <el-alert :title="analyzeData.summary" type="warning" :closable="false" style="margin-top: 12px" />
-        <el-divider content-position="left">风险标记</el-divider>
-        <el-tag v-for="item in analyzeData.flags" :key="item" type="danger" size="mini" style="margin-right: 8px">{{ item }}</el-tag>
-        <el-divider content-position="left">处置建议</el-divider>
-        <p v-for="(item, index) in analyzeData.suggestions" :key="index">{{ index + 1 }}. {{ item }}</p>
+        <el-alert :title="analyzeData.summary || '正在生成智能分析结果...'" type="warning" :closable="false" style="margin-top: 12px" />
+
+        <div class="analyze-section">
+          <div class="analyze-section-title">风险标记</div>
+          <div v-if="analyzeData.flags && analyzeData.flags.length" class="analyze-tag-list">
+            <el-tag v-for="item in analyzeData.flags" :key="item" type="danger" size="mini">{{ item }}</el-tag>
+          </div>
+          <div v-else class="analyze-empty">暂无风险标记</div>
+        </div>
+
+        <div class="analyze-section">
+          <div class="analyze-section-title">AI建议</div>
+          <div v-if="analyzeData.suggestions && analyzeData.suggestions.length" class="analyze-suggestion-list">
+            <div class="analyze-suggestion-item" v-for="(item, index) in analyzeData.suggestions" :key="index">{{ item }}</div>
+          </div>
+          <div v-else class="analyze-empty">暂无建议</div>
+        </div>
+
+        <div class="analyze-section" v-if="analyzeData.aiOriginalExcerpt">
+          <div class="analyze-section-title">AI原文摘录</div>
+          <pre class="analyze-excerpt">{{ analyzeData.aiOriginalExcerpt }}</pre>
+        </div>
+
+        <div class="analyze-footnote" v-if="analyzeData.requestTime">最近分析时间：{{ analyzeData.requestTime }}</div>
       </div>
     </el-dialog>
   </div>
@@ -183,7 +202,16 @@ export default {
       scanResultData: null,
       scanResultMessage: '',
       analyzeOpen: false,
-      analyzeData: null,
+      analyzeData: {
+        anomalyScore: '--',
+        riskLevel: '--',
+        algorithm: '--',
+        summary: '',
+        flags: [],
+        suggestions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      },
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -301,11 +329,37 @@ export default {
       this.handleAnalyzeById(row.queryId)
     },
     handleAnalyzeById(queryId) {
+      this.analyzeOpen = true
       this.analyzeLoading = true
+      this.analyzeData = {
+        anomalyScore: '--',
+        riskLevel: '--',
+        algorithm: '--',
+        summary: '',
+        flags: [],
+        suggestions: [],
+        aiOriginalExcerpt: '',
+        requestTime: ''
+      }
       smartAnalyzeConsumerScan(queryId)
         .then(response => {
-          this.analyzeData = response.data
-          this.analyzeOpen = true
+          const data = response.data || {}
+          const suggestions = Array.isArray(data.suggestions)
+            ? data.suggestions.filter(item => !(typeof item === 'string' && item.indexOf('AI原文摘录：') === 0))
+            : []
+          this.analyzeData = {
+            anomalyScore: data.anomalyScore != null ? data.anomalyScore : '--',
+            riskLevel: data.riskLevel || '--',
+            algorithm: data.algorithm || '--',
+            summary: data.summary || '',
+            flags: Array.isArray(data.flags) ? data.flags : [],
+            suggestions,
+            aiOriginalExcerpt: data.aiOriginalExcerpt || '',
+            requestTime: new Date().toLocaleString()
+          }
+        })
+        .catch(() => {
+          this.$modal.msgError('智能分析调用失败，请稍后重试')
         })
         .finally(() => {
           this.analyzeLoading = false
@@ -528,6 +582,68 @@ export default {
   display: block;
   color: #7a3118;
   font-size: 20px;
+}
+
+.analyze-body {
+  min-height: 120px;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.analyze-section {
+  margin-top: 12px;
+}
+
+.analyze-section-title {
+  margin-bottom: 8px;
+  color: #7a2d18;
+  font-weight: 600;
+}
+
+.analyze-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.analyze-suggestion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.analyze-suggestion-item {
+  border-radius: 8px;
+  border: 1px solid #f1d6d6;
+  background: #fff2f2;
+  color: #d9534f;
+  padding: 8px 10px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.analyze-excerpt {
+  border-radius: 8px;
+  border: 1px solid #f0d9d9;
+  background: #fff7f7;
+  color: #b44d4b;
+  padding: 10px;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
+
+.analyze-empty {
+  color: #9a8a80;
+}
+
+.analyze-footnote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #9a8a80;
 }
 
 @media (max-width: 768px) {

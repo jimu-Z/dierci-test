@@ -1,12 +1,15 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriFarmOperationRecord;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriFarmOperationRecordService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 农事记录Controller
@@ -41,6 +45,9 @@ public class AgriFarmOperationRecordController extends BaseController
 {
     @Autowired
     private IAgriFarmOperationRecordService agriFarmOperationRecordService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     /**
      * 查询农事记录列表
@@ -71,6 +78,13 @@ public class AgriFarmOperationRecordController extends BaseController
             return error("农事记录不存在");
         }
         return success(buildAdvice(record));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:farmOp:query')")
+    @GetMapping("/plot/options")
+    public AjaxResult plotOptions(@RequestParam(value = "keyword", required = false) String keyword)
+    {
+        return success(agriFarmOperationRecordService.selectPlotCodeOptions(keyword));
     }
 
     /**
@@ -262,6 +276,43 @@ public class AgriFarmOperationRecordController extends BaseController
             riskScore -= 10;
         }
 
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("operationId", record.getOperationId());
+            context.put("plotCode", record.getPlotCode());
+            context.put("operationType", record.getOperationType());
+            context.put("operationContent", record.getOperationContent());
+            context.put("inputName", record.getInputName());
+            context.put("inputAmount", record.getInputAmount());
+            context.put("status", record.getStatus());
+            context.put("operatorName", record.getOperatorName());
+            context.put("ruleRiskScore", Math.max(0, riskScore));
+            context.put("ruleAdvice", advice);
+            context.put("ruleSuggestions", suggestions);
+
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult =
+                agriHttpIntegrationClient.invokeGeneralInsight("农事作业智能建议", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                advice = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ex)
+        {
+            suggestions.add("AI分析暂不可用，已回退本地规则：" + StringUtils.substring(ex.getMessage(), 0, 120));
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("operationId", record.getOperationId());
         result.put("operationType", record.getOperationType());
@@ -269,6 +320,7 @@ public class AgriFarmOperationRecordController extends BaseController
         result.put("riskLevel", riskScore >= 85 ? "低" : riskScore >= 70 ? "中" : "高");
         result.put("advice", advice);
         result.put("suggestions", suggestions);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         result.put("record", record);
         return result;
     }

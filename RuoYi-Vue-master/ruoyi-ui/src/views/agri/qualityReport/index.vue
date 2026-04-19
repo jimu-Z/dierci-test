@@ -30,21 +30,47 @@
                   <b>{{ item.reportNo }}</b>
                   <p>{{ item.processBatchNo || '-' }} · {{ item.qualityGrade || '未分级' }}</p>
                 </div>
-                <el-tag size="mini" type="danger">{{ item.defectRate }}</el-tag>
+                <el-tag size="mini" type="danger">{{ item.defectRateText || formatRate(item.defectRate) }}</el-tag>
               </div>
             </div>
             <el-empty v-else description="暂无高风险报告" />
           </div>
         </el-col>
         <el-col :xs="24" :lg="10">
-          <div class="report-panel">
+          <div class="report-panel" v-loading="reviewLoading">
             <div class="report-panel-head"><span>智能审阅</span><small>根据当前报告生成复核意见</small></div>
             <div v-if="smartResult.reportId" class="report-review-box">
               <div class="report-score"><strong>{{ smartResult.riskScore }}</strong><span>{{ smartResult.riskLevel }}风险</span></div>
-              <p>{{ smartResult.report.reportNo }}</p>
+              <p>{{ (smartResult.reportView && smartResult.reportView.reportNo) || (smartResult.report && smartResult.report.reportNo) }}</p>
+              <div v-if="smartResult.reportView" class="report-review-meta">
+                <span>批次：{{ smartResult.reportView.processBatchNo || '-' }}</span>
+                <span>等级：{{ smartResult.reportView.qualityGrade || '未分级' }}</span>
+                <span>状态：{{ smartResult.reportView.reportStatusLabel || formatReportStatus(smartResult.reportView.reportStatus) }}</span>
+                <span>缺陷率：{{ smartResult.reportView.defectRateText || formatRate(smartResult.reportView.defectRate) }}</span>
+              </div>
               <ul><li v-for="item in smartResult.findings" :key="item">{{ item }}</li></ul>
+              <div v-if="smartResult.aiOriginalExcerpt" class="report-excerpt">
+                <span>AI原文摘录</span>
+                <p>{{ smartResult.aiOriginalExcerpt }}</p>
+              </div>
             </div>
             <el-empty v-else description="请选择一条报告进行审阅" />
+          </div>
+          <div class="report-panel report-recent-panel">
+            <div class="report-panel-head"><span>最新报告</span><small>按报告时间倒序展示最近记录</small></div>
+            <div class="report-risk-list" v-if="recentRows.length">
+              <div v-for="item in recentRows" :key="item.reportId" class="report-risk-item" @click="handleReview(item)">
+                <div>
+                  <b>{{ item.reportNo }}</b>
+                  <p>{{ item.processBatchNo || '-' }} · {{ item.qualityGrade || '未分级' }}</p>
+                </div>
+                <div class="report-risk-tags">
+                  <el-tag size="mini" :type="item.reportStatus === '1' ? 'success' : 'info'">{{ item.reportStatusLabel || formatReportStatus(item.reportStatus) }}</el-tag>
+                  <el-tag size="mini" type="warning">{{ item.defectRateText || formatRate(item.defectRate) }}</el-tag>
+                </div>
+              </div>
+            </div>
+            <el-empty v-else description="暂无最新报告" />
           </div>
         </el-col>
       </el-row>
@@ -76,14 +102,23 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="reportList" @selection-change="handleSelectionChange">
+    <el-table
+      ref="reportTable"
+      v-loading="loading"
+      :data="reportList"
+      highlight-current-row
+      @row-click="handleRowClick"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="reportId" align="center" width="70" />
       <el-table-column label="报告编号" prop="reportNo" align="center" width="180" />
       <el-table-column label="检测任务ID" prop="inspectId" align="center" width="100" />
       <el-table-column label="加工批次号" prop="processBatchNo" align="center" width="140" />
       <el-table-column label="品质等级" prop="qualityGrade" align="center" width="90" />
-      <el-table-column label="缺陷率" prop="defectRate" align="center" width="90" />
+      <el-table-column label="缺陷率" align="center" width="90">
+        <template slot-scope="scope">{{ formatRate(scope.row.defectRate) }}</template>
+      </el-table-column>
       <el-table-column label="状态" align="center" width="100">
         <template slot-scope="scope">{{ formatReportStatus(scope.row.reportStatus) }}</template>
       </el-table-column>
@@ -144,6 +179,8 @@ export default {
   data() {
     return {
       loading: true,
+      reviewLoading: false,
+      selectionSyncing: false,
       ids: [],
       single: true,
       multiple: true,
@@ -152,6 +189,7 @@ export default {
       reportList: [],
       dashboardData: {},
       smartResult: {},
+      selectedReport: null,
       title: '',
       open: false,
       queryParams: {
@@ -191,21 +229,33 @@ export default {
     },
     highRiskRows() {
       return this.dashboardData.highRiskRows || []
+    },
+    recentRows() {
+      return this.dashboardData.recentRows || []
     }
   },
   methods: {
-    refreshDashboard() {
-      getQualityReportDashboard(this.queryParams).then(response => {
+    async refreshDashboard() {
+      try {
+        const response = await getQualityReportDashboard(this.queryParams)
         this.dashboardData = response.data || {}
-      })
+      } catch (error) {
+        this.$modal.msgError('加载质检看板失败')
+      }
     },
-    getList() {
+    async getList() {
       this.loading = true
-      listQualityReport(this.queryParams).then(response => {
-        this.reportList = response.rows
-        this.total = response.total
+      try {
+        const response = await listQualityReport(this.queryParams)
+        this.reportList = response.rows || []
+        this.total = response.total || 0
+      } catch (error) {
+        this.reportList = []
+        this.total = 0
+        this.$modal.msgError('加载质检报告列表失败')
+      } finally {
         this.loading = false
-      })
+      }
     },
     formatRate(value) {
       const number = value === undefined || value === null || value === '' ? 0 : Number(value)
@@ -237,18 +287,34 @@ export default {
     },
     handleQuery() {
       this.queryParams.pageNum = 1
+      this.smartResult = {}
       this.refreshDashboard()
       this.getList()
     },
     resetQuery() {
       this.resetForm('queryForm')
-      this.refreshDashboard()
+      this.smartResult = {}
+      this.selectedReport = null
+      if (this.$refs.reportTable) {
+        this.$refs.reportTable.clearSelection()
+      }
       this.handleQuery()
     },
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.reportId)
+      this.selectedReport = selection.length === 1 ? selection[0] : null
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      if (!this.selectionSyncing && selection.length === 1) {
+        this.handleReview(selection[0], { silentSuccess: true, syncSelection: false })
+      }
+    },
+    handleRowClick(row) {
+      if (!this.$refs.reportTable || !row) {
+        return
+      }
+      this.$refs.reportTable.clearSelection()
+      this.$refs.reportTable.toggleRowSelection(row, true)
     },
     handleAdd() {
       this.reset()
@@ -264,31 +330,70 @@ export default {
         this.title = '修改质检报告'
       })
     },
-    handleReview(row) {
-      const target = row || this.reportList[0]
-      if (!target || !target.reportId) {
+    syncTableSelection(reportId) {
+      if (!this.$refs.reportTable || !reportId) {
+        return
+      }
+      const targetRow = this.reportList.find(item => item.reportId === reportId)
+      if (!targetRow) {
+        return
+      }
+      this.selectionSyncing = true
+      this.$refs.reportTable.clearSelection()
+      this.$refs.reportTable.toggleRowSelection(targetRow, true)
+      this.$nextTick(() => {
+        this.selectionSyncing = false
+      })
+    },
+    getPreferredReport(row) {
+      if (row && row.reportId) {
+        return row
+      }
+      if (this.selectedReport && this.selectedReport.reportId) {
+        return this.selectedReport
+      }
+      return this.reportList.length ? this.reportList[0] : null
+    },
+    async handleReview(row, options = {}) {
+      const { silentSuccess = false, syncSelection = true } = options
+      const target = this.getPreferredReport(row)
+      if (!target) {
         this.$modal.msgWarning('请先选择一条质检报告')
         return
       }
-      getQualityReportReview(target.reportId).then(response => {
-        this.smartResult = response.data || {}
-        this.$modal.msgSuccess('智能审阅已更新')
-      })
-    },
-    handleGenerate() {
-      if (this.ids.length !== 1) {
-        this.$modal.msgWarning('请选择一条报告记录用于读取检测任务ID')
-        return
+      if (syncSelection) {
+        this.syncTableSelection(target.reportId)
       }
-      const selected = this.reportList.find(item => item.reportId === this.ids[0])
+      this.reviewLoading = true
+      try {
+        const response = await getQualityReportReview(target.reportId)
+        this.smartResult = response.data || {}
+        if (!silentSuccess) {
+          this.$modal.msgSuccess('智能审阅已更新')
+        }
+      } catch (error) {
+        this.$modal.msgError((error && error.msg) || '智能审阅失败')
+      } finally {
+        this.reviewLoading = false
+      }
+    },
+    async handleGenerate() {
+      const selected = this.getPreferredReport(null)
       if (!selected || !selected.inspectId) {
         this.$modal.msgWarning('所选记录缺少检测任务ID')
         return
       }
-      generateQualityReport(selected.inspectId).then(() => {
+      try {
+        await generateQualityReport(selected.inspectId)
         this.$modal.msgSuccess('报告生成成功')
-        this.getList()
-      })
+        await this.getList()
+        await this.refreshDashboard()
+        if (selected.reportId) {
+          this.syncTableSelection(selected.reportId)
+        }
+      } catch (error) {
+        this.$modal.msgError((error && error.msg) || '报告生成失败')
+      }
     },
     submitForm() {
       this.$refs.form.validate(valid => {
@@ -300,6 +405,7 @@ export default {
             this.$modal.msgSuccess('修改成功')
             this.open = false
             this.getList()
+            this.refreshDashboard()
           })
           return
         }
@@ -307,6 +413,7 @@ export default {
           this.$modal.msgSuccess('新增成功')
           this.open = false
           this.getList()
+          this.refreshDashboard()
         })
       })
     },

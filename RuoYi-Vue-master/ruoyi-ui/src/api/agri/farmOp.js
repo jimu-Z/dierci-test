@@ -23,6 +23,14 @@ export function getFarmOpAdvice(operationId) {
     })
 }
 
+export function getFarmOpPlotOptions(keyword) {
+    return request({
+        url: '/agri/farmOp/plot/options',
+        method: 'get',
+        params: { keyword }
+    })
+}
+
 export function getFarmOp(operationId) {
     return request({
         url: '/agri/farmOp/' + operationId,

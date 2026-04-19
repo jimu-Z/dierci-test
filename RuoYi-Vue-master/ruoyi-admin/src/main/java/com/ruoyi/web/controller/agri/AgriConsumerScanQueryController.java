@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -10,6 +11,7 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriBrandTracePage;
 import com.ruoyi.system.domain.AgriConsumerScanQuery;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriBrandTracePageService;
 import com.ruoyi.system.service.IAgriConsumerScanQueryService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +48,9 @@ public class AgriConsumerScanQueryController extends BaseController
 
     @Autowired
     private IAgriBrandTracePageService agriBrandTracePageService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:consumerScan:list')")
     @GetMapping("/list")
@@ -260,6 +265,47 @@ public class AgriConsumerScanQueryController extends BaseController
             suggestions.add("风险可控，建议持续监控渠道与地区分布");
         }
 
+        String summary = "基于扫码结果、IP与身份信息完成反欺诈评估，风险等级为" + level + "。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "消费者扫码反欺诈智能分析");
+            context.put("queryId", query.getQueryId());
+            context.put("traceCode", query.getTraceCode());
+            context.put("scanResult", query.getScanResult());
+            context.put("scanChannel", query.getScanChannel());
+            context.put("scanIp", query.getScanIp());
+            context.put("consumerName", query.getConsumerName());
+            context.put("consumerPhone", query.getConsumerPhone());
+            context.put("queryTime", query.getQueryTime());
+            context.put("ruleFlags", flags);
+            context.put("ruleLevel", level);
+            context.put("ruleScore", anomalyScore);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("消费者扫码反欺诈智能分析", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
+            {
+                level = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("queryId", query.getQueryId());
         result.put("traceCode", query.getTraceCode());
@@ -268,7 +314,8 @@ public class AgriConsumerScanQueryController extends BaseController
         result.put("riskLevel", level);
         result.put("flags", flags);
         result.put("suggestions", suggestions);
-        result.put("summary", "基于扫码结果、IP与身份信息完成反欺诈评估，风险等级为" + level + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

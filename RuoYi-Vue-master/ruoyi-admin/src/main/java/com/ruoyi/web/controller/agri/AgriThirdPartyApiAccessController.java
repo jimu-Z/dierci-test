@@ -1,11 +1,13 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriThirdPartyApiAccess;
 import com.ruoyi.system.integration.AgriHttpIntegrationClient;
@@ -312,11 +314,50 @@ public class AgriThirdPartyApiAccessController extends BaseController
             score -= 20;
         }
 
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("accessId", access.getAccessId());
+            context.put("accessCode", access.getAccessCode());
+            context.put("accessName", access.getAccessName());
+            context.put("apiType", access.getApiType());
+            context.put("provider", access.getProvider());
+            context.put("endpointUrl", access.getEndpointUrl());
+            context.put("timeoutSec", access.getTimeoutSec());
+            context.put("successRate", access.getSuccessRate());
+            context.put("callStatus", access.getCallStatus());
+            context.put("remark", access.getRemark());
+            context.put("ruleRiskScore", Math.max(0, score));
+            context.put("ruleSuggestions", suggestions);
+
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult =
+                agriHttpIntegrationClient.invokeGeneralInsight("第三方接口接入智能建议", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                suggestions.add(0, "AI结论：" + aiResult.getInsightSummary());
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ex)
+        {
+            suggestions.add("AI分析暂不可用，已回退本地规则：" + StringUtils.substring(ex.getMessage(), 0, 120));
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("accessId", access.getAccessId());
         result.put("riskScore", Math.max(0, score));
         result.put("riskLevel", score >= 85 ? "低" : score >= 70 ? "中" : "高");
         result.put("suggestions", suggestions);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         result.put("access", access);
         return result;
     }

@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -7,6 +8,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriFinanceRiskMetric;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriFinanceRiskMetricService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
@@ -16,6 +18,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -37,8 +41,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/agri/financeRisk")
 public class AgriFinanceRiskMetricController extends BaseController
 {
+    private static final Logger log = LoggerFactory.getLogger(AgriFinanceRiskMetricController.class);
+
     @Autowired
     private IAgriFinanceRiskMetricService agriFinanceRiskMetricService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:financeRisk:list')")
     @GetMapping("/list")
@@ -168,9 +177,11 @@ public class AgriFinanceRiskMetricController extends BaseController
     @GetMapping("/smart/analyze/{riskId}")
     public AjaxResult smartAnalyze(@PathVariable("riskId") Long riskId)
     {
+        log.info("financeRisk smartAnalyze called, riskId={}", riskId);
         AgriFinanceRiskMetric metric = agriFinanceRiskMetricService.selectAgriFinanceRiskMetricByRiskId(riskId);
         if (metric == null)
         {
+            log.warn("financeRisk smartAnalyze metric not found, riskId={}", riskId);
             return error("指标不存在");
         }
 
@@ -194,6 +205,49 @@ public class AgriFinanceRiskMetricController extends BaseController
             suggestions.add("当前指标可控，建议保持周度复盘并持续监测阈值变化");
         }
 
+        String summary = "基于分值-阈值偏离与维度权重完成压力测算，判定风险等级为" + inferredLevel + "。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "农业金融风控智能分析");
+            context.put("riskId", metric.getRiskId());
+            context.put("indicatorCode", metric.getIndicatorCode());
+            context.put("indicatorName", metric.getIndicatorName());
+            context.put("riskDimension", metric.getRiskDimension());
+            context.put("riskScore", score);
+            context.put("thresholdValue", threshold);
+            context.put("riskLevel", metric.getRiskLevel());
+            context.put("evaluateStatus", metric.getEvaluateStatus());
+            context.put("ruleStressIndex", stressIndex);
+            context.put("ruleRiskLevel", inferredLevel);
+            context.put("ruleSuggestions", suggestions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("农业金融风控智能分析", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
+            {
+                inferredLevel = aiResult.getRiskLevel();
+            }
+            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+            log.info("financeRisk smartAnalyze AI succeeded, riskId={}", riskId);
+        }
+        catch (Exception ex)
+        {
+            // keep rule-based fallback when AI is unavailable
+            log.warn("financeRisk smartAnalyze AI fallback, riskId={}, reason={}", riskId, ex.getMessage());
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("riskId", metric.getRiskId());
         result.put("indicatorName", metric.getIndicatorName());
@@ -203,7 +257,9 @@ public class AgriFinanceRiskMetricController extends BaseController
         result.put("riskLevel", inferredLevel);
         result.put("confidence", buildConfidence(score, threshold));
         result.put("suggestions", suggestions);
-        result.put("summary", "基于分值-阈值偏离与维度权重完成压力测算，判定风险等级为" + inferredLevel + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
+        log.info("financeRisk smartAnalyze response ready, riskId={}, riskLevel={}", riskId, inferredLevel);
         return success(result);
     }
 

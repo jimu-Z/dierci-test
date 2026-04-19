@@ -1,13 +1,16 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriLogisticsTrackSummary;
 import com.ruoyi.system.domain.AgriLogisticsTrack;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriLogisticsTrackService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -41,6 +44,9 @@ public class AgriLogisticsTrackController extends BaseController
     @Autowired
     private IAgriLogisticsTrackService agriLogisticsTrackService;
 
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
+
     @PreAuthorize("@ss.hasPermi('agri:logisticsTrack:list')")
     @GetMapping("/list")
     public TableDataInfo list(AgriLogisticsTrack agriLogisticsTrack)
@@ -71,6 +77,54 @@ public class AgriLogisticsTrackController extends BaseController
         AgriLogisticsTrackSummary summary = agriLogisticsTrackService.selectAgriLogisticsTrackSummary(track.getTraceCode());
         int riskScore = calculateRiskScore(track);
         String riskLevel = resolveRiskLevel(riskScore);
+        List<String> factors = buildRiskFactors(track);
+        List<Map<String, Object>> suggestions = buildSmartSuggestions(track, summary, riskLevel);
+        String aiOriginalExcerpt = null;
+
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "物流路径智能研判");
+            context.put("trackId", track.getTrackId());
+            context.put("traceCode", track.getTraceCode());
+            context.put("trackStatus", track.getTrackStatus());
+            context.put("currentLocation", track.getCurrentLocation());
+            context.put("temperature", track.getTemperature());
+            context.put("humidity", track.getHumidity());
+            context.put("eventDesc", track.getEventDesc());
+            context.put("eventTime", track.getEventTime());
+            context.put("routePath", track.getRoutePath());
+            context.put("ruleRiskScore", riskScore);
+            context.put("ruleRiskLevel", riskLevel);
+            context.put("ruleFactors", factors);
+            context.put("summary", summary);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("物流路径智能研判", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
+            {
+                riskLevel = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                Map<String, Object> aiSuggestion = new LinkedHashMap<>();
+                aiSuggestion.put("title", "AI建议");
+                aiSuggestion.put("priority", "高");
+                aiSuggestion.put("desc", aiResult.getSuggestion());
+                suggestions.add(0, aiSuggestion);
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                Map<String, Object> excerptSuggestion = new LinkedHashMap<>();
+                excerptSuggestion.put("title", "AI原文摘录");
+                excerptSuggestion.put("priority", "中");
+                excerptSuggestion.put("desc", aiOriginalExcerpt);
+                suggestions.add(excerptSuggestion);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("trackId", track.getTrackId());
@@ -78,9 +132,10 @@ public class AgriLogisticsTrackController extends BaseController
         result.put("algorithm", "logistics-route-ops-v1");
         result.put("riskScore", riskScore);
         result.put("riskLevel", riskLevel);
-        result.put("factors", buildRiskFactors(track));
+        result.put("factors", factors);
         result.put("summary", summary);
-        result.put("suggestions", buildSmartSuggestions(track, summary, riskLevel));
+        result.put("suggestions", suggestions);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

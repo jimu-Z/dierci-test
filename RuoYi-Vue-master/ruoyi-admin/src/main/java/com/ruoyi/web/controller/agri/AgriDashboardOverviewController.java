@@ -1,12 +1,15 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriDashboardOverview;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriDashboardOverviewService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
@@ -39,6 +42,9 @@ public class AgriDashboardOverviewController extends BaseController
 {
     @Autowired
     private IAgriDashboardOverviewService agriDashboardOverviewService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:dashboardOverview:list')")
     @GetMapping("/list")
@@ -168,6 +174,44 @@ public class AgriDashboardOverviewController extends BaseController
             suggestions.add("当前总览指标处于稳定区间，建议继续按日观测产销比和预警波动。");
         }
 
+        String summary = "基于产销、溯源、预警与待办四项指标生成总览健康诊断，当前健康等级为" + buildHealthLevel(warningCount, pendingTaskCount, traceCoverage) + "。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("overviewId", overview.getOverviewId());
+            context.put("statDate", overview.getStatDate());
+            context.put("totalOutput", totalOutput);
+            context.put("totalSales", totalSales);
+            context.put("traceQueryCount", traceQueryCount);
+            context.put("warningCount", warningCount);
+            context.put("onlineDeviceCount", onlineDeviceCount);
+            context.put("pendingTaskCount", pendingTaskCount);
+            context.put("outputToSalesRatio", outputToSalesRatio);
+            context.put("traceCoverage", traceCoverage);
+            context.put("ruleHealthLevel", buildHealthLevel(warningCount, pendingTaskCount, traceCoverage));
+            context.put("ruleSuggestions", suggestions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult =
+                agriHttpIntegrationClient.invokeGeneralInsight("经营总览智能洞察", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ex)
+        {
+            suggestions.add("AI分析暂不可用，已回退本地规则：" + StringUtils.substring(ex.getMessage(), 0, 120));
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("overviewId", overview.getOverviewId());
         result.put("statDate", overview.getStatDate());
@@ -177,7 +221,8 @@ public class AgriDashboardOverviewController extends BaseController
         result.put("healthLevel", buildHealthLevel(warningCount, pendingTaskCount, traceCoverage));
         result.put("confidenceRate", buildConfidence(totalOutput, warningCount, pendingTaskCount));
         result.put("recommendations", suggestions);
-        result.put("summary", "基于产销、溯源、预警与待办四项指标生成总览健康诊断，当前健康等级为" + buildHealthLevel(warningCount, pendingTaskCount, traceCoverage) + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

@@ -13,7 +13,7 @@
         </div>
         <div class="hero-actions">
           <el-button type="primary" size="mini" icon="el-icon-refresh" @click="loadDashboard">刷新看板</el-button>
-          <el-button type="warning" plain size="mini" icon="el-icon-bell" :disabled="!selectedReminderId" @click="handleSmartDispatch()">智能处置</el-button>
+          <el-button type="warning" plain size="mini" icon="el-icon-bell" :disabled="!selectedReminderId" :loading="dispatchLoading" @click="handleSmartDispatch()">智能处置</el-button>
         </div>
       </div>
     </el-card>
@@ -179,6 +179,7 @@ export default {
     return {
       loading: true,
       dashboardLoading: false,
+      dispatchLoading: false,
       ids: [],
       single: true,
       multiple: true,
@@ -276,10 +277,34 @@ export default {
         this.$modal.msgWarning('请先选择一条待办记录')
         return
       }
+      this.dispatchLoading = true
       smartDispatchTodoTaskReminder(reminderId).then(response => {
+        const data = response.data || {}
+        const nextStatus = data.reminderStatus || '1'
         this.dashboardSnapshot = this.dashboardSnapshot || {}
-        this.dashboardSnapshot.insight = response.data || {}
-        this.$modal.msgSuccess('智能处置完成')
+        this.dashboardSnapshot.insight = data
+        this.reminderList = this.reminderList.map(item => {
+          if (item.reminderId === reminderId) {
+            return Object.assign({}, item, { reminderStatus: nextStatus })
+          }
+          return item
+        })
+        this.topList.forEach(item => {
+          if (item.reminderId === reminderId) {
+            item.reminderStatus = nextStatus
+          }
+        })
+        if (this.selectedReminder && this.selectedReminder.reminderId === reminderId) {
+          this.selectedReminder = Object.assign({}, this.selectedReminder, { reminderStatus: nextStatus })
+        }
+        this.getList()
+        this.loadDashboard()
+        this.$modal.msgSuccess(nextStatus === '2' ? '智能处置完成，提醒已完成' : '智能处置完成，提醒状态已更新为已提醒')
+      }).catch(error => {
+        const message = (error && error.msg) || '智能处置失败，请稍后重试'
+        this.$modal.msgError(message)
+      }).finally(() => {
+        this.dispatchLoading = false
       })
     },
     priorityLabel(level) {

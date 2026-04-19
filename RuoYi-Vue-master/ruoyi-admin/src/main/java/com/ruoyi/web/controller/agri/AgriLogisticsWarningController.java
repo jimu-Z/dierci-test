@@ -1,14 +1,17 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriLogisticsTempHumidity;
 import com.ruoyi.system.domain.AgriLogisticsWarning;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriLogisticsTempHumidityService;
 import com.ruoyi.system.service.IAgriLogisticsWarningService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -43,6 +46,9 @@ public class AgriLogisticsWarningController extends BaseController
 
     @Autowired
     private IAgriLogisticsTempHumidityService agriLogisticsTempHumidityService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:logisticsWarning:list')")
     @GetMapping("/list")
@@ -250,12 +256,52 @@ public class AgriLogisticsWarningController extends BaseController
             suggestions.add("当前预警已进入稳定处置阶段，可继续保持常规跟踪");
         }
 
+        int safeScore = Math.max(0, score);
+        String riskLevel = safeScore >= 85 ? "低" : safeScore >= 70 ? "中" : "高";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "在途异常智能分诊");
+            context.put("warningId", warning.getWarningId());
+            context.put("traceCode", warning.getTraceCode());
+            context.put("warningType", warning.getWarningType());
+            context.put("warningLevel", warning.getWarningLevel());
+            context.put("warningStatus", warning.getWarningStatus());
+            context.put("warningTitle", warning.getWarningTitle());
+            context.put("warningContent", warning.getWarningContent());
+            context.put("handler", warning.getHandler());
+            context.put("sourceRecordId", warning.getSourceRecordId());
+            context.put("ruleRiskScore", safeScore);
+            context.put("ruleRiskLevel", riskLevel);
+            context.put("ruleSuggestions", suggestions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("在途异常智能分诊", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
+            {
+                riskLevel = aiResult.getRiskLevel();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("warningId", warning.getWarningId());
-        result.put("riskScore", Math.max(0, score));
-        result.put("riskLevel", score >= 85 ? "低" : score >= 70 ? "中" : "高");
+        result.put("riskScore", safeScore);
+        result.put("riskLevel", riskLevel);
         result.put("suggestions", suggestions);
         result.put("warning", warning);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return result;
     }
 }

@@ -1,12 +1,15 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriBrandTracePage;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriBrandTracePageService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -38,6 +41,9 @@ public class AgriBrandTracePageController extends BaseController
 {
     @Autowired
     private IAgriBrandTracePageService agriBrandTracePageService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:brandTrace:list')")
     @GetMapping("/list")
@@ -216,6 +222,43 @@ public class AgriBrandTracePageController extends BaseController
             suggestions.add("溯源信息完整，可进入渠道投放与扫码活动阶段");
         }
 
+        String summary = "完成页面内容完整性与可发布性检测，当前状态为" + readiness + "。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("pageId", page.getPageId());
+            context.put("traceCode", page.getTraceCode());
+            context.put("brandName", page.getBrandName());
+            context.put("productName", page.getProductName());
+            context.put("originPlace", page.getOriginPlace());
+            context.put("publishStatus", page.getPublishStatus());
+            context.put("brandStory", page.getBrandStory());
+            context.put("ruleScore", score);
+            context.put("ruleReadiness", readiness);
+            context.put("missing", missing);
+            context.put("ruleSuggestions", suggestions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult =
+                agriHttpIntegrationClient.invokeGeneralInsight("品牌溯源页面智能巡检", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
+            {
+                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (StringUtils.isNotBlank(aiOriginalExcerpt))
+            {
+                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ex)
+        {
+            suggestions.add("AI分析暂不可用，已回退本地规则：" + StringUtils.substring(ex.getMessage(), 0, 120));
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("pageId", page.getPageId());
         result.put("traceCode", page.getTraceCode());
@@ -224,7 +267,8 @@ public class AgriBrandTracePageController extends BaseController
         result.put("readiness", readiness);
         result.put("missing", missing);
         result.put("suggestions", suggestions);
-        result.put("summary", "完成页面内容完整性与可发布性检测，当前状态为" + readiness + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

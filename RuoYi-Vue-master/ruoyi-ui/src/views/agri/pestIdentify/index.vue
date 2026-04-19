@@ -446,6 +446,14 @@ export default {
           if (data.process && data.process.length) {
             this.processTrace = data.process
           }
+          if (data.aiOriginalExcerpt) {
+            this.processTrace.push({
+              stage: 'AI原文摘录',
+              status: 'success',
+              time: this.parseTime(new Date()),
+              message: data.aiOriginalExcerpt
+            })
+          }
           if (data.algorithm) {
             this.algorithm = data.algorithm
           }
@@ -493,6 +501,14 @@ export default {
         const data = response.data || {}
         if (data.process && data.process.length) {
           this.processTrace = data.process
+        }
+        if (data.aiOriginalExcerpt) {
+          this.processTrace.push({
+            stage: 'AI原文摘录',
+            status: 'success',
+            time: this.parseTime(new Date()),
+            message: data.aiOriginalExcerpt
+          })
         }
         if (data.algorithm) {
           this.algorithm = data.algorithm

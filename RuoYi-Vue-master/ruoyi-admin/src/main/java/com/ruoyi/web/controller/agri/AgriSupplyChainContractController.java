@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -7,6 +8,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriSupplyChainContract;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriSupplyChainContractService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
@@ -42,6 +44,9 @@ public class AgriSupplyChainContractController extends BaseController
 {
     @Autowired
     private IAgriSupplyChainContractService agriSupplyChainContractService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:supplyContract:list')")
     @GetMapping("/list")
@@ -231,6 +236,51 @@ public class AgriSupplyChainContractController extends BaseController
             actions.add("当前现金流压力可控，建议继续按月跟踪履约进度");
         }
 
+        String summary = "根据融资规模、利率与到期窗口完成现金流压力评估，综合风险等级为" + riskBand + "。";
+        String aiOriginalExcerpt = null;
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "供应链合约智能评估");
+            context.put("contractId", contract.getContractId());
+            context.put("contractNo", contract.getContractNo());
+            context.put("contractName", contract.getContractName());
+            context.put("financeSubject", contract.getFinanceSubject());
+            context.put("financeAmount", amount);
+            context.put("interestRate", rate);
+            context.put("contractStatus", contract.getContractStatus());
+            context.put("riskLevel", contract.getRiskLevel());
+            context.put("startDate", contract.getStartDate());
+            context.put("endDate", contract.getEndDate());
+            context.put("remainDays", remainDays);
+            context.put("annualInterest", annualInterest);
+            context.put("rulePressureIndex", pressureIndex);
+            context.put("ruleRiskBand", riskBand);
+            context.put("ruleActions", actions);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("供应链合约智能评估", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
+            {
+                riskBand = aiResult.getRiskLevel();
+            }
+            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
+            {
+                actions.add(0, "AI建议：" + aiResult.getSuggestion());
+            }
+            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
+            {
+                actions.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("contractId", contract.getContractId());
         result.put("contractNo", contract.getContractNo());
@@ -240,7 +290,8 @@ public class AgriSupplyChainContractController extends BaseController
         result.put("pressureIndex", pressureIndex);
         result.put("riskBand", riskBand);
         result.put("actions", actions);
-        result.put("summary", "根据融资规模、利率与到期窗口完成现金流压力评估，综合风险等级为" + riskBand + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 

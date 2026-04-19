@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.agri;
 
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -8,6 +9,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.AgriDeviceAccessNode;
+import com.ruoyi.system.integration.AgriHttpIntegrationClient;
 import com.ruoyi.system.service.IAgriDeviceAccessNodeService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -38,6 +40,9 @@ public class AgriDeviceAccessNodeController extends BaseController
 {
     @Autowired
     private IAgriDeviceAccessNodeService agriDeviceAccessNodeService;
+
+    @Autowired
+    private AgriHttpIntegrationClient agriHttpIntegrationClient;
 
     @PreAuthorize("@ss.hasPermi('agri:deviceAccess:list')")
     @GetMapping("/list")
@@ -436,6 +441,48 @@ public class AgriDeviceAccessNodeController extends BaseController
 
         healthScore = Math.max(healthScore, 5);
         String risk = healthScore < 40 ? "高" : (healthScore < 70 ? "中" : "低");
+        String summary = "完成设备接入健康度诊断，当前风险等级为" + risk + "。";
+        String aiOriginalExcerpt = null;
+
+        try
+        {
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("scene", "设备接入智能诊断");
+            context.put("nodeId", node.getNodeId());
+            context.put("nodeCode", node.getNodeId());
+            context.put("deviceCode", node.getDeviceCode());
+            context.put("deviceName", node.getDeviceName());
+            context.put("deviceType", node.getDeviceType());
+            context.put("accessProtocol", node.getProtocolType());
+            context.put("accessStatus", node.getAccessStatus());
+            context.put("firmwareVersion", node.getFirmwareVersion());
+            context.put("lastOnlineTime", node.getLastOnlineTime());
+            context.put("ruleHealthScore", healthScore);
+            context.put("ruleRisk", risk);
+            context.put("ruleFactors", factors);
+            AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("设备接入智能诊断", JSON.toJSONString(context));
+            aiOriginalExcerpt = aiResult.getRawContent();
+            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
+            {
+                summary = aiResult.getInsightSummary();
+            }
+            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
+            {
+                risk = aiResult.getRiskLevel();
+            }
+            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
+            {
+                factors.add("AI建议：" + aiResult.getSuggestion());
+            }
+            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
+            {
+                factors.add("AI原文摘录：" + aiOriginalExcerpt);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // keep rule-based fallback when AI is unavailable
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("nodeId", node.getNodeId());
@@ -443,7 +490,8 @@ public class AgriDeviceAccessNodeController extends BaseController
         result.put("healthScore", healthScore);
         result.put("risk", risk);
         result.put("factors", factors);
-        result.put("summary", "完成设备接入健康度诊断，当前风险等级为" + risk + "。");
+        result.put("summary", summary);
+        result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
 
