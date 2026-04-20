@@ -36,20 +36,23 @@
             <span class="panel-subtitle">按经营健康模型自动评估</span>
           </div>
           <div class="insight-box">
-            <div class="insight-summary">{{ insight.overviewSummary || '暂无健康洞察，刷新看板后可查看系统评估结果。' }}</div>
-            <div class="insight-meta">
-              <el-tag size="mini" :type="healthTagType(insight.healthLevel)">{{ insight.healthLevel || '稳定' }}</el-tag>
-              <span>置信度 {{ formatRate(insight.confidenceRate) }}</span>
-              <span>模型 {{ insight.modelVersion || 'overview-health-v1' }}</span>
-            </div>
-            <div class="recommendation-list" v-if="recommendations.length">
-              <div v-for="(item, index) in recommendations" :key="index" class="recommendation-item">{{ item }}</div>
-            </div>
-            <div v-if="smartInsightResult.summary || smartInsightResult.aiOriginalExcerpt" class="smart-result-box">
+            <template v-if="!hasSmartInsightResult">
+              <div class="insight-summary">{{ insight.overviewSummary || '暂无健康洞察，刷新看板后可查看系统评估结果。' }}</div>
+              <div class="insight-meta">
+                <el-tag size="mini" :type="healthTagType(insight.healthLevel)">{{ insight.healthLevel || '稳定' }}</el-tag>
+                <span>置信度 {{ formatRate(insight.confidenceRate) }}</span>
+                <span>模型 {{ insight.modelVersion || 'overview-health-v1' }}</span>
+              </div>
+              <div class="recommendation-list" v-if="recommendations.length">
+                <div v-for="(item, index) in recommendations" :key="index" class="recommendation-item">{{ item }}</div>
+              </div>
+            </template>
+            <div v-else class="insight-tip">已展示最新智能诊断结果，为避免重复，已收起看板默认洞察内容。</div>
+            <div v-if="hasSmartInsightResult" class="smart-result-box">
               <div class="smart-result-head">
                 <span>智能诊断结果</span>
                 <small>{{ smartInsightResult.statDate || '最近一次按钮触发结果' }}</small>
-              </div>
+            </div>
               <div class="smart-result-meta">
                 <span>健康等级 {{ smartInsightResult.healthLevel || '-' }}</span>
                 <span>置信度 {{ smartInsightResult.confidenceRate != null ? formatRate(smartInsightResult.confidenceRate) : '-' }}</span>
@@ -168,6 +171,7 @@ import {
   getDashboardOverviewDashboard,
   smartInsightDashboardOverview
 } from '@/api/agri/dashboardOverview'
+import { normalizeSmartResult } from '@/utils/agriSmartResult'
 
 export default {
   name: 'DashboardOverview',
@@ -228,10 +232,15 @@ export default {
       return (this.dashboardSnapshot && this.dashboardSnapshot.insight) || {}
     },
     recommendations() {
-      return (this.dashboardSnapshot && this.dashboardSnapshot.recommendations) || []
+      return normalizeSmartResult({
+        recommendations: (this.dashboardSnapshot && this.dashboardSnapshot.recommendations) || []
+      }, 'recommendations').recommendations
     },
     topList() {
       return (this.dashboardSnapshot && Array.isArray(this.dashboardSnapshot.topList)) ? this.dashboardSnapshot.topList : []
+    },
+    hasSmartInsightResult() {
+      return Boolean(this.smartInsightResult.summary || this.smartInsightResult.aiOriginalExcerpt)
     },
     lastRefreshLabel() {
       return this.lastRefreshTime ? this.parseTime(this.lastRefreshTime) : '暂无'
@@ -262,7 +271,18 @@ export default {
     loadDashboard() {
       this.dashboardLoading = true
       getDashboardOverviewDashboard().then(response => {
-        this.dashboardSnapshot = response.data || null
+        const snapshot = response.data || null
+        if (snapshot) {
+          const normalized = normalizeSmartResult({
+            recommendations: Array.isArray(snapshot.recommendations) ? snapshot.recommendations : []
+          }, 'recommendations')
+          this.dashboardSnapshot = {
+            ...snapshot,
+            recommendations: normalized.recommendations
+          }
+        } else {
+          this.dashboardSnapshot = null
+        }
         this.lastRefreshTime = new Date()
         if (!this.selectedOverview && this.topList.length) {
           this.selectedOverview = this.topList[0]
@@ -286,8 +306,8 @@ export default {
       const target = row || this.selectedOverview || fallbackOverview
       this.smartInsightLoading = true
       smartInsightDashboardOverview(overviewId).then(response => {
-        const data = response.data || {}
-        const recommendations = Array.isArray(data.recommendations) ? data.recommendations : []
+        const data = normalizeSmartResult(response.data || {}, 'recommendations')
+        const recommendations = data.recommendations || []
         this.smartInsightResult = {
           overviewId: data.overviewId || overviewId,
           statDate: data.statDate || (target && target.statDate) || '',
@@ -503,6 +523,12 @@ export default {
 .snapshot-desc {
   color: #41505f;
   line-height: 1.8;
+}
+
+.insight-tip {
+  margin-bottom: 10px;
+  color: #7b8794;
+  font-size: 12px;
 }
 
 .snapshot-list {
