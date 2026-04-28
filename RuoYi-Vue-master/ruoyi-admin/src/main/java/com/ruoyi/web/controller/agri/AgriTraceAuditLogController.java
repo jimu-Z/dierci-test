@@ -224,19 +224,10 @@ public class AgriTraceAuditLogController extends BaseController
             context.put("ruleRiskLevel", level);
             context.put("ruleAlerts", alerts);
             AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("溯源审计异常智能检测", JSON.toJSONString(context));
-            aiOriginalExcerpt = aiResult.getRawContent();
-            if (StringUtils.isNotBlank(aiResult.getInsightSummary()))
-            {
-                summary = aiResult.getInsightSummary();
-            }
-            if (StringUtils.isNotBlank(aiResult.getRiskLevel()))
-            {
-                level = aiResult.getRiskLevel();
-            }
-            if (StringUtils.isNotBlank(aiResult.getSuggestion()))
-            {
-                alerts.add(0, "AI建议：" + aiResult.getSuggestion());
-            }
+            AgriAiResultHelper.MergeResult mergeResult = AgriAiResultHelper.mergeGeneralInsightResult(summary, level, alerts, aiResult);
+            summary = mergeResult.getSummary();
+            level = mergeResult.getRiskLevel();
+            aiOriginalExcerpt = mergeResult.getAiOriginalExcerpt();
         }
         catch (Exception ignore)
         {

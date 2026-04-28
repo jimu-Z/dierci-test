@@ -308,7 +308,7 @@ public class AgriThirdPartyApiAccessController extends BaseController
         {
             suggestions.add("通用接口建议补充标准请求示例和健康检查路径");
         }
-        if (access.getEndpointUrl() == null || access.getEndpointUrl().trim().isEmpty())
+        if (AgriValidationHelper.isBlank(access.getEndpointUrl()))
         {
             suggestions.add("请求地址缺失，建议先补齐目标 URL 再保存");
             score -= 20;

@@ -93,6 +93,25 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/agri',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'tempLogisticsTrace',
+        component: () => import('@/views/agri/tempLogisticsTrace/index'),
+        name: 'TempLogisticsTrace',
+        meta: { title: '物流追踪临时页', noCache: true }
+      },
+      {
+        path: 'tempConsumerTrace',
+        component: () => import('@/views/agri/tempConsumerTrace/index'),
+        name: 'TempConsumerTrace',
+        meta: { title: '消费者溯源临时页', noCache: true }
+      }
+    ]
   }
 ]
 

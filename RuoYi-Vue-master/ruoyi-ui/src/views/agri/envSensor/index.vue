@@ -271,6 +271,7 @@ import {
   getEnvSensorDashboard,
   diagnoseEnvSensor
 } from '@/api/agri/envSensor'
+import { normalizeSmartResult } from '@/utils/agriSmartResult'
 
 export default {
   name: 'EnvSensor',
@@ -376,7 +377,7 @@ export default {
         requestTime: ''
       }
       diagnoseEnvSensor(target.recordId).then(response => {
-        const data = response.data || {}
+        const data = normalizeSmartResult(response.data || {}, 'findings')
         this.smartResult = {
           recordId: data.recordId || target.recordId,
           deviceCode: data.deviceCode || target.deviceCode || '',

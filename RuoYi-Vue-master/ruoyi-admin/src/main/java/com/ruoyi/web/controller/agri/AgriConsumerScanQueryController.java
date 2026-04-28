@@ -238,7 +238,7 @@ public class AgriConsumerScanQueryController extends BaseController
             anomalyScore += 25;
             flags.add("命中未发布页面");
         }
-        if (StringUtils.isBlank(query.getConsumerPhone()))
+        if (AgriValidationHelper.isBlank(query.getConsumerPhone()))
         {
             anomalyScore += 10;
             flags.add("缺少手机号");
@@ -311,6 +311,7 @@ public class AgriConsumerScanQueryController extends BaseController
         result.put("flags", flags);
         result.put("suggestions", suggestions);
         result.put("summary", summary);
+        result.put("summaryText", summary);
         result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);
     }
@@ -359,7 +360,7 @@ public class AgriConsumerScanQueryController extends BaseController
     }
 
     @Log(title = "消费者扫码模拟查询", businessType = BusinessType.OTHER)
-    @PostMapping("/scan/{traceCode}")
+    @RequestMapping(value = "/scan/{traceCode}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     public AjaxResult scan(@PathVariable("traceCode") String traceCode,
                            @RequestBody(required = false) AgriConsumerScanQuery payload,
                            HttpServletRequest request)

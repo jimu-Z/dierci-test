@@ -223,23 +223,10 @@ public class AgriFinanceRiskMetricController extends BaseController
             context.put("ruleRiskLevel", inferredLevel);
             context.put("ruleSuggestions", suggestions);
             AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("农业金融风控智能分析", JSON.toJSONString(context));
-            aiOriginalExcerpt = aiResult.getRawContent();
-            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
-            {
-                summary = aiResult.getInsightSummary();
-            }
-            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
-            {
-                inferredLevel = aiResult.getRiskLevel();
-            }
-            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
-            {
-                suggestions.add(0, "AI建议：" + aiResult.getSuggestion());
-            }
-            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
-            {
-                suggestions.add("AI原文摘录：" + aiOriginalExcerpt);
-            }
+            AgriAiResultHelper.MergeResult mergeResult = AgriAiResultHelper.mergeGeneralInsightResult(summary, inferredLevel, suggestions, aiResult);
+            summary = mergeResult.getSummary();
+            inferredLevel = mergeResult.getRiskLevel();
+            aiOriginalExcerpt = mergeResult.getAiOriginalExcerpt();
             log.info("financeRisk smartAnalyze AI succeeded, riskId={}", riskId);
         }
         catch (Exception ex)

@@ -318,10 +318,10 @@
           <div class="analysis-detail-title">处置建议</div>
           <div v-for="item in analysisResult.suggestions || []" :key="item.title" class="analysis-suggestion">
             <strong>{{ item.title }}</strong>
-            <span>{{ item.content }}</span>
+            <span>{{ item.content || item.desc || '' }}</span>
           </div>
           <div class="analysis-detail-title">摘要</div>
-          <div class="analysis-summary-text">{{ analysisResult.summary && analysisResult.summary.summaryText ? analysisResult.summary.summaryText : '暂无摘要' }}</div>
+          <div class="analysis-summary-text">{{ analysisResult.summaryText || analysisResult.summary || '暂无摘要' }}</div>
         </el-card>
       </div>
       <div slot="footer" class="dialog-footer">

@@ -14,6 +14,8 @@ public interface IAgriLogisticsTempHumidityService
 
     public List<AgriLogisticsTempHumidity> selectAgriLogisticsTempHumidityList(AgriLogisticsTempHumidity agriLogisticsTempHumidity);
 
+    public List<AgriLogisticsTempHumidity> selectByTraceCodeWithTimeRange(String traceCode, String startTime, String endTime);
+
     public int insertAgriLogisticsTempHumidity(AgriLogisticsTempHumidity agriLogisticsTempHumidity);
 
     public int updateAgriLogisticsTempHumidity(AgriLogisticsTempHumidity agriLogisticsTempHumidity);

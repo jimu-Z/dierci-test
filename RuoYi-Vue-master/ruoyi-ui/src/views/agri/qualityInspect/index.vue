@@ -8,7 +8,7 @@
         <div class="hero-actions">
           <el-button type="primary" icon="el-icon-plus" @click="handleAdd">新增样本任务</el-button>
           <el-button type="success" icon="el-icon-video-play" :disabled="!canInvoke" @click="handleInvoke()">执行检测</el-button>
-          <el-button type="warning" icon="el-icon-data-analysis" :disabled="!focusTask.inspectId" @click="handleSmartReview(focusTask)">智能复核</el-button>
+          <el-button type="warning" icon="el-icon-data-analysis" :disabled="!canReviewTask" @click="handleSmartReview()">智能复核</el-button>
           <el-button icon="el-icon-refresh" @click="refreshOps">刷新分拨台</el-button>
         </div>
       </div>
@@ -143,7 +143,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="样本图" width="90" align="center">
         <template slot-scope="scope">
@@ -317,6 +317,9 @@ export default {
   },
   computed: {
     canInvoke() {
+      return Boolean(this.getPreferredTask() && this.getPreferredTask().inspectId)
+    },
+    canReviewTask() {
       return Boolean(this.getPreferredTask() && this.getPreferredTask().inspectId)
     }
   },
@@ -523,8 +526,15 @@ export default {
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.inspectId)
       this.selectedTask = selection.length ? selection[0] : {}
+      this.focusTask = selection.length ? { ...selection[0] } : this.focusTask
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    handleRowClick(row) {
+      if (!row || !row.inspectId) {
+        return
+      }
+      this.handleSelectionChange([row])
     },
     handlePressureRowClick(row) {
       if (!row || !row.inspectId) {
@@ -591,7 +601,8 @@ export default {
         .catch(() => {})
     },
     handleSmartReview(row) {
-      const inspectId = row && row.inspectId ? row.inspectId : this.ids[0]
+      const target = this.getPreferredTask(row)
+      const inspectId = target && target.inspectId ? target.inspectId : this.ids[0]
       if (!inspectId) {
         this.$modal.msgWarning('请选择一条任务执行智能复核')
         return

@@ -118,7 +118,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="farmOpList" highlight-current-row @selection-change="handleSelectionChange" @row-click="handleRowClick">
+    <el-table ref="farmTable" row-key="operationId" v-loading="loading" :data="farmOpList" highlight-current-row @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" align="center" prop="operationId" width="70" />
       <el-table-column label="地块编码" align="center" prop="plotCode" width="120" />
@@ -261,6 +261,8 @@ export default {
       farmOpList: [],
       selectedRows: [],
       currentRow: null,
+      selectedOperationId: undefined,
+      selectionAdviceGuard: false,
       dashboardData: {},
       smartAdvice: {},
       smartAdviceLoading: false,
@@ -375,13 +377,22 @@ export default {
       this.handleQuery()
     },
     handleSelectionChange(selection) {
-      this.selectedRows = selection
-      this.ids = selection.map(item => this.getOperationId(item)).filter(item => item !== undefined && item !== null)
+      this.selectedRows = selection.map(item => this.normalizeOperationRow(item))
+      this.ids = this.selectedRows.map(item => this.getOperationId(item)).filter(item => item !== undefined && item !== null)
+      this.currentRow = this.selectedRows.length ? this.selectedRows[0] : null
+      this.selectedOperationId = this.currentRow ? this.getOperationId(this.currentRow) : undefined
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      if (this.selectionAdviceGuard) {
+        this.selectionAdviceGuard = false
+        return
+      }
+      if (selection.length === 1 && this.currentRow && this.selectedOperationId) {
+        this.fetchAdviceForTarget(this.currentRow, { silent: true })
+      }
     },
     handleRowClick(row) {
-      this.currentRow = this.normalizeOperationRow(row)
+      this.selectFarmRow(row)
     },
     normalizeOperationRow(row) {
       if (!row) {
@@ -405,10 +416,31 @@ export default {
         operationType: payload.operationType || payload.operation_type,
         riskScore: payload.riskScore !== undefined ? payload.riskScore : payload.risk_score,
         riskLevel: payload.riskLevel || payload.risk_level,
-        advice: payload.advice || payload.summary || payload.message,
-        suggestions: Array.isArray(payload.suggestions) ? payload.suggestions : [],
+        advice: this.cleanAdviceText(payload.advice || payload.summary || payload.message),
+        suggestions: this.cleanAdviceSuggestions(payload.suggestions),
         aiOriginalExcerpt: payload.aiOriginalExcerpt || payload.ai_original_excerpt || ''
       }
+    },
+    cleanAdviceText(text) {
+      if (!text) {
+        return ''
+      }
+      return String(text)
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line && !/^AI[原\s]*文[\s]*摘录[:：]/i.test(line) && !/^AI原文摘录[:：]/i.test(line))
+        .join('\n')
+    },
+    cleanAdviceSuggestions(suggestions) {
+      if (!Array.isArray(suggestions)) {
+        return []
+      }
+      return suggestions.filter(item => {
+        if (typeof item !== 'string') {
+          return true
+        }
+        return !/^AI[原\s]*文[\s]*摘录[:：]/i.test(item.trim()) && !/^AI原文摘录[:：]/i.test(item.trim())
+      })
     },
     getOperationId(target) {
       if (!target) {
@@ -420,11 +452,20 @@ export default {
       if (row) {
         return row
       }
+      if (this.selectedRows[0] && this.getOperationId(this.selectedRows[0])) {
+        return this.selectedRows[0]
+      }
       if (this.currentRow && this.getOperationId(this.currentRow)) {
         return this.currentRow
       }
-      if (this.selectedRows[0] && this.getOperationId(this.selectedRows[0])) {
-        return this.selectedRows[0]
+      if (this.selectedOperationId) {
+        const rowBySelectedId = this.farmOpList.find(item => String(this.getOperationId(item)) === String(this.selectedOperationId))
+        if (rowBySelectedId) {
+          return rowBySelectedId
+        }
+      }
+      if (this.currentRow && this.getOperationId(this.currentRow)) {
+        return this.currentRow
       }
       if (this.ids[0]) {
         const rowBySelectionId = this.farmOpList.find(item => String(item.operationId) === String(this.ids[0]))
@@ -439,6 +480,44 @@ export default {
         return this.recentRows[0]
       }
       return null
+    },
+    selectFarmRow(target, options = {}) {
+      const normalizedTarget = this.normalizeOperationRow(target)
+      const operationId = this.getOperationId(normalizedTarget)
+      if (!operationId || !this.$refs.farmTable) {
+        return
+      }
+      const matchedRow = this.farmOpList.find(item => String(this.getOperationId(item)) === String(operationId)) || normalizedTarget
+      this.selectionAdviceGuard = Boolean(options.suppressAdviceFetch)
+      this.$refs.farmTable.clearSelection()
+      this.$refs.farmTable.toggleRowSelection(matchedRow, true)
+      this.currentRow = this.normalizeOperationRow(matchedRow)
+      this.selectedRows = [this.currentRow]
+      this.ids = [operationId]
+      this.selectedOperationId = operationId
+      this.single = false
+      this.multiple = false
+    },
+    fetchAdviceForTarget(target, options = {}) {
+      const operationId = this.getOperationId(target)
+      if (!operationId) {
+        return
+      }
+      this.smartAdviceLoading = true
+      getFarmOpAdvice(operationId)
+        .then(response => {
+          this.smartAdvice = this.normalizeAdviceResult(response.data)
+          this.smartAdviceRequestTime = this.parseTime(new Date())
+          if (!options.silent) {
+            this.$modal.msgSuccess('智能建议已更新')
+          }
+        })
+        .catch(() => {
+          this.$modal.msgError('智能建议获取失败，请稍后重试')
+        })
+        .finally(() => {
+          this.smartAdviceLoading = false
+        })
     },
     handleAdd() {
       this.reset()
@@ -486,19 +565,8 @@ export default {
         this.$modal.msgWarning('请先选择一条农事记录')
         return
       }
-      this.smartAdviceLoading = true
-      getFarmOpAdvice(operationId)
-        .then(response => {
-          this.smartAdvice = this.normalizeAdviceResult(response.data)
-          this.smartAdviceRequestTime = this.parseTime(new Date())
-          this.$modal.msgSuccess('智能建议已更新')
-        })
-        .catch(() => {
-          this.$modal.msgError('智能建议获取失败，请稍后重试')
-        })
-        .finally(() => {
-          this.smartAdviceLoading = false
-        })
+      this.selectFarmRow(target, { suppressAdviceFetch: true })
+      this.fetchAdviceForTarget(target)
     },
     submitForm() {
       this.$refs.form.validate(valid => {

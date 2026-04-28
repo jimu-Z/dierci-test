@@ -655,26 +655,11 @@ public class AgriCarbonFootprintModelServiceImpl implements IAgriCarbonFootprint
 
     private AgriCarbonFootprintModel normalizeModel(AgriCarbonFootprintModel model)
     {
-        if (model == null)
-        {
-            return new AgriCarbonFootprintModel();
-        }
-        if (model.getEmissionFactor() == null)
-        {
-            model.setEmissionFactor(BigDecimal.ZERO);
-        }
-        if (model.getCarbonEmission() == null)
-        {
-            model.setCarbonEmission(BigDecimal.ZERO);
-        }
-        if (StringUtils.isBlank(model.getCalcStatus()))
-        {
-            model.setCalcStatus("0");
-        }
-        if (StringUtils.isBlank(model.getStatus()))
-        {
-            model.setStatus("0");
-        }
+        model = AgriNormalizationHelper.ensureNotNull(model, AgriCarbonFootprintModel::new);
+        AgriNormalizationHelper.defaultIfNull(model::getEmissionFactor, model::setEmissionFactor, BigDecimal.ZERO);
+        AgriNormalizationHelper.defaultIfNull(model::getCarbonEmission, model::setCarbonEmission, BigDecimal.ZERO);
+        AgriNormalizationHelper.defaultIfBlank(model::getCalcStatus, model::setCalcStatus, "0");
+        AgriNormalizationHelper.defaultIfBlank(model::getStatus, model::setStatus, "0");
         return model;
     }
 

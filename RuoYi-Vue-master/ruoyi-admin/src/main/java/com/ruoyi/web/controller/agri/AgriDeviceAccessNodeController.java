@@ -461,23 +461,10 @@ public class AgriDeviceAccessNodeController extends BaseController
             context.put("ruleRisk", risk);
             context.put("ruleFactors", factors);
             AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("设备接入智能诊断", JSON.toJSONString(context));
-            aiOriginalExcerpt = aiResult.getRawContent();
-            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
-            {
-                summary = aiResult.getInsightSummary();
-            }
-            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
-            {
-                risk = aiResult.getRiskLevel();
-            }
-            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
-            {
-                factors.add("AI建议：" + aiResult.getSuggestion());
-            }
-            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
-            {
-                factors.add("AI原文摘录：" + aiOriginalExcerpt);
-            }
+            AgriAiResultHelper.MergeResult mergeResult = AgriAiResultHelper.mergeGeneralInsightResult(summary, risk, factors, aiResult);
+            summary = mergeResult.getSummary();
+            risk = mergeResult.getRiskLevel();
+            aiOriginalExcerpt = mergeResult.getAiOriginalExcerpt();
         }
         catch (Exception ignore)
         {

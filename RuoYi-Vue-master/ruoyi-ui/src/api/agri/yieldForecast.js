@@ -56,7 +56,8 @@ export function getYieldForecastDashboardOps() {
 export function smartAssessYieldForecast(forecastId) {
     return request({
         url: '/agri/yieldForecast/smart/assess/' + forecastId,
-        method: 'get'
+        method: 'get',
+        timeout: 30000
     })
 }
 

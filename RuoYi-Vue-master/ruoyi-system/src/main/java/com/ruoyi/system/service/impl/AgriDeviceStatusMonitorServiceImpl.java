@@ -103,34 +103,13 @@ public class AgriDeviceStatusMonitorServiceImpl implements IAgriDeviceStatusMoni
 
     private AgriDeviceStatusMonitor normalizeMonitor(AgriDeviceStatusMonitor monitor)
     {
-        if (monitor == null)
-        {
-            return new AgriDeviceStatusMonitor();
-        }
-        if (monitor.getOnlineStatus() == null)
-        {
-            monitor.setOnlineStatus("0");
-        }
-        if (monitor.getWarningLevel() == null)
-        {
-            monitor.setWarningLevel("0");
-        }
-        if (monitor.getBatteryLevel() == null)
-        {
-            monitor.setBatteryLevel(BigDecimal.ZERO);
-        }
-        if (monitor.getSignalStrength() == null)
-        {
-            monitor.setSignalStrength(BigDecimal.ZERO);
-        }
-        if (monitor.getTemperature() == null)
-        {
-            monitor.setTemperature(BigDecimal.ZERO);
-        }
-        if (monitor.getHumidity() == null)
-        {
-            monitor.setHumidity(BigDecimal.ZERO);
-        }
+        monitor = AgriNormalizationHelper.ensureNotNull(monitor, AgriDeviceStatusMonitor::new);
+        AgriNormalizationHelper.defaultIfBlank(monitor::getOnlineStatus, monitor::setOnlineStatus, "0");
+        AgriNormalizationHelper.defaultIfBlank(monitor::getWarningLevel, monitor::setWarningLevel, "0");
+        AgriNormalizationHelper.defaultIfNull(monitor::getBatteryLevel, monitor::setBatteryLevel, BigDecimal.ZERO);
+        AgriNormalizationHelper.defaultIfNull(monitor::getSignalStrength, monitor::setSignalStrength, BigDecimal.ZERO);
+        AgriNormalizationHelper.defaultIfNull(monitor::getTemperature, monitor::setTemperature, BigDecimal.ZERO);
+        AgriNormalizationHelper.defaultIfNull(monitor::getHumidity, monitor::setHumidity, BigDecimal.ZERO);
         return monitor;
     }
 

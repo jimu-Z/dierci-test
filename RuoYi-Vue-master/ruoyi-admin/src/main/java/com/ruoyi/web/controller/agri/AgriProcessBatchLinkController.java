@@ -200,7 +200,7 @@ public class AgriProcessBatchLinkController extends BaseController
     {
         int riskScore = 100;
         List<String> suggestions = new ArrayList<>();
-        if (record.getProductCode() == null || record.getProductCode().trim().isEmpty())
+        if (AgriValidationHelper.isBlank(record.getProductCode()))
         {
             suggestions.add("产品编码缺失，建议补齐追溯载体标识");
             riskScore -= 20;
@@ -229,7 +229,7 @@ public class AgriProcessBatchLinkController extends BaseController
             statusText = "已完成";
         }
 
-        if (record.getProcessBatchNo() == null || record.getProcessBatchNo().trim().isEmpty())
+        if (AgriValidationHelper.isBlank(record.getProcessBatchNo()))
         {
             suggestions.add("加工批次号缺失，建议同步生产工单编码");
             riskScore -= 15;

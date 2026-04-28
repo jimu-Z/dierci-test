@@ -258,23 +258,10 @@ public class AgriSupplyChainContractController extends BaseController
             context.put("ruleRiskBand", riskBand);
             context.put("ruleActions", actions);
             AgriHttpIntegrationClient.GeneralInsightResult aiResult = agriHttpIntegrationClient.invokeGeneralInsight("供应链合约智能评估", JSON.toJSONString(context));
-            aiOriginalExcerpt = aiResult.getRawContent();
-            if (aiResult.getInsightSummary() != null && !aiResult.getInsightSummary().isEmpty())
-            {
-                summary = aiResult.getInsightSummary();
-            }
-            if (aiResult.getRiskLevel() != null && !aiResult.getRiskLevel().isEmpty())
-            {
-                riskBand = aiResult.getRiskLevel();
-            }
-            if (aiResult.getSuggestion() != null && !aiResult.getSuggestion().isEmpty())
-            {
-                actions.add(0, "AI建议：" + aiResult.getSuggestion());
-            }
-            if (aiOriginalExcerpt != null && !aiOriginalExcerpt.isEmpty())
-            {
-                actions.add("AI原文摘录：" + aiOriginalExcerpt);
-            }
+            AgriAiResultHelper.MergeResult mergeResult = AgriAiResultHelper.mergeGeneralInsightResult(summary, riskBand, actions, aiResult);
+            summary = mergeResult.getSummary();
+            riskBand = mergeResult.getRiskLevel();
+            aiOriginalExcerpt = mergeResult.getAiOriginalExcerpt();
         }
         catch (Exception ignore)
         {

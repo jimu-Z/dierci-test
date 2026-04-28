@@ -171,7 +171,7 @@ public class AgriEnvSensorRecordController extends BaseController
         {
             String headerName = agriIntegrationProperties.getSensor().getAuthHeaderName();
             String requestToken = request.getHeader(headerName);
-            if (StringUtils.isBlank(requestToken))
+            if (AgriValidationHelper.isBlank(requestToken))
             {
                 requestToken = request.getHeader("X-Agri-Token");
             }
@@ -181,7 +181,7 @@ public class AgriEnvSensorRecordController extends BaseController
             }
         }
 
-        if (StringUtils.isBlank(agriEnvSensorRecord.getDeviceCode()) || StringUtils.isBlank(agriEnvSensorRecord.getPlotCode()))
+        if (AgriValidationHelper.hasAnyBlank(agriEnvSensorRecord.getDeviceCode(), agriEnvSensorRecord.getPlotCode()))
         {
             return error("设备编码和地块编码不能为空");
         }

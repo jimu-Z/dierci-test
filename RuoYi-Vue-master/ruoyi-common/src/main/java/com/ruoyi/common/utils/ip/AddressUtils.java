@@ -7,7 +7,11 @@ import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.http.HttpUtils;
+import com.ruoyi.common.utils.http.AgriHttpClientSupport;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.time.Duration;
+import java.util.Map;
 
 /**
  * 获取地址类
@@ -35,7 +39,10 @@ public class AddressUtils
         {
             try
             {
-                String rspStr = HttpUtils.sendGet(IP_URL, "ip=" + ip + "&json=true", Constants.GBK);
+                HttpResponse<String> response = AgriHttpClientSupport.sendGet(IP_URL, "ip=" + ip + "&json=true",
+                    Charset.forName(Constants.GBK), Duration.ofSeconds(8), Duration.ofSeconds(8),
+                    Map.of("Accept", "*/*", "Connection", "Keep-Alive", "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"));
+                String rspStr = response.body() == null ? "" : response.body();
                 if (StringUtils.isEmpty(rspStr))
                 {
                     log.error("获取地理位置异常 {}", ip);

@@ -3,7 +3,6 @@ package com.ruoyi.system.service.impl;
 import com.ruoyi.system.domain.AgriLogisticsTempHumidity;
 import com.ruoyi.system.mapper.AgriLogisticsTempHumidityMapper;
 import com.ruoyi.system.service.IAgriLogisticsTempHumidityService;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +29,12 @@ public class AgriLogisticsTempHumidityServiceImpl implements IAgriLogisticsTempH
     public List<AgriLogisticsTempHumidity> selectAgriLogisticsTempHumidityList(AgriLogisticsTempHumidity agriLogisticsTempHumidity)
     {
         return agriLogisticsTempHumidityMapper.selectAgriLogisticsTempHumidityList(agriLogisticsTempHumidity);
+    }
+
+    @Override
+    public List<AgriLogisticsTempHumidity> selectByTraceCodeWithTimeRange(String traceCode, String startTime, String endTime)
+    {
+        return agriLogisticsTempHumidityMapper.selectByTraceCodeWithTimeRange(traceCode, startTime, endTime);
     }
 
     @Override

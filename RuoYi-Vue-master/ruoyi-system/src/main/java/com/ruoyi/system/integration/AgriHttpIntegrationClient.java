@@ -7,13 +7,11 @@ import com.ruoyi.system.domain.AgriMarketForecast;
 import com.ruoyi.system.domain.AgriPestIdentifyTask;
 import com.ruoyi.system.domain.AgriQualityInspectTask;
 import com.ruoyi.system.domain.AgriYieldForecastTask;
+import com.ruoyi.common.utils.http.AgriHttpClientSupport;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -188,18 +186,8 @@ public class AgriHttpIntegrationClient
     public ThirdApiResult probe(String endpointUrl, Integer timeoutSec) throws IOException, InterruptedException
     {
         int timeout = timeoutSec == null || timeoutSec <= 0 ? 5 : timeoutSec;
-        HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(timeout))
-            .build();
-
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(endpointUrl))
-            .timeout(Duration.ofSeconds(timeout))
-            .header("Accept", "application/json")
-            .GET()
-            .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = AgriHttpClientSupport.sendGet(endpointUrl, null, StandardCharsets.UTF_8,
+            Duration.ofSeconds(timeout), Duration.ofSeconds(timeout), Map.of("Accept", "application/json"));
         ThirdApiResult result = new ThirdApiResult();
         result.setHttpStatus(response.statusCode());
         result.setSuccess(response.statusCode() >= 200 && response.statusCode() < 300);
@@ -215,18 +203,8 @@ public class AgriHttpIntegrationClient
     public WeatherProbeResult probeWeather(String endpointUrl, Integer timeoutSec) throws IOException, InterruptedException
     {
         int timeout = timeoutSec == null || timeoutSec <= 0 ? 8 : timeoutSec;
-        HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(timeout))
-            .build();
-
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(endpointUrl))
-            .timeout(Duration.ofSeconds(timeout))
-            .header("Accept", "application/json")
-            .GET()
-            .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = AgriHttpClientSupport.sendGet(endpointUrl, null, StandardCharsets.UTF_8,
+            Duration.ofSeconds(timeout), Duration.ofSeconds(timeout), Map.of("Accept", "application/json"));
         WeatherProbeResult result = new WeatherProbeResult();
         result.setHttpStatus(response.statusCode());
         result.setSuccess(response.statusCode() >= 200 && response.statusCode() < 300);
@@ -256,19 +234,9 @@ public class AgriHttpIntegrationClient
         }
 
         int timeout = timeoutSec == null || timeoutSec <= 0 ? 8 : timeoutSec;
-        HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(timeout))
-            .build();
-
         String requestUrl = buildMapRequestUrl(endpointUrl);
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(requestUrl))
-            .timeout(Duration.ofSeconds(timeout))
-            .header("Accept", "application/json")
-            .GET()
-            .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = AgriHttpClientSupport.sendGet(requestUrl, null, StandardCharsets.UTF_8,
+            Duration.ofSeconds(timeout), Duration.ofSeconds(timeout), Map.of("Accept", "application/json"));
         String body = response.body() == null ? "" : response.body();
         MapProbeResult result = new MapProbeResult();
         result.setHttpStatus(response.statusCode());
@@ -309,10 +277,6 @@ public class AgriHttpIntegrationClient
             throw new IllegalStateException("AI接入缺少baseUrl配置");
         }
 
-        HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis(Math.max(ai.getConnectTimeoutMs(), 1000)))
-            .build();
-
         String url = ai.getBaseUrl();
         if (StringUtils.isNotBlank(path))
         {
@@ -336,27 +300,16 @@ public class AgriHttpIntegrationClient
         payload.put("temperature", 0.2);
         payload.put("stream", false);
 
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .timeout(Duration.ofMillis(Math.max(ai.getReadTimeoutMs(), 2000)))
-            .header("Content-Type", "application/json")
-            .header("Accept", "application/json");
-
         String apiKey = resolveAiApiKey(ai);
-        if (StringUtils.isNotBlank(apiKey))
-        {
-            requestBuilder.header("Authorization", "Bearer " + apiKey);
-        }
-        else
+        if (StringUtils.isBlank(apiKey))
         {
             throw new IllegalStateException("DeepSeek API Key 为空，请先配置 AGRI_AI_API_KEY 并重启后端");
         }
 
-        HttpRequest request = requestBuilder
-            .POST(HttpRequest.BodyPublishers.ofString(JSON.toJSONString(payload), StandardCharsets.UTF_8))
-            .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = AgriHttpClientSupport.sendJsonPost(url, JSON.toJSONString(payload),
+            StandardCharsets.UTF_8, Duration.ofMillis(Math.max(ai.getConnectTimeoutMs(), 1000)),
+            Duration.ofMillis(Math.max(ai.getReadTimeoutMs(), 2000)),
+            Map.of("Content-Type", "application/json", "Accept", "application/json", "Authorization", "Bearer " + apiKey));
         if (response.statusCode() < 200 || response.statusCode() >= 300)
         {
             if (response.statusCode() == 401)

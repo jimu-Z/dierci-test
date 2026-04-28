@@ -1,0 +1,37 @@
+<!ELEMENT mapper ANY>
+<!ATTLIST mapper namespace CDATA #IMPLIED>
+
+<!ELEMENT resultMap ANY>
+<!ATTLIST resultMap type CDATA #IMPLIED id CDATA #IMPLIED>
+
+<!ELEMENT result ANY>
+<!ATTLIST result property CDATA #IMPLIED column CDATA #IMPLIED>
+
+<!ELEMENT sql ANY>
+<!ATTLIST sql id CDATA #IMPLIED>
+
+<!ELEMENT select ANY>
+<!ATTLIST select id CDATA #IMPLIED parameterType CDATA #IMPLIED resultMap CDATA #IMPLIED>
+
+<!ELEMENT insert ANY>
+<!ATTLIST insert id CDATA #IMPLIED parameterType CDATA #IMPLIED useGeneratedKeys CDATA #IMPLIED keyProperty CDATA #IMPLIED>
+
+<!ELEMENT update ANY>
+<!ATTLIST update id CDATA #IMPLIED parameterType CDATA #IMPLIED>
+
+<!ELEMENT delete ANY>
+<!ATTLIST delete id CDATA #IMPLIED parameterType CDATA #IMPLIED>
+
+<!ELEMENT include EMPTY>
+<!ATTLIST include refid CDATA #IMPLIED>
+
+<!ELEMENT where ANY>
+
+<!ELEMENT if ANY>
+<!ATTLIST if test CDATA #IMPLIED>
+
+<!ELEMENT trim ANY>
+<!ATTLIST trim prefix CDATA #IMPLIED suffix CDATA #IMPLIED suffixOverrides CDATA #IMPLIED>
+
+<!ELEMENT foreach ANY>
+<!ATTLIST foreach item CDATA #IMPLIED collection CDATA #IMPLIED open CDATA #IMPLIED separator CDATA #IMPLIED close CDATA #IMPLIED>

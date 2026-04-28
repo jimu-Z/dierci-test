@@ -153,7 +153,7 @@
           <el-col :span="8"><div class="analyze-kpi"><span>等级</span><b>{{ analyzeData.riskLevel }}</b></div></el-col>
           <el-col :span="8"><div class="analyze-kpi"><span>算法</span><b>{{ analyzeData.algorithm }}</b></div></el-col>
         </el-row>
-        <el-alert :title="analyzeData.summary || '正在生成智能分析结果...'" type="warning" :closable="false" style="margin-top: 12px" />
+        <el-alert :title="analyzeData.summaryText || analyzeData.summary || '正在生成智能分析结果...'" type="warning" :closable="false" style="margin-top: 12px" />
 
         <div class="analyze-section">
           <div class="analyze-section-title">风险标记</div>
@@ -208,6 +208,7 @@ export default {
         riskLevel: '--',
         algorithm: '--',
         summary: '',
+          summaryText: '',
         flags: [],
         suggestions: [],
         aiOriginalExcerpt: '',
@@ -348,6 +349,7 @@ export default {
         riskLevel: '--',
         algorithm: '--',
         summary: '',
+        summaryText: '',
         flags: [],
         suggestions: [],
         aiOriginalExcerpt: '',
@@ -364,6 +366,7 @@ export default {
             riskLevel: data.riskLevel || '--',
             algorithm: data.algorithm || '--',
             summary: data.summary || '',
+            summaryText: data.summaryText || data.summary || '',
             flags: Array.isArray(data.flags) ? data.flags : [],
             suggestions,
             aiOriginalExcerpt: data.aiOriginalExcerpt || '',

@@ -88,7 +88,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="forecastList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
+    <el-table ref="forecastTable" v-loading="loading" :data="forecastList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="forecastId" align="center" width="70" />
       <el-table-column label="市场区域" prop="marketArea" align="center" width="110" />
@@ -186,6 +186,7 @@ export default {
       total: 0,
       forecastList: [],
       dashboardData: {},
+      selectedForecast: null,
       smartResult: {
         forecastId: null,
         riskScore: '--',
@@ -312,12 +313,26 @@ export default {
       this.ids = selection.map(item => item.forecastId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+      this.selectedForecast = selection.length ? selection[0] : null
     },
     handleRowClick(row) {
       if (!row) {
         return
       }
       this.handleSelectionChange([row])
+      if (this.$refs.forecastTable) {
+        this.$refs.forecastTable.clearSelection()
+        this.$refs.forecastTable.toggleRowSelection(row, true)
+      }
+    },
+    getPreferredForecast(row) {
+      if (row && row.forecastId) {
+        return row
+      }
+      if (this.selectedForecast && this.selectedForecast.forecastId) {
+        return this.selectedForecast
+      }
+      return this.forecastList.length ? this.forecastList[0] : null
     },
     handleAdd() {
       this.reset()
@@ -349,7 +364,7 @@ export default {
         .catch(() => {})
     },
     handleReview(row) {
-      const target = row || this.forecastList[0]
+      const target = this.getPreferredForecast(row)
       if (!target || !target.forecastId) {
         this.$modal.msgWarning('请先选择一条预测任务')
         return
@@ -487,6 +502,7 @@ export default {
 .forecast-desc {
   margin-top: 6px;
   color: #8a6e42;
+  overflow-wrap: anywhere;
 }
 
 .forecast-actions {
@@ -506,11 +522,16 @@ export default {
   border-radius: 10px;
   background: #fff;
   padding: 14px;
+  overflow-wrap: anywhere;
 }
 
 .forecast-kpi-card {
   min-height: 88px;
   margin-bottom: 12px;
+}
+
+.forecast-box {
+  overflow: hidden;
 }
 
 .forecast-kpi-card span,
@@ -522,9 +543,11 @@ export default {
 }
 
 .forecast-kpi-card strong {
-  max-height: 340px;
-  overflow-y: auto;
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #7a4e12;
   display: block;
+}
 
 .forecast-section {
   margin-top: 12px;
@@ -546,6 +569,7 @@ export default {
 .forecast-suggestion-list li {
   line-height: 1.5;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .forecast-excerpt {
@@ -559,6 +583,7 @@ export default {
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
   font-size: 13px;
 }
 
@@ -570,10 +595,6 @@ export default {
   margin-top: 10px;
   font-size: 12px;
   color: #9a8a80;
-}
-  margin: 8px 0 4px;
-  font-size: 22px;
-  color: #7a4e12;
 }
 
 .forecast-hot-item {
@@ -595,5 +616,6 @@ export default {
   margin: 10px 0 0;
   padding-left: 18px;
   color: #6f5a3f;
+  overflow-wrap: anywhere;
 }
 </style>

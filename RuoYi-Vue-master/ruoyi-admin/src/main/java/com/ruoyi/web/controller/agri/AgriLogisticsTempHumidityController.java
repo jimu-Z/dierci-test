@@ -14,6 +14,7 @@ import com.ruoyi.system.service.IAgriLogisticsTempHumidityService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -59,6 +60,18 @@ public class AgriLogisticsTempHumidityController extends BaseController
     public AjaxResult dashboard(AgriLogisticsTempHumidity agriLogisticsTempHumidity)
     {
         return success(buildDashboard(agriLogisticsTempHumidity));
+    }
+
+    @PreAuthorize("@ss.hasPermi('agri:logisticsTemp:query')")
+    @GetMapping("/history/{traceCode}")
+    public TableDataInfo getHistory(
+        @PathVariable("traceCode") String traceCode,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) String collectTimeStart,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) String collectTimeEnd)
+    {
+        startPage();
+        List<AgriLogisticsTempHumidity> list = agriLogisticsTempHumidityService.selectByTraceCodeWithTimeRange(traceCode, collectTimeStart, collectTimeEnd);
+        return getDataTable(list);
     }
 
     @PreAuthorize("@ss.hasPermi('agri:logisticsTemp:query')")
@@ -187,8 +200,8 @@ public class AgriLogisticsTempHumidityController extends BaseController
         summary.put("totalCount", records.size());
         summary.put("alertCount", alertCount);
         summary.put("normalCount", Math.max(0, records.size() - alertCount));
-        summary.put("avgTemperature", tempCount == 0 ? BigDecimal.ZERO : tempSum.divide(BigDecimal.valueOf(tempCount), 2, BigDecimal.ROUND_HALF_UP));
-        summary.put("avgHumidity", humidityCount == 0 ? BigDecimal.ZERO : humiditySum.divide(BigDecimal.valueOf(humidityCount), 2, BigDecimal.ROUND_HALF_UP));
+        summary.put("avgTemperature", tempCount == 0 ? BigDecimal.ZERO : tempSum.divide(BigDecimal.valueOf(tempCount), 2, RoundingMode.HALF_UP));
+        summary.put("avgHumidity", humidityCount == 0 ? BigDecimal.ZERO : humiditySum.divide(BigDecimal.valueOf(humidityCount), 2, RoundingMode.HALF_UP));
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("summary", summary);

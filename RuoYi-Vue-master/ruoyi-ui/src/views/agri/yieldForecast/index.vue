@@ -7,8 +7,8 @@
         <p>本页默认展示趋势折线与地块对比柱图，支持一键调用 DeepSeek，并返回部分 AI 原文摘录用于复核。</p>
         <div class="hero-actions">
           <el-button type="primary" icon="el-icon-plus" @click="handleAdd">新增任务</el-button>
-          <el-button type="success" icon="el-icon-video-play" :disabled="!focusTask.forecastId" @click="handleInvoke(focusTask)">智能预测</el-button>
-          <el-button type="warning" icon="el-icon-cpu" :disabled="!focusTask.forecastId" @click="handleSmartAssess(focusTask)">智能评估</el-button>
+          <el-button type="success" icon="el-icon-video-play" :disabled="!activeTask.forecastId" @click="handleInvoke(activeTask)">智能预测</el-button>
+          <el-button type="warning" icon="el-icon-cpu" :disabled="!activeTask.forecastId" @click="handleSmartAssess(activeTask)">智能评估</el-button>
           <el-button icon="el-icon-refresh" @click="refreshAll">刷新</el-button>
         </div>
       </div>
@@ -82,8 +82,8 @@
             <div class="focus-line"><span>亩产</span><strong>{{ formatNum(focusTask.yieldPerMu) }} kg/亩</strong></div>
             <div class="focus-line"><span>风险分</span><strong>{{ focusTask.riskScore || 0 }}</strong></div>
             <div class="focus-actions">
-              <el-button type="primary" size="mini" @click="handleInvoke(focusTask)">智能预测</el-button>
-              <el-button size="mini" @click="handleSmartAssess(focusTask)">智能评估</el-button>
+              <el-button type="primary" size="mini" @click="handleInvoke(activeTask)">智能预测</el-button>
+              <el-button size="mini" @click="handleSmartAssess(activeTask)">智能评估</el-button>
             </div>
           </div>
           <el-empty v-else description="暂无聚焦地块" :image-size="80" />
@@ -129,7 +129,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
+    <el-table ref="yieldTable" row-key="forecastId" v-loading="loading" :data="taskList" @selection-change="handleSelectionChange" @row-click="handleRowClick" highlight-current-row>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" prop="forecastId" align="center" width="70" />
       <el-table-column label="地块" prop="plotCode" align="center" width="110" />
@@ -239,6 +239,7 @@ export default {
       assessLoading: false,
       assessResult: {},
       ids: [],
+      selectedTask: null,
       single: true,
       multiple: true,
       showSearch: false,
@@ -297,6 +298,11 @@ export default {
   beforeDestroy() {
     window.removeEventListener('resize', this.handleResize)
     this.disposeCharts()
+  },
+  computed: {
+    activeTask() {
+      return this.selectedTask || this.focusTask || {}
+    }
   },
   methods: {
     getList() {
@@ -458,15 +464,35 @@ export default {
       this.handleQuery()
     },
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.forecastId)
-      this.single = selection.length !== 1
-      this.multiple = !selection.length
+      const normalizedSelection = selection.map(item => this.normalizeForecastRow(item))
+      this.ids = normalizedSelection.map(item => item.forecastId).filter(item => item !== undefined && item !== null)
+      this.selectedTask = normalizedSelection.length ? normalizedSelection[0] : null
+      this.single = normalizedSelection.length !== 1
+      this.multiple = !normalizedSelection.length
     },
     handleRowClick(row) {
       if (!row) {
         return
       }
-      this.handleSelectionChange([row])
+      const normalizedRow = this.normalizeForecastRow(row)
+      if (this.$refs.yieldTable) {
+        this.$refs.yieldTable.clearSelection()
+        this.$refs.yieldTable.toggleRowSelection(normalizedRow, true)
+      }
+      this.handleSelectionChange([normalizedRow])
+    },
+    normalizeForecastRow(row) {
+      if (!row) {
+        return row
+      }
+      const forecastId = row.forecastId || row.forecast_id || row.id
+      if (!forecastId) {
+        return row
+      }
+      return {
+        ...row,
+        forecastId
+      }
     },
     handleAdd() {
       this.reset()
@@ -524,7 +550,8 @@ export default {
         .catch(() => {})
     },
     handleSmartAssess(row) {
-      const forecastId = row && row.forecastId ? row.forecastId : this.ids[0]
+      const target = this.resolveForecastTarget(row)
+      const forecastId = target && target.forecastId ? target.forecastId : undefined
       if (!forecastId) {
         this.$modal.msgWarning('请选择一条任务执行智能评估')
         return
@@ -539,6 +566,24 @@ export default {
         .finally(() => {
           this.assessLoading = false
         })
+    },
+    resolveForecastTarget(row) {
+      if (row && row.forecastId) {
+        return this.normalizeForecastRow(row)
+      }
+      if (this.selectedTask && this.selectedTask.forecastId) {
+        return this.selectedTask
+      }
+      if (this.focusTask && this.focusTask.forecastId) {
+        return this.focusTask
+      }
+      if (this.ids[0]) {
+        const selectedRow = this.taskList.find(item => String(item.forecastId) === String(this.ids[0]))
+        if (selectedRow) {
+          return this.normalizeForecastRow(selectedRow)
+        }
+      }
+      return null
     },
     submitForm() {
       this.$refs.form.validate(valid => {

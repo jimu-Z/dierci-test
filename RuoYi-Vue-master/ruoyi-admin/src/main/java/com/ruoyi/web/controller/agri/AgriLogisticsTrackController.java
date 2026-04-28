@@ -110,6 +110,7 @@ public class AgriLogisticsTrackController extends BaseController
                 aiSuggestion.put("title", "AI建议");
                 aiSuggestion.put("priority", "高");
                 aiSuggestion.put("desc", aiResult.getSuggestion());
+                aiSuggestion.put("content", aiResult.getSuggestion());
                 suggestions.add(0, aiSuggestion);
             }
             if (StringUtils.isNotBlank(aiOriginalExcerpt))
@@ -118,6 +119,7 @@ public class AgriLogisticsTrackController extends BaseController
                 excerptSuggestion.put("title", "AI原文摘录");
                 excerptSuggestion.put("priority", "中");
                 excerptSuggestion.put("desc", aiOriginalExcerpt);
+                excerptSuggestion.put("content", aiOriginalExcerpt);
                 suggestions.add(excerptSuggestion);
             }
         }
@@ -134,6 +136,7 @@ public class AgriLogisticsTrackController extends BaseController
         result.put("riskLevel", riskLevel);
         result.put("factors", factors);
         result.put("summary", summary);
+        result.put("summaryText", summary);
         result.put("suggestions", suggestions);
         result.put("aiOriginalExcerpt", aiOriginalExcerpt);
         return success(result);

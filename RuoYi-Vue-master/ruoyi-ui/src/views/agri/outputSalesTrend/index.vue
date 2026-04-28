@@ -68,9 +68,25 @@
         </el-card>
       </el-col>
       <el-col :xs="24" :lg="8">
-        <el-card shadow="never" class="chart-card">
-          <div slot="header" class="chart-header">病虫害高风险地块TOP</div>
-          <div ref="riskChart" class="chart-box"></div>
+        <el-card shadow="never" class="chart-card risk-card">
+          <div slot="header" class="chart-header risk-header">
+            <div>
+              <div class="risk-title">病虫害高风险地块TOP</div>
+              <div class="risk-sub">按风险次数降序，动态识别高风险地块</div>
+            </div>
+            <el-tag size="mini" type="danger" effect="plain">TOP{{ riskPanelMeta.count }}</el-tag>
+          </div>
+          <div class="risk-kpi-row">
+            <div class="risk-kpi">
+              <span>最高风险地块</span>
+              <strong>{{ riskPanelMeta.topPlot }}</strong>
+            </div>
+            <div class="risk-kpi">
+              <span>最高风险次数</span>
+              <strong>{{ riskPanelMeta.maxCount }}</strong>
+            </div>
+          </div>
+          <div ref="riskChart" class="chart-box risk-chart-box"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -275,6 +291,24 @@ export default {
     window.removeEventListener('resize', this.handleResize)
     this.disposeCharts()
   },
+  computed: {
+    riskPanelMeta() {
+      const list = this.dashboard.pestRisk || []
+      if (!list.length) {
+        return {
+          count: 0,
+          topPlot: '-',
+          maxCount: 0
+        }
+      }
+      const sorted = [...list].sort((a, b) => Number(b.count || 0) - Number(a.count || 0))
+      return {
+        count: sorted.length,
+        topPlot: sorted[0].plotCode || '-',
+        maxCount: Number(sorted[0].count || 0)
+      }
+    }
+  },
   methods: {
     getList() {
       this.loading = true
@@ -420,9 +454,23 @@ export default {
       const pestRisk = this.dashboard.pestRisk || []
       chart.setOption({
         tooltip: { trigger: 'axis' },
-        grid: { left: '8%', right: '5%', bottom: '6%', containLabel: true },
-        xAxis: { type: 'value', name: '风险次数' },
-        yAxis: { type: 'category', data: pestRisk.map(item => item.plotCode) },
+        grid: { left: '18%', right: '8%', bottom: '18%', top: '8%', containLabel: true },
+        xAxis: {
+          type: 'value',
+          name: '风险次数（次）',
+          nameLocation: 'middle',
+          nameGap: 34,
+          axisLabel: {
+            formatter: '{value} 次'
+          }
+        },
+        yAxis: {
+          type: 'category',
+          name: '地块编码',
+          nameLocation: 'middle',
+          nameGap: 72,
+          data: pestRisk.map(item => item.plotCode)
+        },
         series: [{ name: '风险记录', type: 'bar', data: pestRisk.map(item => Number(item.count || 0)), itemStyle: { color: '#d35400' } }]
       })
     },
@@ -661,6 +709,74 @@ export default {
   font-size: 14px;
   font-weight: 600;
   color: #2f3f5e;
+}
+
+.risk-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e9edf5;
+  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+}
+
+.risk-card::before {
+  content: '';
+  position: absolute;
+  right: -46px;
+  top: -46px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(211, 84, 0, 0.08);
+}
+
+.risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.risk-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d3e62;
+}
+
+.risk-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #7b8aa3;
+}
+
+.risk-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.risk-kpi {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #edf1f8;
+  background: #fff;
+}
+
+.risk-kpi span {
+  font-size: 12px;
+  color: #76849c;
+}
+
+.risk-kpi strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  color: #d35400;
+  line-height: 1.1;
+}
+
+.risk-chart-box {
+  height: 272px;
 }
 
 .chart-box {

@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper SYSTEM "AgriLogisticsTempHumidityMapper.dtd">
 <mapper namespace="com.ruoyi.system.mapper.AgriLogisticsTempHumidityMapper">
 
     <resultMap type="AgriLogisticsTempHumidity" id="AgriLogisticsTempHumidityResult">
@@ -139,5 +137,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{recordId}
         </foreach>
     </delete>
+
+    <select id="selectByTraceCodeWithTimeRange" parameterType="map" resultMap="AgriLogisticsTempHumidityResult">
+        <include refid="selectAgriLogisticsTempHumidityVo"/>
+        <where>
+            trace_code = #{traceCode}
+            <if test="collectTimeStart != null and collectTimeStart != ''">
+                and collect_time >= #{collectTimeStart}
+            </if>
+            <if test="collectTimeEnd != null and collectTimeEnd != ''">
+                and collect_time <![CDATA[<=]]> #{collectTimeEnd}
+            </if>
+        </where>
+        order by collect_time asc
+    </select>
 
 </mapper>
