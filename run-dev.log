@@ -103,8 +103,8 @@
 [INFO] --- compiler:3.13.0:compile (default-compile) @ ruoyi-admin ---
 [INFO] Recompiling the module because of changed dependency.
 [INFO] Compiling 56 source files with javac [debug parameters release 21] to target\classes
-[INFO] /F:/chuangye/RuoYi-Vue-master/ruoyi-admin/src/main/java/com/ruoyi/web/controller/agri/AgriEnvSensorRecordController.java: Êüê‰∫õËæìÂÖ•Êñá‰ª∂‰ΩøÁî®ÊàñË¶ÜÁõñ‰∫ÜÂ∑≤ËøáÊó∂ÁöÑ API„ÄÇ
-[INFO] /F:/chuangye/RuoYi-Vue-master/ruoyi-admin/src/main/java/com/ruoyi/web/controller/agri/AgriEnvSensorRecordController.java: ÊúâÂÖ≥ËØ¶ÁªÜ‰ø°ÊÅØ, ËØ∑‰ΩøÁî® -Xlint:deprecation ÈáçÊñ∞ÁºñËØë„ÄÇ
+[INFO] /F:/chuangye/RuoYi-Vue-master/ruoyi-admin/src/main/java/com/ruoyi/web/controller/agri/AgriEnvSensorRecordController.java: ƒ≥–© ‰»ÎŒƒº˛ π”√ªÚ∏≤∏«¡À“—π˝ ±µƒ API°£
+[INFO] /F:/chuangye/RuoYi-Vue-master/ruoyi-admin/src/main/java/com/ruoyi/web/controller/agri/AgriEnvSensorRecordController.java: ”–πÿœÍœ∏–≈œ¢, «Î π”√ -Xlint:deprecation ÷ÿ–¬±‡“Î°£
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for ruoyi 3.9.2:
 [INFO] 
@@ -145,7 +145,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:25:53.957 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,18] - HV000001: Hibernate Validator 9.0.1.Final
 10:25:54.047 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
@@ -181,7 +181,7 @@ Spring Boot Version: 4.0.3
 10:26:11.328 [restartedMain] INFO  o.q.c.QuartzScheduler - [start,541] - Scheduler quartzScheduler_$_NON_CLUSTERED started.
 10:26:11.336 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,60] - Started RuoYiApplication in 18.021 seconds (process running for 19.106)
 10:26:11.341 [restartedMain] WARN  o.s.c.e.SpringDocAppInitializer - [init,83] - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
-(????)??  ÂÜú‰∫ßÂìÅÊ∫ØÊ∫êÁ≥ªÁªüÂêØÂä®ÊàêÂäü   ?(??`?)?  
+(????)??  ≈©≤˙∆∑À›‘¥œµÕ≥∆Ù∂Ø≥…π¶   ?(??`?)?  
  .-------.       ____     __        
  |  _ _   \      \   \   /  /    
  | ( ' )  |       \  _. /  '       
@@ -197,7 +197,7 @@ Spring Boot Version: 4.0.3
 10:30:12.659 [Thread-1] INFO  o.q.c.QuartzScheduler - [shutdown,656] - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
 10:30:12.660 [Thread-1] INFO  o.q.c.QuartzScheduler - [standby,576] - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
 10:30:12.660 [Thread-1] INFO  o.q.c.QuartzScheduler - [shutdown,728] - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-10:30:12.660 [Thread-1] INFO  sys-user - [shutdownAsyncManager,31] - ====ÈçèÊäΩÊ£¥ÈçöÂ∫°ÂΩ¥Êµ†ËØ≤ÂßüÊµ†ËØ≤ÂßüÁªæË∑®‚ñºÂßπÔøΩ====
+10:30:12.660 [Thread-1] INFO  sys-user - [shutdownAsyncManager,31] - ====ÂÖ≥Èó≠ÂêéÂè∞‰ªªÂä°‰ªªÂä°Á∫øÁ®ãÊ±†====
 10:30:12.669 [Thread-1] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
 10:30:12.676 [Thread-1] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed
 Application Version: 3.9.2
@@ -222,7 +222,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:30:12.786 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:30:12.786 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -331,13 +331,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 66 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ËπáÂë¥„ÄèÊæπÁâàÊßëÈçèÂÜ™Á§åÁª´ËØ≤ÁÄ∑ "mapper"ÈäÜÔøΩ
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÂøÖÈ°ªÂ£∞ÊòéÂÖÉÁ¥†Á±ªÂûã "mapper"„ÄÇ
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 77 common frames omitted
-Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ËπáÂë¥„ÄèÊæπÁâàÊßëÈçèÂÜ™Á§åÁª´ËØ≤ÁÄ∑ "mapper"ÈäÜÔøΩ
+Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÂøÖÈ°ªÂ£∞ÊòéÂÖÉÁ¥†Á±ªÂûã "mapper"„ÄÇ
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.createSAXParseException(ErrorHandlerWrapper.java:204)
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.error(ErrorHandlerWrapper.java:135)
 	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:396)
@@ -712,7 +712,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:31:45.229 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:31:45.229 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -803,13 +803,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 52 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ËπáÂë¥„ÄèÊæπÁâàÊßëÈçèÂÜ™Á§åÁª´ËØ≤ÁÄ∑ "mapper"ÈäÜÔøΩ
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÂøÖÈ°ªÂ£∞ÊòéÂÖÉÁ¥†Á±ªÂûã "mapper"„ÄÇ
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 63 common frames omitted
-Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ËπáÂë¥„ÄèÊæπÁâàÊßëÈçèÂÜ™Á§åÁª´ËØ≤ÁÄ∑ "mapper"ÈäÜÔøΩ
+Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÂøÖÈ°ªÂ£∞ÊòéÂÖÉÁ¥†Á±ªÂûã "mapper"„ÄÇ
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.createSAXParseException(ErrorHandlerWrapper.java:204)
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.error(ErrorHandlerWrapper.java:135)
 	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:396)
@@ -852,7 +852,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:31:48.333 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:31:48.334 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -960,13 +960,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 66 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ËπáÂë¥„ÄèÊæπÁâàÊßëÈçèÂÜ™Á§åÁª´ËØ≤ÁÄ∑ "mapper"ÈäÜÔøΩ
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÂøÖÈ°ªÂ£∞ÊòéÂÖÉÁ¥†Á±ªÂûã "mapper"„ÄÇ
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 77 common frames omitted
-Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ËπáÂë¥„ÄèÊæπÁâàÊßëÈçèÂÜ™Á§åÁª´ËØ≤ÁÄ∑ "mapper"ÈäÜÔøΩ
+Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÂøÖÈ°ªÂ£∞ÊòéÂÖÉÁ¥†Á±ªÂûã "mapper"„ÄÇ
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.createSAXParseException(ErrorHandlerWrapper.java:204)
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.error(ErrorHandlerWrapper.java:135)
 	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:396)
@@ -1394,7 +1394,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:34:34.665 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:34:34.666 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -1485,13 +1485,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 52 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÈèÇÂõ®„ÄÇÈèçÁë∞ÂéìÁª±ÔøΩ "mapper" ËπáÂë¥„ÄèÈçñÂΩíÂé§ DOCTYPE ÈèçÔøΩ "null"ÈäÜÔøΩ
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÊñáÊ°£Ê†πÂÖÉÁ¥† "mapper" ÂøÖÈ°ªÂåπÈÖç DOCTYPE Ê†π "null"„ÄÇ
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 63 common frames omitted
-Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÈèÇÂõ®„ÄÇÈèçÁë∞ÂéìÁª±ÔøΩ "mapper" ËπáÂë¥„ÄèÈçñÂΩíÂé§ DOCTYPE ÈèçÔøΩ "null"ÈäÜÔøΩ
+Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÊñáÊ°£Ê†πÂÖÉÁ¥† "mapper" ÂøÖÈ°ªÂåπÈÖç DOCTYPE Ê†π "null"„ÄÇ
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.createSAXParseException(ErrorHandlerWrapper.java:204)
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.error(ErrorHandlerWrapper.java:135)
 	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:396)
@@ -1535,7 +1535,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:34:38.185 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:34:38.186 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -1643,13 +1643,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 66 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÈèÇÂõ®„ÄÇÈèçÁë∞ÂéìÁª±ÔøΩ "mapper" ËπáÂë¥„ÄèÈçñÂΩíÂé§ DOCTYPE ÈèçÔøΩ "null"ÈäÜÔøΩ
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÊñáÊ°£Ê†πÂÖÉÁ¥† "mapper" ÂøÖÈ°ªÂåπÈÖç DOCTYPE Ê†π "null"„ÄÇ
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 77 common frames omitted
-Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÈèÇÂõ®„ÄÇÈèçÁë∞ÂéìÁª±ÔøΩ "mapper" ËπáÂë¥„ÄèÈçñÂΩíÂé§ DOCTYPE ÈèçÔøΩ "null"ÈäÜÔøΩ
+Caused by: org.xml.sax.SAXParseException; lineNumber: 3; columnNumber: 64; ÊñáÊ°£Ê†πÂÖÉÁ¥† "mapper" ÂøÖÈ°ªÂåπÈÖç DOCTYPE Ê†π "null"„ÄÇ
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.createSAXParseException(ErrorHandlerWrapper.java:204)
 	at java.xml/com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper.error(ErrorHandlerWrapper.java:135)
 	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:396)
@@ -2078,7 +2078,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:36:11.009 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:36:11.009 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -2169,13 +2169,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 52 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (ÁªØËç§Á≤∫ÈéµÂè•Á¨âÈçíÁâàÂØöÁÄπÊ∞±ÊÆëÈèÇÂõ¶Ê¨¢ÈäÜÔøΩ)
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (Á≥ªÁªüÊâæ‰∏çÂà∞ÊåáÂÆöÁöÑÊñá‰ª∂„ÄÇ)
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 63 common frames omitted
-Caused by: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (ÁªØËç§Á≤∫ÈéµÂè•Á¨âÈçíÁâàÂØöÁÄπÊ∞±ÊÆëÈèÇÂõ¶Ê¨¢ÈäÜÔøΩ)
+Caused by: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (Á≥ªÁªüÊâæ‰∏çÂà∞ÊåáÂÆöÁöÑÊñá‰ª∂„ÄÇ)
 	at java.base/java.io.FileInputStream.open0(Native Method)
 	at java.base/java.io.FileInputStream.open(FileInputStream.java:213)
 	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:152)
@@ -2220,7 +2220,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:36:16.569 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:36:16.570 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -2328,13 +2328,13 @@ Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chua
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
 	... 66 common frames omitted
-Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (ÁªØËç§Á≤∫ÈéµÂè•Á¨âÈçíÁâàÂØöÁÄπÊ∞±ÊÆëÈèÇÂõ¶Ê¨¢ÈäÜÔøΩ)
+Caused by: org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (Á≥ªÁªüÊâæ‰∏çÂà∞ÊåáÂÆöÁöÑÊñá‰ª∂„ÄÇ)
 	at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:262)
 	at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127)
 	at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:83)
 	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:692)
 	... 77 common frames omitted
-Caused by: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (ÁªØËç§Á≤∫ÈéµÂè•Á¨âÈçíÁâàÂØöÁÄπÊ∞±ÊÆëÈèÇÂõ¶Ê¨¢ÈäÜÔøΩ)
+Caused by: java.io.FileNotFoundException: F:\chuangye\system\AgriLogisticsTempHumidityMapper.dtd (Á≥ªÁªüÊâæ‰∏çÂà∞ÊåáÂÆöÁöÑÊñá‰ª∂„ÄÇ)
 	at java.base/java.io.FileInputStream.open0(Native Method)
 	at java.base/java.io.FileInputStream.open(FileInputStream.java:213)
 	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:152)
@@ -3063,7 +3063,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:38:38.856 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:38:38.857 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -3096,7 +3096,7 @@ Spring Boot Version: 4.0.3
 10:38:43.730 [restartedMain] INFO  o.q.c.QuartzScheduler - [start,541] - Scheduler quartzScheduler_$_NON_CLUSTERED started.
 10:38:43.733 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,60] - Started RuoYiApplication in 4.904 seconds (process running for 771.503)
 10:38:43.735 [restartedMain] WARN  o.s.c.e.SpringDocAppInitializer - [init,83] - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
-(????)??  ÂÜú‰∫ßÂìÅÊ∫ØÊ∫êÁ≥ªÁªüÂêØÂä®ÊàêÂäü   ?(??`?)?  
+(????)??  ≈©≤˙∆∑À›‘¥œµÕ≥∆Ù∂Ø≥…π¶   ?(??`?)?  
  .-------.       ____     __        
  |  _ _   \      \   \   /  /    
  | ( ' )  |       \  _. /  '       
@@ -3110,7 +3110,7 @@ Spring Boot Version: 4.0.3
 10:38:45.783 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,656] - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
 10:38:45.784 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,576] - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
 10:38:45.784 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,728] - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-10:38:45.784 [Thread-5] INFO  sys-user - [shutdownAsyncManager,31] - ====ÈçèÊäΩÊ£¥ÈçöÂ∫°ÂΩ¥Êµ†ËØ≤ÂßüÊµ†ËØ≤ÂßüÁªæË∑®‚ñºÂßπÔøΩ====
+10:38:45.784 [Thread-5] INFO  sys-user - [shutdownAsyncManager,31] - ====ÂÖ≥Èó≠ÂêéÂè∞‰ªªÂä°‰ªªÂä°Á∫øÁ®ãÊ±†====
 10:38:45.788 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-9} closing ...
 10:38:45.791 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-9} closed
 Application Version: 3.9.2
@@ -3135,7 +3135,7 @@ Spring Boot Version: 4.0.3
 //      ========`-.____`-.___\_____/___.-`____.-'========         //
 //                           `=---='                              //
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
-//             ‰ΩõÁ•ñ‰øù‰Ωë       Ê∞∏‰∏çÂÆïÊú∫      Ê∞∏Êó†BUG               //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
 ////////////////////////////////////////////////////////////////////
 10:38:45.954 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
 10:38:45.954 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
@@ -3168,7 +3168,7 @@ Spring Boot Version: 4.0.3
 10:38:49.461 [restartedMain] INFO  o.q.c.QuartzScheduler - [start,541] - Scheduler quartzScheduler_$_NON_CLUSTERED started.
 10:38:49.463 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,60] - Started RuoYiApplication in 3.541 seconds (process running for 777.233)
 10:38:49.464 [restartedMain] WARN  o.s.c.e.SpringDocAppInitializer - [init,83] - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
-(????)??  ÂÜú‰∫ßÂìÅÊ∫ØÊ∫êÁ≥ªÁªüÂêØÂä®ÊàêÂäü   ?(??`?)?  
+(????)??  ≈©≤˙∆∑À›‘¥œµÕ≥∆Ù∂Ø≥…π¶   ?(??`?)?  
  .-------.       ____     __        
  |  _ _   \      \   \   /  /    
  | ( ' )  |       \  _. /  '       
@@ -3182,7 +3182,7 @@ Spring Boot Version: 4.0.3
 10:39:04.925 [Thread-84] INFO  o.q.c.QuartzScheduler - [shutdown,656] - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
 10:39:04.926 [Thread-84] INFO  o.q.c.QuartzScheduler - [standby,576] - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
 10:39:04.926 [Thread-84] INFO  o.q.c.QuartzScheduler - [shutdown,728] - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-10:39:04.927 [Thread-84] INFO  sys-user - [shutdownAsyncManager,31] - ====ÈçèÊäΩÊ£¥ÈçöÂ∫°ÂΩ¥Êµ†ËØ≤ÂßüÊµ†ËØ≤ÂßüÁªæË∑®‚ñºÂßπÔøΩ====
+10:39:04.927 [Thread-84] INFO  sys-user - [shutdownAsyncManager,31] - ====ÂÖ≥Èó≠ÂêéÂè∞‰ªªÂä°‰ªªÂä°Á∫øÁ®ãÊ±†====
 10:39:04.931 [Thread-84] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-10} closing ...
 10:39:04.934 [Thread-84] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-10} closed
 
@@ -3299,3 +3299,848 @@ Caused by: org.springframework.util.PlaceholderResolutionException: Could not re
 	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:493) ~[spring-beans-7.0.5.jar:7.0.5]
 	... 62 common frames omitted
 
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.3)
+
+2026-05-06T10:41:50.616+08:00  INFO 15968 --- [  restartedMain] com.ruoyi.RuoYiApplication               : Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+2026-05-06T10:41:50.616+08:00  INFO 15968 --- [  restartedMain] com.ruoyi.RuoYiApplication               : The following 1 profile is active: "druid"
+2026-05-06T10:41:50.983+08:00  INFO 15968 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-06T10:41:50.983+08:00  INFO 15968 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-05-06T10:41:51.044+08:00  INFO 15968 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 59 ms. Found 0 Redis repository interfaces.
+2026-05-06T10:41:51.334+08:00  INFO 15968 --- [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-05-06T10:41:51.335+08:00  INFO 15968 --- [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-06T10:41:51.335+08:00  INFO 15968 --- [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-05-06T10:41:51.405+08:00  INFO 15968 --- [  restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 787 ms
+2026-05-06T10:41:51.407+08:00 ERROR 15968 --- [  restartedMain] t.s.DeferredServletContainerInitializers : Error starting Tomcat context. Exception: org.springframework.beans.factory.BeanCreationException. Message: Error creating bean with name 'filterConfig': Injection of autowired dependencies failed
+2026-05-06T10:41:51.409+08:00  INFO 15968 --- [  restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2026-05-06T10:41:51.411+08:00  WARN 15968 --- [  restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Unable to start web server
+2026-05-06T10:41:51.413+08:00  INFO 15968 --- [  restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-05-06T10:41:51.416+08:00 ERROR 15968 --- [  restartedMain] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.context.ApplicationContextException: Unable to start web server
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:167) ~[spring-boot-web-server-4.0.3.jar:4.0.3]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:615) ~[spring-context-7.0.5.jar:7.0.5]
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:143) ~[spring-boot-web-server-4.0.3.jar:4.0.3]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:756) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:445) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:321) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1365) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354) ~[spring-boot-4.0.3.jar:4.0.3]
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:18) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:52) ~[spring-boot-devtools-4.0.3.jar:4.0.3]
+Caused by: org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+	at org.springframework.boot.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:150) ~[spring-boot-tomcat-4.0.3.jar:4.0.3]
+	at org.springframework.boot.tomcat.TomcatWebServer.<init>(TomcatWebServer.java:110) ~[spring-boot-tomcat-4.0.3.jar:4.0.3]
+	at org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory.getTomcatWebServer(TomcatServletWebServerFactory.java:408) ~[spring-boot-tomcat-4.0.3.jar:4.0.3]
+	at org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:166) ~[spring-boot-tomcat-4.0.3.jar:4.0.3]
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:190) ~[spring-boot-web-server-4.0.3.jar:4.0.3]
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:164) ~[spring-boot-web-server-4.0.3.jar:4.0.3]
+	... 11 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'filterConfig': Injection of autowired dependencies failed
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:499) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1446) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:413) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1362) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1194) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:565) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:231) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:222) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addServletContextInitializerBeans(ServletContextInitializerBeans.java:107) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.<init>(ServletContextInitializerBeans.java:96) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.web.context.servlet.WebApplicationContextInitializer.initialize(WebApplicationContextInitializer.java:53) ~[spring-boot-4.0.3.jar:4.0.3]
+	at org.springframework.boot.tomcat.servlet.DeferredServletContainerInitializers.onStartup(DeferredServletContainerInitializers.java:55) ~[spring-boot-tomcat-4.0.3.jar:4.0.3]
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4416) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1162) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1158) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:81) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145) ~[na:na]
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:714) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:780) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1162) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1158) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:81) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145) ~[na:na]
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:714) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:201) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardService.startInternal(StandardService.java:410) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:864) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.startup.Tomcat.start(Tomcat.java:435) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.springframework.boot.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:131) ~[spring-boot-tomcat-4.0.3.jar:4.0.3]
+	... 16 common frames omitted
+Caused by: org.springframework.util.PlaceholderResolutionException: Could not resolve placeholder 'xss.excludes' in value "${xss.excludes}"
+	at org.springframework.util.PlaceholderResolutionException.withValue(PlaceholderResolutionException.java:81) ~[spring-core-7.0.5.jar:7.0.5]
+	at org.springframework.util.PlaceholderParser$ParsedValue.resolve(PlaceholderParser.java:296) ~[spring-core-7.0.5.jar:7.0.5]
+	at org.springframework.util.PlaceholderParser.replacePlaceholders(PlaceholderParser.java:129) ~[spring-core-7.0.5.jar:7.0.5]
+	at org.springframework.util.PropertyPlaceholderHelper.replacePlaceholders(PropertyPlaceholderHelper.java:96) ~[spring-core-7.0.5.jar:7.0.5]
+	at org.springframework.core.env.AbstractPropertyResolver.doResolvePlaceholders(AbstractPropertyResolver.java:286) ~[spring-core-7.0.5.jar:7.0.5]
+	at org.springframework.core.env.AbstractPropertyResolver.resolveRequiredPlaceholders(AbstractPropertyResolver.java:257) ~[spring-core-7.0.5.jar:7.0.5]
+	at org.springframework.context.support.PropertySourcesPlaceholderConfigurer.lambda$processProperties$0(PropertySourcesPlaceholderConfigurer.java:184) ~[spring-context-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveEmbeddedValue(AbstractBeanFactory.java:959) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1672) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1651) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:764) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:748) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:146) ~[spring-beans-7.0.5.jar:7.0.5]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:493) ~[spring-beans-7.0.5.jar:7.0.5]
+	... 62 common frames omitted
+
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:35:24.148 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:35:24.150 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:35:24.151 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:35:27.464 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:35:27.466 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:35:28.265 [restartedMain] DEBUG c.r.f.s.f.JwtAuthenticationTokenFilter - [init,236] - Filter 'jwtAuthenticationTokenFilter' configured for use
+17:35:28.864 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-11} inited
+17:35:31.990 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - ==>  Preparing: select config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark from sys_config
+17:35:31.994 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - ==> Parameters: 
+17:35:32.004 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - <==      Total: 8
+17:35:33.037 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - ==>  Preparing: select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark from sys_dict_data WHERE status = ? order by dict_sort asc
+17:35:33.040 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - ==> Parameters: 0(String)
+17:35:33.054 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - <==      Total: 67
+17:35:34.676 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,62] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+17:35:34.677 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,224] - Quartz Scheduler v2.5.2 created.
+17:35:34.679 [restartedMain] INFO  o.q.s.RAMJobStore - [initialize,152] - RAMJobStore initialized.
+17:35:34.680 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,289] - Scheduler meta-data: Quartz Scheduler (v2.5.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+17:35:34.681 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2250] - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@30cbc560
+17:35:34.718 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - ==>  Preparing: select job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, create_by, create_time, update_by, update_time, remark from sys_job
+17:35:34.721 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - ==> Parameters: 
+17:35:34.725 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - <==      Total: 3
+17:35:35.824 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+17:35:35.828 [restartedMain] INFO  o.q.c.QuartzScheduler - [shutdown,656] - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+17:35:35.829 [restartedMain] INFO  o.q.c.QuartzScheduler - [standby,576] - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+17:35:35.830 [restartedMain] INFO  o.q.c.QuartzScheduler - [shutdown,728] - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+17:35:35.832 [restartedMain] INFO  sys-user - [shutdownAsyncManager,31] - ====ÂÖ≥Èó≠ÂêéÂè∞‰ªªÂä°‰ªªÂä°Á∫øÁ®ãÊ±†====
+17:35:35.853 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-11} closing ...
+17:35:35.873 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-11} closed
+17:35:35.915 [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - [report,40] - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:36:45.058 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:36:45.059 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:36:45.061 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:36:45.223 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: I/O failure while processing configuration class [com.ruoyi.web.controller.agri.AgriBaseRuleController]
+17:36:45.229 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,863] - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: I/O failure while processing configuration class [com.ruoyi.web.controller.agri.AgriBaseRuleController]
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:288)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:220)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:355)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:283)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:206)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:174)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:446)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:310)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:795)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:603)
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:143)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:756)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:445)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:321)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1365)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:18)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:52)
+Caused by: java.io.FileNotFoundException: class path resource [com/ruoyi/common/core/controller/BaseController.class] cannot be opened because it does not exist
+	at org.springframework.core.io.ClassPathResource.getInputStream(ClassPathResource.java:212)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:54)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:48)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:62)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:127)
+	at org.springframework.core.type.classreading.AbstractMetadataReaderFactory.getMetadataReader(AbstractMetadataReaderFactory.java:62)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:40)
+	at org.springframework.context.annotation.ConfigurationClassParser.asSourceClass(ConfigurationClassParser.java:728)
+	at org.springframework.context.annotation.ConfigurationClassParser$SourceClass.getSuperClass(ConfigurationClassParser.java:1061)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:396)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:283)
+	... 21 common frames omitted
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:36:51.511 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:36:51.512 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:36:51.513 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:36:53.326 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'projectingArgumentResolverBeanPostProcessor' defined in class path resource [org/springframework/data/web/config/ProjectingArgumentResolverRegistrar.class]: BeanPostProcessor before instantiation of bean failed
+17:36:53.335 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,863] - Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'projectingArgumentResolverBeanPostProcessor' defined in class path resource [org/springframework/data/web/config/ProjectingArgumentResolverRegistrar.class]: BeanPostProcessor before instantiation of bean failed
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:520)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.registerBeanPostProcessors(PostProcessorRegistrationDelegate.java:277)
+	at org.springframework.context.support.AbstractApplicationContext.registerBeanPostProcessors(AbstractApplicationContext.java:812)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:605)
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:143)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:756)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:445)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:321)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1365)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:18)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:52)
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'org.springframework.cache.annotation.ProxyCachingConfiguration': BeanPostProcessor before instantiation of bean failed
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:520)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:413)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1362)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1194)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:565)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201)
+	at org.springframework.aop.framework.autoproxy.BeanFactoryAdvisorRetrievalHelper.findAdvisorBeans(BeanFactoryAdvisorRetrievalHelper.java:90)
+	at org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.findCandidateAdvisors(AbstractAdvisorAutoProxyCreator.java:118)
+	at org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator.findCandidateAdvisors(AnnotationAwareAspectJAutoProxyCreator.java:90)
+	at org.springframework.aop.aspectj.autoproxy.AspectJAwareAdvisorAutoProxyCreator.shouldSkip(AspectJAwareAdvisorAutoProxyCreator.java:104)
+	at org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessBeforeInstantiation(AbstractAutoProxyCreator.java:251)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInstantiation(AbstractAutowireCapableBeanFactory.java:1157)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.resolveBeforeInstantiation(AbstractAutowireCapableBeanFactory.java:1133)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:514)
+	... 17 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration': BeanPostProcessor before instantiation of bean failed
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:520)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:413)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1362)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1194)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:565)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201)
+	at org.springframework.aop.framework.autoproxy.BeanFactoryAdvisorRetrievalHelper.findAdvisorBeans(BeanFactoryAdvisorRetrievalHelper.java:90)
+	at org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.findCandidateAdvisors(AbstractAdvisorAutoProxyCreator.java:118)
+	at org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator.findCandidateAdvisors(AnnotationAwareAspectJAutoProxyCreator.java:90)
+	at org.springframework.aop.aspectj.autoproxy.AspectJAwareAdvisorAutoProxyCreator.shouldSkip(AspectJAwareAdvisorAutoProxyCreator.java:104)
+	at org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessBeforeInstantiation(AbstractAutoProxyCreator.java:251)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInstantiation(AbstractAutowireCapableBeanFactory.java:1157)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.resolveBeforeInstantiation(AbstractAutowireCapableBeanFactory.java:1133)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:514)
+	... 38 common frames omitted
+Caused by: java.lang.NoClassDefFoundError: com/ruoyi/system/domain/SysOperLog
+	at java.base/java.lang.Class.getDeclaredMethods0(Native Method)
+	at java.base/java.lang.Class.privateGetDeclaredMethods(Class.java:3578)
+	at java.base/java.lang.Class.getDeclaredMethods(Class.java:2676)
+	at org.aspectj.internal.lang.reflect.AjTypeImpl.getDeclarePrecedence(AjTypeImpl.java:1005)
+	at org.springframework.aop.aspectj.annotation.AspectMetadata.<init>(AspectMetadata.java:97)
+	at org.springframework.aop.aspectj.annotation.BeanFactoryAspectJAdvisorsBuilder.buildAspectJAdvisors(BeanFactoryAspectJAdvisorsBuilder.java:110)
+	at org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator.findCandidateAdvisors(AnnotationAwareAspectJAutoProxyCreator.java:93)
+	at org.springframework.aop.aspectj.autoproxy.AspectJAwareAdvisorAutoProxyCreator.shouldSkip(AspectJAwareAdvisorAutoProxyCreator.java:104)
+	at org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessBeforeInstantiation(AbstractAutoProxyCreator.java:251)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInstantiation(AbstractAutowireCapableBeanFactory.java:1157)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.resolveBeforeInstantiation(AbstractAutowireCapableBeanFactory.java:1133)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:514)
+	... 59 common frames omitted
+Caused by: java.lang.ClassNotFoundException: com.ruoyi.system.domain.SysOperLog
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:123)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	... 71 common frames omitted
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:36:55.124 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:36:55.126 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:36:55.127 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:36:57.828 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:36:57.828 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:36:58.496 [restartedMain] DEBUG c.r.f.s.f.JwtAuthenticationTokenFilter - [init,236] - Filter 'jwtAuthenticationTokenFilter' configured for use
+17:36:58.518 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agriBaseRuleController': Unsatisfied dependency expressed through field 'agriBaseRuleService': No qualifying bean of type 'com.ruoyi.system.service.IAgriBaseRuleService' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {@org.springframework.beans.factory.annotation.Autowired(required=true)}
+17:36:58.537 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+17:36:58.558 [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - [report,40] - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Field agriBaseRuleService in com.ruoyi.web.controller.agri.AgriBaseRuleController required a bean of type 'com.ruoyi.system.service.IAgriBaseRuleService' that could not be found.
+
+The injection point has the following annotations:
+	- @org.springframework.beans.factory.annotation.Autowired(required=true)
+
+
+Action:
+
+Consider defining a bean of type 'com.ruoyi.system.service.IAgriBaseRuleService' in your configuration.
+
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:37:00.264 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:37:00.265 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:37:00.266 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:37:01.218 [restartedMain] WARN  o.m.s.m.ClassPathMapperScanner - [warn,71] - No MyBatis mapper was found in '[com.ruoyi]' package. Please check your configuration.
+17:37:01.275 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:37:01.277 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:37:01.466 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agriBaseRuleController': Unsatisfied dependency expressed through field 'agriBaseRuleService': Error creating bean with name 'agriBaseRuleServiceImpl': Unsatisfied dependency expressed through field 'agriBaseRuleMapper': No qualifying bean of type 'com.ruoyi.system.mapper.AgriBaseRuleMapper' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {@org.springframework.beans.factory.annotation.Autowired(required=true)}
+17:37:01.467 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+17:37:01.486 [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - [report,40] - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Field agriBaseRuleMapper in com.ruoyi.system.service.impl.AgriBaseRuleServiceImpl required a bean of type 'com.ruoyi.system.mapper.AgriBaseRuleMapper' that could not be found.
+
+The injection point has the following annotations:
+	- @org.springframework.beans.factory.annotation.Autowired(required=true)
+
+
+Action:
+
+Consider defining a bean of type 'com.ruoyi.system.mapper.AgriBaseRuleMapper' in your configuration.
+
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:37:03.968 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:37:03.969 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:37:03.970 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:37:05.137 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:37:05.138 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:37:05.444 [restartedMain] DEBUG c.r.f.s.f.JwtAuthenticationTokenFilter - [init,236] - Filter 'jwtAuthenticationTokenFilter' configured for use
+17:37:05.628 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-12} inited
+17:37:06.441 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agriBaseRuleController': Unsatisfied dependency expressed through field 'agriBaseRuleService': Error creating bean with name 'agriBaseRuleServiceImpl': Unsatisfied dependency expressed through field 'agriBaseRuleMapper': Error creating bean with name 'agriBaseRuleMapper' defined in file [F:\chuangye\RuoYi-Vue-master\ruoyi-system\target\classes\com\ruoyi\system\mapper\AgriBaseRuleMapper.class]: Unsatisfied dependency expressed through bean property 'sqlSessionFactory': Error creating bean with name 'sqlSessionFactory' defined in class path resource [com/ruoyi/framework/config/MyBatisConfig.class]: Failed to instantiate [org.apache.ibatis.session.SqlSessionFactory]: Factory method 'sqlSessionFactory' threw exception with message: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+17:37:06.442 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-12} closing ...
+17:37:06.451 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-12} closed
+17:37:06.462 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+17:37:06.472 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,863] - Application run failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agriBaseRuleController': Unsatisfied dependency expressed through field 'agriBaseRuleService': Error creating bean with name 'agriBaseRuleServiceImpl': Unsatisfied dependency expressed through field 'agriBaseRuleMapper': Error creating bean with name 'agriBaseRuleMapper' defined in file [F:\chuangye\RuoYi-Vue-master\ruoyi-system\target\classes\com\ruoyi\system\mapper\AgriBaseRuleMapper.class]: Unsatisfied dependency expressed through bean property 'sqlSessionFactory': Error creating bean with name 'sqlSessionFactory' defined in class path resource [com/ruoyi/framework/config/MyBatisConfig.class]: Failed to instantiate [org.apache.ibatis.session.SqlSessionFactory]: Factory method 'sqlSessionFactory' threw exception with message: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:767)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:748)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:146)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:493)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1446)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1184)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1121)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:994)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:621)
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:143)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:756)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:445)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:321)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1365)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:18)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:52)
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agriBaseRuleServiceImpl': Unsatisfied dependency expressed through field 'agriBaseRuleMapper': Error creating bean with name 'agriBaseRuleMapper' defined in file [F:\chuangye\RuoYi-Vue-master\ruoyi-system\target\classes\com\ruoyi\system\mapper\AgriBaseRuleMapper.class]: Unsatisfied dependency expressed through bean property 'sqlSessionFactory': Error creating bean with name 'sqlSessionFactory' defined in class path resource [com/ruoyi/framework/config/MyBatisConfig.class]: Failed to instantiate [org.apache.ibatis.session.SqlSessionFactory]: Factory method 'sqlSessionFactory' threw exception with message: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:767)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:748)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:146)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:493)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1446)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:229)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1762)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1651)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:764)
+	... 25 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agriBaseRuleMapper' defined in file [F:\chuangye\RuoYi-Vue-master\ruoyi-system\target\classes\com\ruoyi\system\mapper\AgriBaseRuleMapper.class]: Unsatisfied dependency expressed through bean property 'sqlSessionFactory': Error creating bean with name 'sqlSessionFactory' defined in class path resource [com/ruoyi/framework/config/MyBatisConfig.class]: Failed to instantiate [org.apache.ibatis.session.SqlSessionFactory]: Factory method 'sqlSessionFactory' threw exception with message: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireByType(AbstractAutowireCapableBeanFactory.java:1543)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1437)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveBean(DefaultListableBeanFactory.java:1225)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1704)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1651)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:764)
+	... 39 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'sqlSessionFactory' defined in class path resource [com/ruoyi/framework/config/MyBatisConfig.class]: Failed to instantiate [org.apache.ibatis.session.SqlSessionFactory]: Factory method 'sqlSessionFactory' threw exception with message: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:657)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:645)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1362)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1194)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:565)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:229)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1762)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1651)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireByType(AbstractAutowireCapableBeanFactory.java:1528)
+	... 50 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.apache.ibatis.session.SqlSessionFactory]: Factory method 'sqlSessionFactory' threw exception with message: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:183)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiateWithFactoryMethod(SimpleInstantiationStrategy.java:72)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:152)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653)
+	... 63 common frames omitted
+Caused by: java.io.IOException: Failed to parse mapping resource: 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'
+	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:695)
+	at org.mybatis.spring.SqlSessionFactoryBean.afterPropertiesSet(SqlSessionFactoryBean.java:572)
+	at org.mybatis.spring.SqlSessionFactoryBean.getObject(SqlSessionFactoryBean.java:712)
+	at com.ruoyi.framework.config.MyBatisConfig.sqlSessionFactory(MyBatisConfig.java:130)
+	at com.ruoyi.framework.config.MyBatisConfig$$SpringCGLIB$$0.CGLIB$sqlSessionFactory$0(<generated>)
+	at com.ruoyi.framework.config.MyBatisConfig$$SpringCGLIB$$FastClass$$1.invoke(<generated>)
+	at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:258)
+	at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:398)
+	at com.ruoyi.framework.config.MyBatisConfig$$SpringCGLIB$$0.sqlSessionFactory(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)
+	... 66 common frames omitted
+Caused by: org.apache.ibatis.builder.BuilderException: Error parsing Mapper XML. The XML location is 'file [F:\chuangye\RuoYi-Vue-master\ruoyi-generator\target\classes\mapper\generator\GenTableColumnMapper.xml]'. Cause: org.apache.ibatis.builder.BuilderException: Error resolving class. Cause: org.apache.ibatis.type.TypeException: Could not resolve type alias 'GenTableColumn'.  Cause: java.lang.ClassNotFoundException: Cannot find class: GenTableColumn
+	at org.apache.ibatis.builder.xml.XMLMapperBuilder.configurationElement(XMLMapperBuilder.java:125)
+	at org.apache.ibatis.builder.xml.XMLMapperBuilder.parse(XMLMapperBuilder.java:98)
+	at org.mybatis.spring.SqlSessionFactoryBean.buildSqlSessionFactory(SqlSessionFactoryBean.java:693)
+	... 77 common frames omitted
+Caused by: org.apache.ibatis.builder.BuilderException: Error resolving class. Cause: org.apache.ibatis.type.TypeException: Could not resolve type alias 'GenTableColumn'.  Cause: java.lang.ClassNotFoundException: Cannot find class: GenTableColumn
+	at org.apache.ibatis.builder.BaseBuilder.resolveClass(BaseBuilder.java:103)
+	at org.apache.ibatis.builder.xml.XMLMapperBuilder.resultMapElement(XMLMapperBuilder.java:222)
+	at org.apache.ibatis.builder.xml.XMLMapperBuilder.resultMapElement(XMLMapperBuilder.java:214)
+	at org.apache.ibatis.builder.xml.XMLMapperBuilder.resultMapElements(XMLMapperBuilder.java:206)
+	at org.apache.ibatis.builder.xml.XMLMapperBuilder.configurationElement(XMLMapperBuilder.java:121)
+	... 79 common frames omitted
+Caused by: org.apache.ibatis.type.TypeException: Could not resolve type alias 'GenTableColumn'.  Cause: java.lang.ClassNotFoundException: Cannot find class: GenTableColumn
+	at org.apache.ibatis.type.TypeAliasRegistry.resolveAlias(TypeAliasRegistry.java:128)
+	at org.apache.ibatis.builder.BaseBuilder.resolveAlias(BaseBuilder.java:132)
+	at org.apache.ibatis.builder.BaseBuilder.resolveClass(BaseBuilder.java:101)
+	... 83 common frames omitted
+Caused by: java.lang.ClassNotFoundException: Cannot find class: GenTableColumn
+	at org.apache.ibatis.io.ClassLoaderWrapper.classForName(ClassLoaderWrapper.java:226)
+	at org.apache.ibatis.io.ClassLoaderWrapper.classForName(ClassLoaderWrapper.java:103)
+	at org.apache.ibatis.io.Resources.classForName(Resources.java:322)
+	at org.apache.ibatis.type.TypeAliasRegistry.resolveAlias(TypeAliasRegistry.java:124)
+	... 85 common frames omitted
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:37:08.686 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:37:08.687 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:37:08.687 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:37:10.108 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:37:10.108 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:37:10.476 [restartedMain] DEBUG c.r.f.s.f.JwtAuthenticationTokenFilter - [init,236] - Filter 'jwtAuthenticationTokenFilter' configured for use
+17:37:10.711 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-13} inited
+17:37:11.726 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - ==>  Preparing: select config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark from sys_config
+17:37:11.728 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - ==> Parameters: 
+17:37:11.734 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - <==      Total: 8
+17:37:12.344 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - ==>  Preparing: select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark from sys_dict_data WHERE status = ? order by dict_sort asc
+17:37:12.346 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - ==> Parameters: 0(String)
+17:37:12.359 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - <==      Total: 67
+17:37:13.782 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,62] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+17:37:13.783 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,224] - Quartz Scheduler v2.5.2 created.
+17:37:13.783 [restartedMain] INFO  o.q.s.RAMJobStore - [initialize,152] - RAMJobStore initialized.
+17:37:13.784 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,289] - Scheduler meta-data: Quartz Scheduler (v2.5.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+17:37:13.784 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2250] - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@731957de
+17:37:13.802 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - ==>  Preparing: select job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, create_by, create_time, update_by, update_time, remark from sys_job
+17:37:13.804 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - ==> Parameters: 
+17:37:13.808 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - <==      Total: 3
+17:37:14.705 [restartedMain] INFO  o.q.c.QuartzScheduler - [start,541] - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+17:37:14.708 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,60] - Started RuoYiApplication in 6.081 seconds (process running for 25882.478)
+17:37:14.709 [restartedMain] WARN  o.s.c.e.SpringDocAppInitializer - [init,83] - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+(????)??  ≈©≤˙∆∑À›‘¥œµÕ≥∆Ù∂Ø≥…π¶   ?(??`?)?  
+ .-------.       ____     __        
+ |  _ _   \      \   \   /  /    
+ | ( ' )  |       \  _. /  '       
+ |(_ o _) /        _( )_ .'         
+ | (_,_).' __  ___(_ o _)'          
+ |  |\ \  |  ||   |(_,_)'         
+ |  | \ `'   /|   `-'  /           
+ |  |  \    /  \      /           
+ ''-'   `'-'    `-..-'              
+17:38:10.628 [Thread-88] INFO  o.q.c.QuartzScheduler - [standby,576] - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+17:38:10.663 [Thread-88] INFO  o.q.c.QuartzScheduler - [shutdown,656] - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+17:38:10.663 [Thread-88] INFO  o.q.c.QuartzScheduler - [standby,576] - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+17:38:10.664 [Thread-88] INFO  o.q.c.QuartzScheduler - [shutdown,728] - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+17:38:10.665 [Thread-88] INFO  sys-user - [shutdownAsyncManager,31] - ====ÂÖ≥Èó≠ÂêéÂè∞‰ªªÂä°‰ªªÂä°Á∫øÁ®ãÊ±†====
+17:38:10.670 [Thread-88] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-13} closing ...
+17:38:10.675 [Thread-88] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-13} closed
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:38:10.824 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:38:10.825 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:38:10.826 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:38:12.144 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:38:12.146 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:38:12.367 [restartedMain] DEBUG c.r.f.s.f.JwtAuthenticationTokenFilter - [init,236] - Filter 'jwtAuthenticationTokenFilter' configured for use
+17:38:12.541 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-14} inited
+17:38:13.740 [restartedMain] WARN  o.s.b.w.s.s.c.AnnotationConfigServletWebServerApplicationContext - [refresh,629] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'agriYieldForecastTaskController': Lookup method resolution failed
+17:38:13.740 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-14} closing ...
+17:38:13.743 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-14} closed
+17:38:13.747 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+17:38:13.752 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,863] - Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'agriYieldForecastTaskController': Lookup method resolution failed
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.checkLookupMethods(AutowiredAnnotationBeanPostProcessor.java:482)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.determineCandidateConstructors(AutowiredAnnotationBeanPostProcessor.java:352)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineConstructorsFromBeanPostProcessors(AbstractAutowireCapableBeanFactory.java:1321)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:565)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:525)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1184)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1121)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:994)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:621)
+	at org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:143)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:756)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:445)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:321)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1365)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:18)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:52)
+Caused by: java.lang.IllegalStateException: Failed to introspect Class [com.ruoyi.web.controller.agri.AgriYieldForecastTaskController] from ClassLoader [org.springframework.boot.devtools.restart.classloader.RestartClassLoader@49d2caea]
+	at org.springframework.util.ReflectionUtils.getDeclaredMethods(ReflectionUtils.java:483)
+	at org.springframework.util.ReflectionUtils.doWithLocalMethods(ReflectionUtils.java:320)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.checkLookupMethods(AutowiredAnnotationBeanPostProcessor.java:460)
+	... 24 common frames omitted
+Caused by: java.lang.NoClassDefFoundError: com/ruoyi/web/controller/agri/AgriYieldForecastTaskController$RulePredictResult
+	at java.base/java.lang.Class.getDeclaredMethods0(Native Method)
+	at java.base/java.lang.Class.privateGetDeclaredMethods(Class.java:3578)
+	at java.base/java.lang.Class.getDeclaredMethods(Class.java:2676)
+	at org.springframework.util.ReflectionUtils.getDeclaredMethods(ReflectionUtils.java:465)
+	... 26 common frames omitted
+Caused by: java.lang.ClassNotFoundException: com.ruoyi.web.controller.agri.AgriYieldForecastTaskController$RulePredictResult
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:123)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	... 30 common frames omitted
+Application Version: 3.9.2
+Spring Boot Version: 4.0.3
+////////////////////////////////////////////////////////////////////
+//                          _ooOoo_                               //
+//                         o8888888o                              //
+//                         88" . "88                              //
+//                         (| ^_^ |)                              //
+//                         O\  =  /O                              //
+//                      ____/`---'\____                           //
+//                    .'  \\|     |//  `.                         //
+//                   /  \\|||  :  |||//  \                        //
+//                  /  _||||| -:- |||||-  \                       //
+//                  |   | \\\  -  /// |   |                       //
+//                  | \_|  ''\---/''  |   |                       //
+//                  \  .-\__  `-`  ___/-. /                       //
+//                ___`. .'  /--.--\  `. . ___                     //
+//              ."" '<  `.___\_<|>_/___.'  >'"".                  //
+//            | | :  `- \`.;`\ _ /`;.`/ - ` : | |                 //
+//            \  \ `-.   \_ __\ /__ _/   .-` /  /                 //
+//      ========`-.____`-.___\_____/___.-`____.-'========         //
+//                           `=---='                              //
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        //
+//             ∑◊Ê±£””       ”¿≤ªÂ¥ª˙      ”¿ŒﬁBUG               //
+////////////////////////////////////////////////////////////////////
+17:38:15.398 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,54] - Starting RuoYiApplication using Java 21.0.5 with PID 15968 (F:\chuangye\RuoYi-Vue-master\ruoyi-admin\target\classes started by 13469 in F:\chuangye\RuoYi-Vue-master)
+17:38:15.398 [restartedMain] DEBUG c.r.RuoYiApplication - [logStarting,55] - Running with Spring Boot v4.0.3, Spring v7.0.5
+17:38:15.398 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,658] - The following 1 profile is active: "druid"
+17:38:16.971 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+17:38:16.972 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/11.0.18]
+17:38:17.804 [restartedMain] DEBUG c.r.f.s.f.JwtAuthenticationTokenFilter - [init,236] - Filter 'jwtAuthenticationTokenFilter' configured for use
+17:38:18.796 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-15} inited
+17:38:20.591 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - ==>  Preparing: select config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark from sys_config
+17:38:20.593 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - ==> Parameters: 
+17:38:20.597 [restartedMain] DEBUG c.r.s.m.S.selectConfigList - [debug,135] - <==      Total: 8
+17:38:21.055 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - ==>  Preparing: select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark from sys_dict_data WHERE status = ? order by dict_sort asc
+17:38:21.057 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - ==> Parameters: 0(String)
+17:38:21.068 [restartedMain] DEBUG c.r.s.m.S.selectDictDataList - [debug,135] - <==      Total: 67
+17:38:21.840 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,62] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+17:38:21.841 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,224] - Quartz Scheduler v2.5.2 created.
+17:38:21.841 [restartedMain] INFO  o.q.s.RAMJobStore - [initialize,152] - RAMJobStore initialized.
+17:38:21.841 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,289] - Scheduler meta-data: Quartz Scheduler (v2.5.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+17:38:21.841 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2250] - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@7a091099
+17:38:21.857 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - ==>  Preparing: select job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, create_by, create_time, update_by, update_time, remark from sys_job
+17:38:21.859 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - ==> Parameters: 
+17:38:21.862 [restartedMain] DEBUG c.r.q.m.S.selectJobAll - [debug,135] - <==      Total: 3
+17:38:22.988 [restartedMain] INFO  o.q.c.QuartzScheduler - [start,541] - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+17:38:22.992 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,60] - Started RuoYiApplication in 7.62 seconds (process running for 25950.762)
+17:38:22.994 [restartedMain] WARN  o.s.c.e.SpringDocAppInitializer - [init,83] - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+(????)??  ≈©≤˙∆∑À›‘¥œµÕ≥∆Ù∂Ø≥…π¶   ?(??`?)?  
+ .-------.       ____     __        
+ |  _ _   \      \   \   /  /    
+ | ( ' )  |       \  _. /  '       
+ |(_ o _) /        _( )_ .'         
+ | (_,_).' __  ___(_ o _)'          
+ |  |\ \  |  ||   |(_,_)'         
+ |  | \ `'   /|   `-'  /           
+ |  |  \    /  \      /           
+ ''-'   `'-'    `-..-'              

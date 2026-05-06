@@ -11,24 +11,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="readTime" column="read_time"   />
     </resultMap>
 
-    <!-- 新增已读记录 -->
+    <!-- 鏂板宸茶璁板綍 -->
     <insert id="insertNoticeRead" parameterType="SysNoticeRead">
         insert ignore into sys_notice_read (notice_id, user_id, read_time)
         values (#{noticeId}, #{userId}, sysdate())
     </insert>
 
-    <!-- 查询未读数量：正常状态公告 减去 当前用户已读数 -->
+    <!-- 鏌ヨ鏈鏁伴噺锛氭甯哥姸鎬佸叕鍛?鍑忓幓 褰撳墠鐢ㄦ埛宸茶鏁?-->
     <select id="selectUnreadCount" resultType="int">
         select count(*) from sys_notice n
         where n.status = '0' and not exists (select 1 from sys_notice_read r where r.notice_id = n.notice_id and r.user_id = #{userId})
     </select>
 
-    <!-- 查询是否已读 -->
+    <!-- 鏌ヨ鏄惁宸茶 -->
     <select id="selectIsRead" resultType="int">
         select count(*) from sys_notice_read where notice_id = #{noticeId} and user_id = #{userId}
     </select>
 
-    <!-- 查询带已读状态的公告列表（直接在SQL中限制条数） -->
+    <!-- 鏌ヨ甯﹀凡璇荤姸鎬佺殑鍏憡鍒楄〃锛堢洿鎺ュ湪SQL涓檺鍒舵潯鏁帮級 -->
     <select id="selectNoticeListWithReadStatus" resultType="SysNotice">
         select
             n.notice_id    as noticeId,
@@ -46,7 +46,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         limit #{limit}
     </select>
 
-    <!-- 批量标记已读 -->
+    <!-- 鎵归噺鏍囪宸茶 -->
     <insert id="insertNoticeReadBatch">
         insert ignore into sys_notice_read (notice_id, user_id, read_time)
         values
@@ -55,7 +55,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 
-    <!-- 删除公告时清理已读记录 -->
+    <!-- 鍒犻櫎鍏憡鏃舵竻鐞嗗凡璇昏褰?-->
     <delete id="deleteByNoticeIds">
         delete from sys_notice_read where notice_id in
         <foreach collection="noticeIds" item="noticeId" open="(" separator="," close=")">
