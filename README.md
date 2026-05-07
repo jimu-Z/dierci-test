@@ -1,16 +1,18 @@
-﻿# 启元农链
+# 启元农链
 
 农业溯源与物联网数据平台（基于 RuoYi-Vue 二次开发）。
 
 ## 仓库结构
 
-| 路径 | 说明 |
-|------|------|
+
+| 路径                                          | 说明                                          |
+| ------------------------------------------- | ------------------------------------------- |
 | [apps/qiyuan-backend](apps/qiyuan-backend/) | 后端 Maven 多模块，入口 `ruoyi-admin`；前端 `ruoyi-ui` |
-| [docs/](docs/) | 设计文档、开发计划、ADR |
-| [docs/runbooks/](docs/runbooks/) | 联调与运维手册（含 EMQX） |
-| [db/baseline/](db/baseline/) | 基线数据库脚本 |
-| [iot/emqx/](iot/emqx/) | 本地 EMQX Docker 示例 |
+| [docs/](docs/)                              | 设计文档、开发计划、ADR                               |
+| [docs/runbooks/](docs/runbooks/)            | 联调与运维手册（含 EMQX）                             |
+| [db/baseline/](db/baseline/)                | 基线数据库脚本                                     |
+| [iot/emqx/](iot/emqx/)                      | 本地 EMQX Docker 示例                           |
+
 
 ## 快速启动
 

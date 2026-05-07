@@ -258,6 +258,16 @@ public class AgriIntegrationProperties
         {
             private String dataSource = "emqx-webhook";
 
+            /**
+             * 填写 EMQX Webhook 可访问的公网基址（不含路径），如 https://emqx-hook.example.com
+             */
+            private String publicWebhookBaseUrl = "";
+
+            /**
+             * 该公网入口计划停用日期（ISO 日期，仅文档/运维展示），如 2027-05-06
+             */
+            private String publicWebhookValidUntil = "";
+
             public String getDataSource()
             {
                 return dataSource;
@@ -266,6 +276,26 @@ public class AgriIntegrationProperties
             public void setDataSource(String dataSource)
             {
                 this.dataSource = dataSource;
+            }
+
+            public String getPublicWebhookBaseUrl()
+            {
+                return publicWebhookBaseUrl;
+            }
+
+            public void setPublicWebhookBaseUrl(String publicWebhookBaseUrl)
+            {
+                this.publicWebhookBaseUrl = publicWebhookBaseUrl;
+            }
+
+            public String getPublicWebhookValidUntil()
+            {
+                return publicWebhookValidUntil;
+            }
+
+            public void setPublicWebhookValidUntil(String publicWebhookValidUntil)
+            {
+                this.publicWebhookValidUntil = publicWebhookValidUntil;
             }
         }
     }

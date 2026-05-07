@@ -59,6 +59,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where node_id = #{nodeId}
     </select>
 
+    <select id="selectAgriDeviceAccessNodeByDeviceCode" parameterType="String" resultMap="AgriDeviceAccessNodeResult">
+        <include refid="selectAgriDeviceAccessNodeVo"/>
+        where device_code = #{deviceCode}
+        order by node_id asc
+        limit 1
+    </select>
+
     <insert id="insertAgriDeviceAccessNode" parameterType="AgriDeviceAccessNode" useGeneratedKeys="true" keyProperty="nodeId">
         insert into agri_device_access_node
         <trim prefix="(" suffix=")" suffixOverrides=",">

@@ -17,6 +17,8 @@ ruoyi:
 server:
   # 服务器的HTTP端口，默认为8080
   port: 8080
+  # 置于 Nginx / Cloudflare Tunnel 等反向代理之后时，识别 X-Forwarded-*，便于生成正确的外链与重定向
+  forward-headers-strategy: framework
   servlet:
     # 应用的访问路径
     context-path: /
@@ -167,6 +169,9 @@ agri:
       dataSource: ${AGRI_SENSOR_DATA_SOURCE:gateway-http}
       emqx:
         dataSource: ${AGRI_SENSOR_EMQX_DATA_SOURCE:emqx-webhook}
+        # 公网 Webhook 基址（EMQX 控制台填：{publicWebhookBaseUrl}/agri/envSensor/ingest/emqx），见 docs/runbooks/EMQX_阶段A_联调配置模板.md
+        publicWebhookBaseUrl: ${AGRI_EMQX_PUBLIC_WEBHOOK_BASE_URL:}
+        publicWebhookValidUntil: ${AGRI_EMQX_WEBHOOK_VALID_UNTIL:2027-05-06}
       tempAlertHigh: ${AGRI_SENSOR_TEMP_ALERT_HIGH:35}
       humidityAlertHigh: ${AGRI_SENSOR_HUMIDITY_ALERT_HIGH:85}
     weather:

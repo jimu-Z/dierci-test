@@ -12,6 +12,8 @@ public interface IAgriDeviceAccessNodeService
 {
     public AgriDeviceAccessNode selectAgriDeviceAccessNodeByNodeId(Long nodeId);
 
+    public AgriDeviceAccessNode selectAgriDeviceAccessNodeByDeviceCode(String deviceCode);
+
     public List<AgriDeviceAccessNode> selectAgriDeviceAccessNodeList(AgriDeviceAccessNode agriDeviceAccessNode);
 
     public int insertAgriDeviceAccessNode(AgriDeviceAccessNode agriDeviceAccessNode);

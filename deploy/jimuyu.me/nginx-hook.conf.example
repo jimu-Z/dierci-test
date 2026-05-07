@@ -1,0 +1,36 @@
+# 复制到 Nginx sites-available 并按实际路径修改后 include。
+# 假设：TLS 证书与私钥已就绪；后端监听 127.0.0.1:8080
+
+server {
+    listen 443 ssl http2;
+    server_name hook.jimuyu.me;
+
+    # 方式一：使用你购买的证书（推荐把 fullchain + privkey 放到固定目录）
+    ssl_certificate     /etc/nginx/ssl/jimuyu.me/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/jimuyu.me/privkey.pem;
+
+    # 方式二：若使用 Let’s Encrypt（Certbot），通常为：
+    # ssl_certificate     /etc/letsencrypt/live/hook.jimuyu.me/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/hook.jimuyu.me/privkey.pem;
+
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+server {
+    listen 80;
+    server_name hook.jimuyu.me;
+    return 301 https://$host$request_uri;
+}

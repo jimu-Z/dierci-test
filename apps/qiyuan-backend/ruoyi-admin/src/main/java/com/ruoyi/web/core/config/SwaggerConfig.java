@@ -55,7 +55,7 @@ public class SwaggerConfig
             // 设置标题
             .title("标题：农产品溯源系统_接口文档")
             // 描述
-            .description("描述：用于管理集团旗下公司的人员信息,具体包括XXX,XXX模块...")
+            .description("农产品溯源／启元农链相关业务接口文档（溯源、物联上报、台账与可视化等）；具体模块以 Swagger 分组与 Controller 注解为准。")
             // 作者信息
             .contact(new Contact().name(ruoyiConfig.getName()))
             // 版本

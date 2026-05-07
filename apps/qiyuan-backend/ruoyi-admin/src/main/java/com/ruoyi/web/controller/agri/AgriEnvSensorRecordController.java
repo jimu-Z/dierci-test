@@ -27,7 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,6 +51,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/agri/envSensor")
 public class AgriEnvSensorRecordController extends BaseController
 {
+    private static final Logger log = LoggerFactory.getLogger(AgriEnvSensorRecordController.class);
+
+    /** 并行上报时同一 deviceCode 的自动建档串行化，避免插入两条台账。 */
+    private final ConcurrentHashMap<String, Object> emqxDeviceProvisionLocks = new ConcurrentHashMap<>();
+
     @Autowired
     private IAgriEnvSensorRecordService agriEnvSensorRecordService;
 
@@ -164,6 +172,30 @@ public class AgriEnvSensorRecordController extends BaseController
         return ingestInternal(agriEnvSensorRecord, request, agriIntegrationProperties.getSensor().getEmqx().getDataSource());
     }
 
+    /**
+     * 返回 EMQX Webhook 联调所需 URL、Header 与令牌是否已配置（需在管理端登录后调用，避免泄露公网入口细节给匿名方）。
+     */
+    @PreAuthorize("@ss.hasPermi('agri:envSensor:query')")
+    @GetMapping("/integration/emqx-webhook")
+    public AjaxResult emqxWebhookIntegration(HttpServletRequest request)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        String base = StringUtils.trimToEmpty(agriIntegrationProperties.getSensor().getEmqx().getPublicWebhookBaseUrl());
+        if (StringUtils.isBlank(base))
+        {
+            base = resolveRequestBaseUrl(request);
+        }
+        base = trimTrailingSlash(base);
+        row.put("webhookUrl", base + "/agri/envSensor/ingest/emqx");
+        row.put("method", "POST");
+        row.put("contentType", "application/json");
+        row.put("authHeaderName", agriIntegrationProperties.getSensor().getAuthHeaderName());
+        row.put("ingestTokenConfigured", StringUtils.isNotBlank(agriIntegrationProperties.getSensor().getIngestToken()));
+        row.put("publicWebhookValidUntil", agriIntegrationProperties.getSensor().getEmqx().getPublicWebhookValidUntil());
+        row.put("recommendedTopic", "agri/{plotCode}/{deviceCode}/telemetry");
+        return success(row);
+    }
+
     private AjaxResult ingestInternal(AgriEnvSensorRecord agriEnvSensorRecord, HttpServletRequest request, String dataSource)
     {
         String configuredToken = agriIntegrationProperties.getSensor().getIngestToken();
@@ -186,19 +218,52 @@ public class AgriEnvSensorRecordController extends BaseController
             return error("设备编码和地块编码不能为空");
         }
 
-        AgriDeviceAccessNode query = new AgriDeviceAccessNode();
-        query.setDeviceCode(agriEnvSensorRecord.getDeviceCode());
-        List<AgriDeviceAccessNode> nodes = agriDeviceAccessNodeService.selectAgriDeviceAccessNodeList(query);
-        if (nodes == null || nodes.isEmpty())
+        String deviceCode = agriEnvSensorRecord.getDeviceCode();
+        AgriDeviceAccessNode accessNode = agriDeviceAccessNodeService.selectAgriDeviceAccessNodeByDeviceCode(deviceCode);
+        if (accessNode == null)
         {
-            return error("设备未注册，拒绝接入");
+            if (!isEmqxWebhookDataSource(dataSource))
+            {
+                return error("设备未注册，拒绝接入");
+            }
+            Object lock = emqxDeviceProvisionLocks.computeIfAbsent(deviceCode, k -> new Object());
+            try
+            {
+                synchronized (lock)
+                {
+                    accessNode = agriDeviceAccessNodeService.selectAgriDeviceAccessNodeByDeviceCode(deviceCode);
+                    if (accessNode == null)
+                    {
+                        AgriDeviceAccessNode draft = buildAutoProvisionEmqxDeviceAccessNode(agriEnvSensorRecord);
+                        agriDeviceAccessNodeService.insertAgriDeviceAccessNode(draft);
+                        log.info("EMQX auto-provision device access node. deviceCode={}, plotCode={}, nodeId={}",
+                            deviceCode, agriEnvSensorRecord.getPlotCode(), draft.getNodeId());
+                        accessNode = agriDeviceAccessNodeService.selectAgriDeviceAccessNodeByDeviceCode(deviceCode);
+                        if (accessNode == null && draft.getNodeId() != null)
+                        {
+                            accessNode = draft;
+                            log.warn("select after insert missed row for device {}, using keyed entity snapshot", deviceCode);
+                        }
+                        else if (accessNode == null)
+                        {
+                            log.error("EMQX auto-provision failed to obtain node primary key after insert. deviceCode={}",
+                                deviceCode);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                emqxDeviceProvisionLocks.remove(deviceCode, lock);
+            }
         }
-
-        AgriDeviceAccessNode node = nodes.get(0);
-        node.setAccessStatus("1");
-        node.setLastOnlineTime(DateUtils.getNowDate());
-        node.setUpdateBy("gateway");
-        agriDeviceAccessNodeService.updateAgriDeviceAccessNode(node);
+        if (accessNode != null)
+        {
+            accessNode.setAccessStatus("1");
+            accessNode.setLastOnlineTime(DateUtils.getNowDate());
+            accessNode.setUpdateBy("gateway");
+            agriDeviceAccessNodeService.updateAgriDeviceAccessNode(accessNode);
+        }
 
         agriEnvSensorRecord.setDataSource(StringUtils.defaultIfBlank(dataSource, agriIntegrationProperties.getSensor().getDataSource()));
         if (agriEnvSensorRecord.getCollectTime() == null)
@@ -214,6 +279,69 @@ public class AgriEnvSensorRecordController extends BaseController
             return error("上报入库失败");
         }
         return success("接收成功");
+    }
+
+    private String resolveRequestBaseUrl(HttpServletRequest request)
+    {
+        String scheme = request.getScheme();
+        String host = request.getServerName();
+        int port = request.getServerPort();
+        if (("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443))
+        {
+            return scheme + "://" + host;
+        }
+        return scheme + "://" + host + ":" + port;
+    }
+
+    private static String trimTrailingSlash(String base)
+    {
+        if (StringUtils.isBlank(base))
+        {
+            return "";
+        }
+        String b = base.trim();
+        while (b.endsWith("/"))
+        {
+            b = b.substring(0, b.length() - 1);
+        }
+        return b;
+    }
+
+    private boolean isEmqxWebhookDataSource(String dataSource)
+    {
+        return StringUtils.equals(dataSource, agriIntegrationProperties.getSensor().getEmqx().getDataSource());
+    }
+
+    private static AgriDeviceAccessNode buildAutoProvisionEmqxDeviceAccessNode(AgriEnvSensorRecord record)
+    {
+        AgriDeviceAccessNode node = new AgriDeviceAccessNode();
+        node.setDeviceCode(record.getDeviceCode());
+        node.setDeviceName(trimToMaxUtf16Chars("EMQX/" + StringUtils.defaultString(record.getDeviceCode()), 64));
+        node.setDeviceType("TEMP_HUMIDITY");
+        node.setProtocolType("MQTT");
+        String plot = StringUtils.trimToEmpty(record.getPlotCode());
+        node.setBindArea(StringUtils.isBlank(plot) ? null : plot);
+        node.setAccessStatus("1");
+        node.setLastOnlineTime(DateUtils.getNowDate());
+        node.setStatus("0");
+        String remark = String.format("首次 EMQX Webhook 上报自动建档（plot=%s）",
+            StringUtils.defaultString(record.getPlotCode(), "-"));
+        node.setRemark(trimToMaxUtf16Chars(remark, 480));
+        node.setCreateBy("gateway");
+        return node;
+    }
+
+    private static String trimToMaxUtf16Chars(String value, int maxChars)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+        if (value.length() <= maxChars)
+        {
+            return value;
+        }
+        return value.substring(0, maxChars);
     }
 
     private AgriEnvSensorRecord mapFromEmqx(Map<String, Object> body)
@@ -278,6 +406,23 @@ public class AgriEnvSensorRecordController extends BaseController
         if (segments == null || segments.length < 2)
         {
             return;
+        }
+        // 手册约定：agri/{plotCode}/{deviceCode}/telemetry
+        if (segments.length >= 3 && "agri".equalsIgnoreCase(segments[0]))
+        {
+            boolean telemetryTail = segments.length >= 4 && "telemetry".equalsIgnoreCase(segments[segments.length - 1]);
+            if (telemetryTail || segments.length == 3)
+            {
+                if (StringUtils.isBlank(record.getPlotCode()))
+                {
+                    record.setPlotCode(segments[1]);
+                }
+                if (StringUtils.isBlank(record.getDeviceCode()))
+                {
+                    record.setDeviceCode(segments[2]);
+                }
+                return;
+            }
         }
         if (StringUtils.isBlank(record.getPlotCode()))
         {
@@ -430,6 +575,25 @@ public class AgriEnvSensorRecordController extends BaseController
         if (value instanceof Map<?, ?> map)
         {
             return (Map<String, Object>) map;
+        }
+        if (value instanceof String str && StringUtils.isNotBlank(str))
+        {
+            String s = str.trim();
+            if (s.startsWith("{") && s.endsWith("}"))
+            {
+                try
+                {
+                    Object parsed = JSON.parse(s);
+                    if (parsed instanceof Map<?, ?> m)
+                    {
+                        return (Map<String, Object>) m;
+                    }
+                }
+                catch (Exception ignored)
+                {
+                    // EMQX 规则中 payload 可能为非 JSON 字符串，忽略
+                }
+            }
         }
         return Map.of();
     }

@@ -1,0 +1,2 @@
+在此文件第一行粘贴你的 AGRI_SENSOR_INGEST_TOKEN（不要换行、不要空格）。
+保存后把本文件改名为 ingest-token.txt（与启动脚本同目录）。

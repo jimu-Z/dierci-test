@@ -25,6 +25,12 @@ public class AgriDeviceAccessNodeServiceImpl implements IAgriDeviceAccessNodeSer
     }
 
     @Override
+    public AgriDeviceAccessNode selectAgriDeviceAccessNodeByDeviceCode(String deviceCode)
+    {
+        return agriDeviceAccessNodeMapper.selectAgriDeviceAccessNodeByDeviceCode(deviceCode);
+    }
+
+    @Override
     public List<AgriDeviceAccessNode> selectAgriDeviceAccessNodeList(AgriDeviceAccessNode agriDeviceAccessNode)
     {
         return agriDeviceAccessNodeMapper.selectAgriDeviceAccessNodeList(agriDeviceAccessNode);

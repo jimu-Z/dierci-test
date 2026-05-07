@@ -1,0 +1,57 @@
+# 本示例：Tunnel 已到 Cloudflare HTTPS，本机 Nginx **只监听 HTTP**（任选端口，示例 8890）。
+# 部署流程：先在 ruoyi-ui 执行 npm run build，再将 dist 拷到 nginx root（或直接用下面路径指向源码里的 dist）。
+#
+# 假定：后端 Spring Boot 监听 http://127.0.0.1:8080
+#
+# Tunnel config.yml 中增加：
+#   - hostname: app.jimuyu.me   # 可改成你想要的子域，如 www
+#     service: http://127.0.0.1:8890
+#
+# 然后执行：
+#   cloudflared tunnel route dns <隧道名> app.jimuyu.me
+
+server {
+    listen       8890;
+    listen       [::]:8890;
+    server_name  _;
+
+    # Windows 请将路径改成你本机 ruoyi-ui\dist 的绝对路径（正斜杠也可）
+    root   F:/chuangye/apps/qiyuan-backend/ruoyi-ui/dist;
+    index  index.html;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript application/x-javascript image/svg+xml;
+
+    # 若依生产环境接口前缀（与 .env.production 中 VUE_APP_BASE_API=/prod-api 一致）
+    location /prod-api/ {
+        proxy_pass http://127.0.0.1:8080/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Tunnel → 本机 Nginx 为 HTTP，勿用 $scheme（会是 http）。用户经 Cloudflare 为 HTTPS，固定写 https 最稳。
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout    300s;
+        proxy_read_timeout    300s;
+    }
+
+    # SpringDoc（若生产环境对外开放；不需要可删）
+    location ^~ /swagger-ui {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    location ^~ /v3/api-docs {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

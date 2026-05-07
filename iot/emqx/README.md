@@ -1,4 +1,4 @@
-﻿# 本地 EMQX（可选）
+# 本地 EMQX（可选）
 
 ```powershell
 cd iot/emqx
