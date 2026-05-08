@@ -1,10 +1,18 @@
+## 在本仓库中的位置
+
+前端工程路径：**`frontend/admin-web`**（与 monorepo 根仓库一起克隆；阶段 B 由原 `ruoyi-ui` 迁入）。
+
+开发服务器端口以 **`vue.config.js`** 中 `devServer.port` 为准（默认常见为 80，若冲突请改端口或加 `--port`）。
+
+---
+
 ## 开发
 
 ```bash
-# 克隆项目
+# 若依官方示例（独立克隆时用）；本仓库请从仓库根目录进入 frontend/admin-web
 git clone https://gitee.com/y_project/RuoYi-Vue
 
-# 进入项目目录
+# 进入项目目录（官方独立仓为 ruoyi-ui；本仓为 admin-web）
 cd ruoyi-ui
 
 # 安装依赖

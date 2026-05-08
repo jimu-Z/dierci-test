@@ -175,7 +175,7 @@ cloudflared tunnel run qiyuan-nonglian
 #### A. 开发联调：`npm run dev` 直通 Tunnel（省事，但不适合长期使用）
 
 1. Windows 监听 **80 端口经常要管理员权限**，建议使用其它端口启动前端，例如 **8890**：  
-   在 `ruoyi-ui` 目录执行：`npm run dev -- --port 8890`
+   在 `frontend/admin-web` 目录执行：`npm run dev -- --port 8890`
 2. 在用户目录 **`config.yml`** 的 `ingress` 里追加一条（写在 `hook` 与 `catch-all` 之间）：
 
 ```yaml
@@ -196,7 +196,7 @@ Vue 仍会按 `vue.config.js` 把 **`/dev-api`** 转到本机 `8080`，一般 **
 
 #### B. 推荐：**打包 + 本机 Nginx + Tunnel（稳定、可当日常入口）**
 
-1. 在后端源码目录 **`ruoyi-ui`** 执行生产构建：`npm run build`，得到 **`dist`** 目录。
+1. 在 **`frontend/admin-web`** 执行生产构建：`npm run build:prod`，得到 **`dist`** 目录。
 2. 在本机安装 Nginx（Windows 可用官方 zip），把仓库里的 **`deploy/jimuyu.me/nginx-app-local-http.conf.example`** 拷贝为实际配置，`root` 改成你的 **`dist` 路径**，监听端口与 Tunnel 一致（示例 **8890**）。
 3. `config.yml` 与 **`tunnel route dns`** 同方案 A，`service` 指向 `http://127.0.0.1:8890`。
 4. 后端需已启用 **`application.yml`** 中与转发头相关的配置（如 `server.forward-headers-strategy: framework`），以便登录、重定向等在 HTTPS 下正常。
@@ -226,8 +226,8 @@ Vue 仍会按 `vue.config.js` 把 **`/dev-api`** 转到本机 `8080`，一般 **
 1. 将仓库文件 **`deploy/jimuyu.me/nginx-app-local-http.conf.example`** 复制到 **`C:\nginx\conf\app-jimuyu.conf`**（文件名自定）。
 2. 用编辑器打开 **`app-jimuyu.conf`**，核对两行：
    - **`listen 8890;`**（若 8890 被占用，改成例如 **8891**，后面 Tunnel 里端口要一致）。
-   - **`root`**：改成你机器上 **`ruoyi-ui\dist`** 的绝对路径，Windows 可用正斜杠，例如  
-     `F:/chuangye/apps/qiyuan-backend/ruoyi-ui/dist;`  
+   - **`root`**：改成你机器上 **`frontend\admin-web\dist`** 的绝对路径，Windows 可用正斜杠，例如  
+     `F:/chuangye/frontend/admin-web/dist;`  
      （**先执行下面第 3 步生成 `dist`，或先写路径，构建后再启动 Nginx**。）
 3. 编辑 **`C:\nginx\conf\nginx.conf`**：在 **`http { ... }`** 块**末尾**（最后一个 `}` 之前）增加一行：
 
@@ -254,12 +254,12 @@ Vue 仍会按 `vue.config.js` 把 **`/dev-api`** 转到本机 `8080`，一般 **
 1. 打开 **PowerShell**：
 
 ```powershell
-cd F:\chuangye\apps\qiyuan-backend\ruoyi-ui
+cd F:\chuangye\frontend\admin-web
 npm install
 npm run build
 ```
 
-2. 确认目录 **`...\ruoyi-ui\dist`** 下已有 **`index.html`**。若上一步 Nginx 的 **`root`** 已指向该目录，重新 **`nginx.exe -t`** 后 **`.\nginx.exe`**（若已在跑则 **`.\nginx.exe -s reload`**）。
+2. 确认目录 **`...\frontend\admin-web\dist`** 下已有 **`index.html`**。若上一步 Nginx 的 **`root`** 已指向该目录，重新 **`nginx.exe -t`** 后 **`.\nginx.exe`**（若已在跑则 **`.\nginx.exe -s reload`**）。
 
 **4. 修改 Cloudflare Tunnel 配置（两条子域）**
 
@@ -513,6 +513,6 @@ Invoke-RestMethod -Method Post -Uri "https://hook.jimuyu.me/agri/envSensor/inges
 ## 文档索引
 
 - EMQX 字段与规则模板：`docs/runbooks/EMQX_阶段A_联调配置模板.md`  
-- 通用隧道说明：`deploy/emqx-tunnel/README.md`  
+- 隧道与 Webhook 索引：`deploy/jimuyu.me/README.md`（`deploy/emqx-tunnel/README.md` 为短链占位，指向同一套说明）  
 - 环境变量示例：`deploy/jimuyu.me/env.example`
 

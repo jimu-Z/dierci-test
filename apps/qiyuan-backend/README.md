@@ -1,3 +1,14 @@
+## 启元农链（本仓库中的若依二开）
+
+- **后端**与定制 Java 代码在本目录下；**管理端前端**已迁至 [**`frontend/admin-web`**](../../frontend/admin-web)。  
+- 仓库总览与 **`deploy/jimuyu.me` 公网方案**见 [**`README.md`**](../../README.md)。  
+- **JDK 21**、启动命令、EMQX 联调入口见 [**`CLAUDE.md`**](../../CLAUDE.md)。  
+- 目录与模块说明见 [**`docs/design/启元农链_目录重构与开发指南.md`**](../../docs/design/启元农链_目录重构与开发指南.md)。
+
+以下为上游 **RuoYi-Vue** 原项目说明（版本与分支以若依官方为准）。
+
+---
+
 <p align="center">
 	<img alt="logo" src="https://oscimg.oschina.net/oscnet/up-d3d0a9303e11d522a06cd263f3079027715.png">
 </p>

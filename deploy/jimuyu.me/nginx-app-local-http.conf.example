@@ -1,5 +1,5 @@
 # 本示例：Tunnel 已到 Cloudflare HTTPS，本机 Nginx **只监听 HTTP**（任选端口，示例 8890）。
-# 部署流程：先在 ruoyi-ui 执行 npm run build，再将 dist 拷到 nginx root（或直接用下面路径指向源码里的 dist）。
+# 部署流程：先在 frontend/admin-web 执行 npm run build:prod，再将 dist 拷到 nginx root（或直接用下面路径指向源码里的 dist）。
 #
 # 假定：后端 Spring Boot 监听 http://127.0.0.1:8080
 #
@@ -15,8 +15,8 @@ server {
     listen       [::]:8890;
     server_name  _;
 
-    # Windows 请将路径改成你本机 ruoyi-ui\dist 的绝对路径（正斜杠也可）
-    root   F:/chuangye/apps/qiyuan-backend/ruoyi-ui/dist;
+    # Windows 请将路径改成你本机 frontend\admin-web\dist 的绝对路径（正斜杠也可）
+    root   F:/chuangye/frontend/admin-web/dist;
     index  index.html;
 
     gzip on;

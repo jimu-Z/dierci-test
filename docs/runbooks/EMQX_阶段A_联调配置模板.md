@@ -33,7 +33,7 @@
   - `AGRI_EMQX_WEBHOOK_VALID_UNTIL`：计划下线日期，默认 `2027-05-06`（便于联调台账与续约提醒，与 SSL/域名账单无关时需自行维护）。  
   - `AGRI_SENSOR_INGEST_TOKEN`：**必须**设为强随机串；EMQX Webhook 请求头携带 `X-Agri-Token: <同值>`。
 2. **一年期临时域名（实施方式，非代码自动生成）**
-  代码无法替你注册真实 DNS。推荐流程：在任意注册商购买 **1 年期** 最便宜域名 → 将 `emqx-hook`（或任意子域）**CNAME** 到云厂商 **负载均衡 / API 网关 / Cloudflare Tunnel** 给出的目标 → 网关反代到本机 `http://127.0.0.1:8080`。详细示例见仓库 `deploy/emqx-tunnel/README.md`。
+  代码无法替你注册真实 DNS。推荐流程：在任意注册商购买 **1 年期** 最便宜域名 → 将 `emqx-hook`（或任意子域）**CNAME** 到云厂商 **负载均衡 / API 网关 / Cloudflare Tunnel** 给出的目标 → 网关反代到本机 `http://127.0.0.1:8080`。**家用宽带 + Tunnel 分步说明**：[`deploy/jimuyu.me/家用宽带_Cloudflare_Tunnel完整步骤.md`](../../deploy/jimuyu.me/家用宽带_Cloudflare_Tunnel完整步骤.md)；索引见 [`deploy/jimuyu.me/README.md`](../../deploy/jimuyu.me/README.md)。
 3. **未配置公网基址时**
   `GET .../integration/emqx-webhook` 会用**当前请求的协议+主机+端口**拼出 `webhookUrl`，仅适用于本机或内网验收；EMQX 云端规则必须使用 2.2 中的公网 HTTPS 地址。
 
